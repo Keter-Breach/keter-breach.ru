@@ -5,8 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project: Keter — SCP Foundation Access</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Подключаем Three.js для 3D графики -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+
+    <!-- ОВЕРЛЕЙ ДЛЯ АВТОЗАПУСКА ЗВУКА И ИНИЦИАЛИЗАЦИИ -->
+    <div id="start-overlay" onclick="initAudioAndApp()">
+        <div class="overlay-content">
+            <h1 class="glitch-text">PROJECT: KETER</h1>
+            <p>НАЖМИТЕ В ЛЮБОМ МЕСТЕ ДЛЯ ВКЛЮЧЕНИЯ ПИТАНИЯ ТЕРМИНАЛА И ЗВУКОВОЙ СИСТЕМЫ</p>
+        </div>
+    </div>
+
+    <!-- 3D CANVAS ДЛЯ ИГРЫ ОТ ПЕРВОГО ЛИЦА -->
+    <canvas id="game-canvas" class="hidden"></canvas>
+
+    <!-- ПРИЦЕЛ ДЛЯ ИГРЫ ОТ ПЕРВОГО ЛИЦА -->
+    <div id="crosshair" class="hidden">+</div>
+    
+    <!-- ПОДСКАЗКА ВЗАИМОДЕЙСТВИЯ -->
+    <div id="interaction-prompt" class="hidden">Нажмите [E] для взаимодействия с терминалом</div>
 
     <!-- ВЕРХНЯЯ ПАНЕЛЬ ИГРОКА -->
     <div id="player-panel" class="hidden">
@@ -19,200 +38,46 @@
     <div class="container">
 
         <!-- ГЛАВНОЕ МЕНЮ -->
-        <div id="block-menu" class="terminal">
+        <div id="block-menu" class="terminal hidden">
             <h1 class="glitch-text">PROJECT: KETER</h1>
             <h2>ФОНД SCP — ЗОНА 19 [АВАРИЙНЫЙ РЕЖИМ]</h2>
             <p class="warning-text">ВНИМАНИЕ: Нарушение условий сдержания класса Кэтер. Активирован локальный протокол карантина.</p>
-            <p class="lore-text">Личность пользователя: [ДОСТУП ОГРАНИЧЕН]. Операция по восстановлению памяти и блокировке объектов начата.</p>
+            <p class="lore-text">Персонаж: Спецагент Коулман (Агент C-492). Место появления: Сектор Сдерживания D-Класса.</p>
             
             <div class="menu-buttons">
-                <button class="btn-main" onclick="startGame()">ПРИСТУПИТЬ К ЗАДАЧЕ</button>
+                <button class="btn-main" onclick="startGame3D()">ПРИСТУПИТЬ К ЗАДАЧЕ</button>
                 <button class="btn-main" onclick="openArchiveFromMenu()">БАЗА ДАННЫХ ОБЪЕКТОВ</button>
                 <button class="btn-main btn-danger" onclick="resetProgress()">СБРОСИТЬ ПРОГРЕСС</button>
             </div>
         </div>
 
-        <!-- УРОВЕНЬ 0: БЛОК D (SCP-173) -->
+        <!-- ТЕРМИНАЛ ЗАДАЧИ (ОТКРЫВАЕТСЯ ПРИ ПОДОХОДЕ К КОНСОЛИ В 3D) -->
         <div id="block-d" class="terminal hidden">
-            <h3>[ЭТАП 1] СЕКТОР СОДЕРЖАНИЯ D-КЛАССА</h3>
-            <p>Вы приходите в себя на холодном бетонном полу. Голова раскалывается — следствие амнезиака или когнитивного удара. На оранжевой робе написано D-9341, но в памяти всплывают фрагменты допусков Фонда SCP.</p>
-            <p>В конце коридора слышен хруст. Защитная гермодверь заблокирована. Терминал запросов безопасности ожидает ввод инструкции по сдерживанию:</p>
+            <h3>[ЗАДАЧА 1] СЕКТОР СОДЕРЖАНИЯ D-КЛАССА</h3>
+            <p>Вы подошли к терминалу контроля дверей. На полу видны следы повреждений. Гермодверь заблокирована.</p>
             <p class="question">«Сколько сотрудников Class-D требуется для поддержания зрительного контакта и очистки камеры SCP-173?»</p>
             
             <div class="input-group">
                 <input type="text" id="input-block-d" placeholder="Введите количество..." autocomplete="off">
                 <button onclick="verifyCode('block-d')">ПОДТВЕРДИТЬ</button>
             </div>
-        </div>
-
-        <!-- УРОВЕНЬ 1: МЕДБЛОК (SCP-049 И SCP-999) -->
-        <div id="block-0" class="terminal hidden">
-            <h3>[ЭТАП 2] МЕДИЦИНСКИЙ КОРПУС — ЗОНА B</h3>
-            <p>Дверь со скрежетом открывается. Вы попадаете в залитый аварйным красным светом медотсек. На полу следы черной жидкости. Из динамиков доносится спокойный голос в средневековой маске: <i>«Вы больны... Я чувствую Поветрие»</i>.</p>
-            <p>Чтобы активировать систему вентиляции и заблокировать SCP-049 («Чумной Доктор»), авторизуйтесь под профилем ведущего специалиста:</p>
-            <p class="question">«Назовите специализацию доктора, использующего скальпель и костяные инструменты (Чумной ...):»</p>
-            
-            <div class="input-group">
-                <input type="text" id="input-block-0" placeholder="Введите слово..." autocomplete="off">
-                <button onclick="verifyCode('block-0')">ПОДТВЕРДИТЬ</button>
-            </div>
-        </div>
-
-        <!-- УРОВЕНЬ 2: КОРИДОР СЕРВЕРНОЙ (SCP-096) -->
-        <div id="block-1" class="terminal hidden">
-            <h3>[ЭТАП 3] ТРАНЗИТНЫЙ КОРИДОР B-2</h3>
-            <p class="warning-text">Впереди темнота. Из-за угла доносится тихий, надрывный плач гуманоида. Датчики показывают приближение SCP-096 («Скромник»).</p>
-            <p>Вы поворачиваете за угол и мгновенно фиксируете длинное бледное тело. Он сидит к вам спиной, но начинает поворачивать голову. Ваше решение?</p>
-            
-            <div class="choice-buttons">
-                <button onclick="quizLevel2('close_eyes')">Уткнуться лицом в пол и закрыть глаза</button>
-                <button onclick="quizLevel2('run')">Развернуться и побежать обратно в Медблок</button>
-                <button onclick="quizLevel2('look')">Вскинуть пистолет и выстрелить ему в голову</button>
-            </div>
-        </div>
-
-        <!-- УРОВЕНЬ 3: СЕКТОР ЕВКЛИД (SCP-076) -->
-        <div id="block-2" class="terminal hidden">
-            <h3>[ЭТАП 4] УЗЕЛ СВЯЗИ СЕКТОРА ЕВКЛИД</h3>
-            <p>Вы миновали коридоры. Системы мониторинга фиксируют разрушение каменного куба SCP-076-2 («Авель»). Времени мало. Для подключения к главному серверу Совета O5 введите три главных девиза Фонда SCP:</p>
-            <p class="question">«Три ключевых слова девиза Фонда (через пробел):»</p>
-            
-            <div class="input-group">
-                <input type="text" id="input-block-2" placeholder="слово слово слово..." autocomplete="off">
-                <button onclick="verifyCode('block-2')">ПОДТВЕРДИТЬ</button>
-            </div>
-        </div>
-
-        <!-- УРОВЕНЬ 4: АДМИНИСТРАЦИЯ (ДОКТОР БРАЙТ) -->
-        <div id="block-3" class="terminal hidden">
-            <h3>[ЭТАП 5] ШТАБ АДМИНИСТРАЦИИ ЗОНЫ 19</h3>
-            <p>Вы в центральной рубке. Терминал заблокирован личным амулетом SCP-963. Память окончательно возвращается — вы Агент C-492, отправившийся сюда по личному приказу Совета O5.</p>
-            <p>Для активации консоли главного администратора введите фамилию исследователя, чье сознание записано в амулет SCP-963:</p>
-            <p class="question">«Фамилия сотрудника, которому запрещено использовать SCP-963 на бензопилах:»</p>
-            
-            <div class="input-group">
-                <input type="text" id="input-block-3" placeholder="Введите фамилию..." autocomplete="off">
-                <button onclick="verifyCode('block-3')">ПОДТВЕРДИТЬ</button>
-            </div>
-        </div>
-
-        <!-- УРОВЕНЬ 5: МЕМЕТИЧЕСКАЯ ОЧИСТКА -->
-        <div id="block-4" class="terminal hidden">
-            <h3>[ЭТАП 6] КЛЮЧЕВОЙ ШЛЮЗ БЕЗОПАСНОСТИ</h3>
-            <p>Терминал запрашивает мем-код. На экране мелькают опасные фракталы. Для защиты сознания требуется ввести класс стандартного амнезиака, стирающего кратковременную память:</p>
-            <p class="question">«Буквенный класс амнезиака (Класс ...):»</p>
-            
-            <div class="input-group">
-                <input type="text" id="input-block-4" placeholder="Введите букву..." autocomplete="off">
-                <button onclick="verifyCode('block-4')">ПОДТВЕРДИТЬ</button>
-            </div>
-        </div>
-
-        <!-- УРОВЕНЬ 6: ПЕРЕХОД К KETER-ШЛЮЗУ -->
-        <div id="block-5" class="terminal hidden">
-            <h3>[ЭТАП 7] ШЛЮЗ ГЛУБОКОГО СДЕРЖИВАНИЯ KETER</h3>
-            <p>Вы стоите перед огромной бронированной дверью с символикой Кэтер. За ней слышен рык и всплески кислого раствора. SCP-682 пытаются уничтожить.</p>
-            <button class="btn-main btn-danger" onclick="goToKeterSector()">ВОЙТИ В СЕКТОР KETER</button>
-        </div>
-
-        <!-- ФИНАЛ 1: СЕКТОР KETER (ФОНД) -->
-        <div id="block-keter" class="terminal hidden">
-            <h3>[ФИНАЛ: ФОНД] КУПОЛ СОДЕРЖАНИЯ SCP-682</h3>
-            <p>Кислотные резервуары пробиты! Неуничтожимая рептилия вырывается на свободу. Для вызова отряда спецназа и перезапуска протокола «Омега» введите код Мобильной Оперативной Группы:</p>
-            <p class="question">«Позывной МОГ сдерживания (Девятихвостая ...-1):»</p>
-            
-            <div class="input-group">
-                <input type="text" id="input-block-keter" placeholder="Введите название..." autocomplete="off">
-                <button onclick="quizKeter()">ОТПРАВИТЬ СИГНАЛ</button>
-            </div>
-        </div>
-
-        <!-- ФИНАЛ 2: ВЕТКА ПОВСТАНЦЕВ ХАОСА -->
-        <div id="block-chaos" class="terminal hidden">
-            <h3>[ФИНАЛ: ХАОС] СВЯЗЬ С ДЕЛЬТА-КОМАНДОВАНИЕМ</h3>
-            <p class="warning-text">Фонд считает вас погибшим. Терминал перехвачен Повстанцами Хаоса (Chaos Insurgency):</p>
-            <p><i>«Агент C-492, передай нам коды подрыва Зоны 19. Мы заберем объекты Keter и дадим тебе свободу»</i>.</p>
-            <p class="question">«Секретное кодовое слово Повстанцев (Многоглавая гидра):»</p>
-            
-            <div class="input-group">
-                <input type="text" id="input-block-chaos" placeholder="Введите слово..." autocomplete="off">
-                <button onclick="quizChaos()">АКТИВИРОВАТЬ ВЗРЫВАТЕЛИ</button>
-            </div>
+            <button class="btn-small" style="margin-top: 15px;" onclick="closeTerminal()">ОТОЙТИ ОТ ТЕРМИНАЛА</button>
         </div>
 
         <!-- БЛОК ЭНЦИКЛОПЕДИИ / АРХИВА -->
         <div id="block-encyclopedia" class="terminal hidden">
             <h2>АРХИВ ОБЪЕКТОВ PROJECT: KETER</h2>
-            <p>Доступ к файлам разблокируется по мере сбора данных в Зоне 19:</p>
-
             <div class="archive-grid">
-                <!-- SCP-173 -->
                 <div id="card-scp173" class="archive-card hidden">
                     <h4>SCP-173 — Скульптура</h4>
                     <p><b>Класс:</b> Евклид</p>
-                    <p>Перемещается при разрыве зрительного контакта. Ломает шейные позвонки.</p>
+                    <p>Перемещается при разрыве зрительного контакта.</p>
                 </div>
                 <div id="card-scp173-locked" class="archive-card locked">
                     <h4>SCP-173 — [ЗАСЕКРЕЧЕНО]</h4>
                     <p>Исследуйте Сектор D для разблокировки.</p>
                 </div>
-
-                <!-- SCP-049 -->
-                <div id="card-scp049" class="archive-card hidden">
-                    <h4>SCP-049 — Чумной Доктор</h4>
-                    <p><b>Класс:</b> Евклид</p>
-                    <p>Гуманоид в костюме средневекового врача. Убивает касанием для «излечения».</p>
-                </div>
-                <div id="card-scp049-locked" class="archive-card locked">
-                    <h4>SCP-049 — [ЗАСЕКРЕЧЕНО]</h4>
-                    <p>Исследуйте Медблок для разблокировки.</p>
-                </div>
-
-                <!-- SCP-999 -->
-                <div id="card-scp999" class="archive-card hidden">
-                    <h4>SCP-999 — Щекоточный Монстр</h4>
-                    <p><b>Класс:</b> Безопасный</p>
-                    <p>Игривое аморфное существо, дарующее чувство радости и безопасности.</p>
-                </div>
-                <div id="card-scp999-locked" class="archive-card locked">
-                    <h4>SCP-999 — [ЗАСЕКРЕЧЕНО]</h4>
-                    <p>Исследуйте Медблок для разблокировки.</p>
-                </div>
-
-                <!-- SCP-096 -->
-                <div id="card-scp096" class="archive-card hidden">
-                    <h4>SCP-096 — Скромник</h4>
-                    <p><b>Класс:</b> Евклид</p>
-                    <p>Впадает в неистовство, если кто-то увидит его лицо. Уничтожает цель в 100% случаев.</p>
-                </div>
-                <div id="card-scp096-locked" class="archive-card locked">
-                    <h4>SCP-096 — [ЗАСЕКРЕЧЕНО]</h4>
-                    <p>Пройдите коридор B-2 для разблокировки.</p>
-                </div>
-
-                <!-- SCP-076 -->
-                <div id="card-scp076" class="archive-card hidden">
-                    <h4>SCP-076 — Авель</h4>
-                    <p><b>Класс:</b> Кэтер</p>
-                    <p>Бессмертный гуманоид-воин с сверхчеловеческой силой, возникающий из куба SCP-076-1.</p>
-                </div>
-                <div id="card-scp076-locked" class="archive-card locked">
-                    <h4>SCP-076 — [ЗАСЕКРЕЧЕНО]</h4>
-                    <p>Пройдите Сектор Евклид для разблокировки.</p>
-                </div>
-
-                <!-- SCP-682 -->
-                <div id="card-scp682" class="archive-card hidden">
-                    <h4>SCP-682 — Неуничтожимая рептилия</h4>
-                    <p><b>Класс:</b> Кэтер</p>
-                    <p>Огромная рептилия с мгновенной регенерацией и ненавистью ко всему живому.</p>
-                </div>
-                <div id="card-scp682-locked" class="archive-card locked">
-                    <h4>SCP-682 — [ЗАСЕКРЕЧЕНО]</h4>
-                    <p>Пройдите Штаб администрации для разблокировки.</p>
-                </div>
             </div>
-
             <button class="btn-main" onclick="toggleArchiveView()" style="margin-top: 20px;">ЗАКРЫТЬ АРХИВ</button>
         </div>
 
