@@ -98,9 +98,32 @@
     <h3>МЕМОРАНДУМ О5: ИСТИННАЯ СУТЬ ФОНДА</h3>
     <p>Мы строим тюрьму для самой реальности. Если мы проиграем, мир рухнет.</p>
     <hr>
-    <button class="btn btn-3" onclick="alert('ПРОТОКОЛ АЛЬФА-БОЕГОЛОВОК АКТИВИРОВАН. ЭВАКУАЦИЯ: 90 СЕКУНД.')">Активировать Альфа-боеголовки</button>
-    <button class="btn btn-3" style="margin-left: 10px;" onclick="resetProgress()">Перезагрузить симуляцию</button>
+  <button class="btn btn-3" onclick="localStorage.setItem('scp_secure_level', 'Level_Keter'); checkAccess();">Войти в Сектор Кэтер</button>
+  <button class="btn btn-3" style="margin-left: 10px;" onclick="resetProgress()">Перезагрузить симуляцию</button>
 </div>
+    
+<!-- ================= БЛОК УРОВНЯ 4: СЕКТОР КЕТЕР ================= -->
+<div id="block-keter" class="terminal status-d hidden" style="color: #ff0000; border-color: #ff0000; box-shadow: 0 0 35px rgba(255,0,0,0.4);">
+    <h2>[ВНИМАНИЕ: СЕКТОР КЕТЕР // ТЕРМИНАЛ ЭКСТРЕННОГО СДЕРЖИВАНИЯ]</h2>
+    <p><b>СТАТУС СЕКТОРА:</b> Множественные нарушения условий содержания! Автоматические системы шлюзования уничтожены.</p>
+    <hr style="border-color: #ff0000;">
+    
+    <h3>ТЕКУЩАЯ СИТУАЦИЯ И ЗАДАЧИ СДЕРЖИВАНИЯ:</h3>
+    <ul>
+        <li><b>SCP-106 («Старик»):</b> Субъект проходит сквозь стены командного пункта. На полу обнаружена коррозийная черная слизь. <i>Протокол:</i> Для его заманивания обратно требуется активировать «Бедренную дробилку» и пожертвовать одним сотрудником класса D.</li>
+        <li><b>SCP-1048 («Мишка-строитель»):</b> Милое на вид существо из ушной серы и запчастей крадется по вентиляции. Огонь на поражение разрешен.</li>
+    </ul>
+
+    <div style="background: rgba(255,0,0,0.05); padding: 15px; border: 1px dashed #ff0000; margin-top: 15px;">
+        <p class="warning-flash">ФИНАЛЬНЫЙ ТЕСТ: ИЗОЛЯЦИЯ SCP-682</p>
+        <p>Ядерный удар отменен. Рептилия адаптировалась к взрыву и поглощает радиацию. Единственный способ временно остановить SCP-682 — залить камеру гидрохлоридной кислотой, но автоматика требует ввести секретный идентификатор Мобильной Опергруппы, которая специализируется на сдерживании Кэтеров в Зоне 19.</p>
+        <p><i>[Подсказка: Введите название этой знаменитой опергруппы Фонда на русском языке в формате "название-число" (например: альфа-1)]</i></p>
+    </div>
+    
+    <button class="btn" style="color: #ff0000; border-color: #ff0000;" onclick="quizKeter()">Ввести позывной МОГ и залить камеру кислотой</button>
+    <button class="btn" style="color: #ff0000; border-color: #ff0000; margin-left: 10px;" onclick="resetProgress()">Капитулировать (Сброс)</button>
+</div>
+
 <script>
     function checkAccess() {
         document.getElementById('block-d').classList.add('hidden');
@@ -108,6 +131,9 @@
         document.getElementById('block-1').classList.add('hidden');
         document.getElementById('block-2').classList.add('hidden');
         document.getElementById('block-3').classList.add('hidden');
+        // Проверяем, существует ли новый блок в HTML (на случай если скопирован не весь код)
+        let keterBlock = document.getElementById('block-keter');
+        if (keterBlock) keterBlock.classList.add('hidden');
 
         let currentLevel = localStorage.getItem("scp_secure_level");
         
@@ -131,6 +157,9 @@
         } else if (currentLevel === "Level_3") {
             document.getElementById('block-3').classList.remove('hidden');
             document.body.style.backgroundColor = "#18011c";
+        } else if (currentLevel === "Level_Keter" && keterBlock) {
+            keterBlock.classList.remove('hidden');
+            document.body.style.backgroundColor = "#260000"; // Кроваво-красный фон для Кэтеров
         }
     }
 
@@ -149,10 +178,24 @@
     function quizLevel2(choice) {
         if (choice === 'закрыть глаза') {
             localStorage.setItem("scp_secure_level", "Level_2");
-            alert("ВЫ СВЕРНУЛИ ЗА УГОЛ И ЗАКРЫЛИ ГЛАЗА. Допуск повышен.");
+            alert("ВЫ СВЕРНУЛИ ЗА УГОЛ И ЗАКРЫЛИ ГЛАЗА. SCP-096 пробежал мимо. Допуск повышен.");
             checkAccess();
         } else {
             alert("ВЫ ПОСМОТРЕЛИ НА НЕГО. SCP-096 разорвал вас на части.");
+            resetProgress();
+        }
+    }
+
+    // Финальная загадка Сектора Кетер
+    function quizKeter() {
+        let mogAnswer = prompt("Введите позывной МОГ для усмирения Кэтеров (например: омега-7):");
+        // Самая известная МОГ Зоны 19, занимающаяся Кэтерами и ликвидацией последствий — Эпсилон-11 ("Девятихвостая лиса")
+        if (mogAnswer && (mogAnswer.toLowerCase().trim() === "эпсилон-11" || mogAnswer.toLowerCase().trim() === "epsilon-11")) {
+            alert("СИГНАЛ ПРИНЯТ. Вертолеты МОГ Эпсилон-11 прибыли в сектор. Кислота залита. Вы заслужили абсолютный статус Легенды Фонда!");
+            localStorage.setItem("scp_secure_level", "Class_D"); // Сброс для новой игры
+            checkAccess();
+        } else {
+            alert("ОШИБКА. Неверный позывной МОГ. SCP-682 пробил стену терминала. Вы уничтожены.");
             resetProgress();
         }
     }
@@ -178,3 +221,4 @@
 
 </body>
 </html>
+
