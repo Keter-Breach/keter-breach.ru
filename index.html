@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>SCP TERMINAL</title>
+    <style>
+        body { background-color: #0d0d0d; color: #00ff66; font-family: monospace; padding: 30px; }
+        .terminal { border: 2px solid #00ff66; padding: 25px; border-radius: 5px; max-width: 600px; margin: 0 auto; }
+        .btn { background: transparent; color: #00ff66; border: 1px solid #00ff66; padding: 10px 20px; font-family: monospace; cursor: pointer; margin-top: 15px; }
+        .btn:hover { background: #00ff66; color: #0d0d0d; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<!-- ЭКРАН 1: КЛАСС D -->
+<div id="block-d" class="terminal hidden">
+    <h1>ТЕРМИНАЛ: КЛАСС D</h1>
+    <p>Статус: Расходный персонал. Доступ к архивам заблокирован.</p>
+    <p><i>[Подсказка: Введите код "новичок"]</i></p>
+    <button class="btn" onclick="verifyCode('новичок', 'Level_0')">Ввести код доступа</button>
+</div>
+
+<!-- ЭКРАН 2: УРОВЕНЬ 0 -->
+<div id="block-0" class="terminal hidden">
+    <h1>ТЕРМИНАЛ: УРОВЕНЬ 0</h1>
+    <p>Статус: Технический персонал. Доступ к лабораториям ограничен.</p>
+    <p><i>[Подсказка: Введите код "трудяга"]</i></p>
+    <button class="btn" onclick="verifyCode('трудяга', 'Level_1')">Повысить допуск</button>
+    <button class="btn" style="margin-left: 10px;" onclick="resetProgress()">Выйти</button>
+</div>
+
+<!-- ЭКРАН 3: УРОВЕНЬ 1 -->
+<div id="block-1" class="terminal hidden">
+    <h1>ТЕРМИНАЛ: УРОВЕНЬ 1</h1>
+    <p>Статус: Младший исследователь. Допуск разрешен.</p>
+    <hr style="border-color: #00ff66;">
+    <h3>СЕКРЕТНЫЙ ОБЪЕКТ: SCP-173</h3>
+    <p>Класс: Евклид. Скульптура из бетона. Нападает, если разорвать зрительный контакт. При работе с объектом запрещено моргать без предупреждения.</p>
+    <hr style="border-color: #00ff66;">
+    <button class="btn" onclick="resetProgress()">Заблокировать терминал</button>
+</div>
+
+<script>
+    function checkAccess() {
+        document.getElementById('block-d').classList.add('hidden');
+        document.getElementById('block-0').classList.add('hidden');
+        document.getElementById('block-1').classList.add('hidden');
+
+        let currentLevel = localStorage.getItem("scp_simple_level");
+        
+        if (!currentLevel) {
+            currentLevel = "Class_D";
+            localStorage.setItem("scp_simple_level", "Class_D");
+        }
+
+        if (currentLevel === "Class_D") {
+            document.getElementById('block-d').classList.remove('hidden');
+        } else if (currentLevel === "Level_0") {
+            document.getElementById('block-0').classList.remove('hidden');
+        } else if (currentLevel === "Level_1") {
+            document.getElementById('block-1').classList.remove('hidden');
+        }
+    }
+
+    function verifyCode(correctCode, targetLevel) {
+        let userCode = prompt("Введите код авторизации:");
+        if (userCode && userCode.toLowerCase().trim() === correctCode) {
+            localStorage.setItem("scp_simple_level", targetLevel);
+            alert("Доступ предоставлен!");
+            checkAccess();
+        } else {
+            alert("Ошибка! Неверный код доступа.");
+        }
+    }
+
+    function resetProgress() {
+        localStorage.setItem("scp_simple_level", "Class_D");
+        checkAccess();
+    }
+
+    checkAccess();
+</script>
+
+</body>
+</html>
