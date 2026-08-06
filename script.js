@@ -6,7 +6,7 @@ let gameState = {
     currentBlock: 'block-menu',
     xp: 0,
     rank: 'Подопытный D-9341',
-    unlockedArchive: [] // Массив ID разблокированных SCP (например, ['scp999', 'scp173'])
+    unlockedArchive: [] // Хранит ID открытых SCP (например, ['scp173', 'scp049'])
 };
 
 // Правильные ответы для каждого терминала
@@ -15,12 +15,12 @@ const ANSWERS = {
     'block-0': 'медик',
     'block-2': 'обезопасить удержать сохранить',
     'block-3': 'брайт',
-    'block-4': ['а', 'a', 'f'], // Принимает русскую "а", английскую "a" и "f"
+    'block-4': ['а', 'a', 'f'], // Вариативность языков и клавиш
     'keter': 'девятихвостая лиса-1',
     'chaos': 'гидра'
 };
 
-// При загрузке страницы восстанавливаем прогресс и вешаем слушатели
+// Загрузка при открытии страницы
 document.addEventListener('DOMContentLoaded', () => {
     loadProgress();
     updateUI();
@@ -30,13 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // 2. УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ И НАВИГАЦИЕЙ
 // ==========================================
 
-// Переключение видимого терминала/экрана
+// Переключение экранов терминала
 function showBlock(blockId) {
-    // Скрываем все терминалы
     const allBlocks = document.querySelectorAll('.terminal');
     allBlocks.forEach(b => b.classList.add('hidden'));
 
-    // Показываем целевой блок
     const targetBlock = document.getElementById(blockId);
     if (targetBlock) {
         targetBlock.classList.remove('hidden');
@@ -44,25 +42,30 @@ function showBlock(blockId) {
         saveProgress();
     }
 
-    // Верхняя панель видна всегда, кроме Главного меню и Энциклопедии из меню
+    // Верхняя панель видна только во время игры
     const topPanel = document.getElementById('player-panel');
-    if (blockId === 'block-menu' || blockId === 'block-encyclopedia') {
-        topPanel.classList.add('hidden');
-    } else {
-        topPanel.classList.remove('hidden');
+    if (topPanel) {
+        if (blockId === 'block-menu' || blockId === 'block-encyclopedia') {
+            topPanel.classList.add('hidden');
+        } else {
+            topPanel.classList.remove('hidden');
+        }
     }
 }
 
 // Запуск игры из меню
 function startGame() {
-    showBlock(gameState.currentBlock === 'block-menu' ? 'block-d' : gameState.currentBlock);
+    startAmbientSound(); // Включаем фоновый VHS-шум
+    
+    // Если игрок был в меню, запускаем с первого уровня (или сохраненного)
+    const targetBlock = (gameState.currentBlock === 'block-menu') ? 'block-d' : gameState.currentBlock;
+    showBlock(targetBlock);
 }
 
-// Начисление XP и обновление ранга
+// Начисление XP и рост ранга
 function addXP(amount) {
     gameState.xp += amount;
     
-    // Обновление ранга по мере накопления XP
     if (gameState.xp >= 300) {
         gameState.rank = 'Бывший Директор Зоны';
     } else if (gameState.xp >= 150) {
@@ -75,7 +78,7 @@ function addXP(amount) {
     updateUI();
 }
 
-// Обновление верха экрана и состояния карт в архиве
+// Обновление верха экрана и карточек архива
 function updateUI() {
     const rankEl = document.getElementById('player-rank');
     const xpEl = document.getElementById('player-xp');
@@ -83,7 +86,7 @@ function updateUI() {
     if (rankEl) rankEl.textContent = gameState.rank;
     if (xpEl) xpEl.textContent = gameState.xp;
 
-    // Обновляем карточки в энциклопедии
+    // Синхронизация открытых карточек SCP
     const allScpKeys = ['scp173', 'scp049', 'scp999', 'scp096', 'scp076', 'scp682'];
     
     allScpKeys.forEach(scp => {
@@ -112,6 +115,8 @@ function openArchiveFromMenu() {
 
 function toggleArchiveView() {
     const enc = document.getElementById('block-encyclopedia');
+    if (!enc) return;
+
     if (enc.classList.contains('hidden')) {
         enc.classList.remove('hidden');
     } else {
@@ -128,18 +133,16 @@ function unlockArchiveCard(scpId) {
 }
 
 // ==========================================
-// 4. ЛОГИКА ПРОВЕРКИ И ПЕРЕХОДОВ ПО УРОВНЯМ
+// 4. ЛОГИКА УРОВНЕЙ И ТЕСТОВ
 // ==========================================
 
-// Универсальная функция проверки текстовых паролей
-function verifyCode(blockId, nextLevel) {
+function verifyCode(blockId) {
     const input = document.getElementById(`input-${blockId}`);
     if (!input) return;
 
     const userVal = input.value.trim().toLowerCase();
     const correctAns = ANSWERS[blockId];
     
-    // Проверяем, совпадает ли ответ (учитывая, что correctAns может быть массивом)
     const isCorrect = Array.isArray(correctAns) ? correctAns.includes(userVal) : userVal === correctAns;
 
     if (isCorrect) {
@@ -147,13 +150,13 @@ function verifyCode(blockId, nextLevel) {
         input.value = '';
         addXP(50);
         
-        // Разблокировка SCP при прохождении
+        // Разблокировка объектов
         if (blockId === 'block-d') unlockArchiveCard('scp173');
-        if (blockId === 'block-0') unlockArchiveCard('scp999');
+        if (blockId === 'block-0') { unlockArchiveCard('scp049'); unlockArchiveCard('scp999'); }
         if (blockId === 'block-2') unlockArchiveCard('scp076');
         if (blockId === 'block-3') unlockArchiveCard('scp682');
 
-        // Карта переходов между уровнями
+        // Маршрут движения по секторам
         const nextMap = {
             'block-d': 'block-0',
             'block-0': 'block-1',
@@ -169,7 +172,7 @@ function verifyCode(blockId, nextLevel) {
     }
 }
 
-// Уровень 1: Интерактивный выбор при встрече с SCP-096
+// Уровень 1: SCP-096 (Выбор действий)
 function quizLevel2(choice) {
     unlockArchiveCard('scp096');
 
@@ -179,69 +182,97 @@ function quizLevel2(choice) {
         showBlock('block-2');
     } else if (choice === 'run') {
         triggerHorrorEffect();
-        alert("ОШИБКА ВЫЖИВАНИЯ:\n\nВы побежали по коридору, создав шум. SCP-096 услышал вас и нагнал через 3 секунды. Вы погибли.");
+        alert("ОШИБКА ВЫЖИВАНИЯ:\n\nВы побежали по коридору. SCP-096 услышал шум и нагнал вас за 3 секунды. Вы погибли.");
     } else if (choice === 'look') {
         triggerHorrorEffect();
-        alert("КРИТИЧЕСКАЯ ОШИБКА:\n\nВы посмотрели прямо в лицо SCP-096. Никакое оружие вам не помогло. Вы разодраны на куски.");
+        alert("КРИТИЧЕСКАЯ ОШИБКА:\n\nВы посмотрели на лицо SCP-096. Никакое оружие не помогло. Вы разодраны на куски.");
     }
 }
 
-// Переход в Сектор Кэтер из Уровня 5
 function goToKeterSector() {
     showBlock('block-keter');
 }
 
-// Финал: Тест в Секторе Кэтер (МОГ)
+// Концовка Фонда
 function quizKeter() {
     const input = document.getElementById('input-block-keter');
     if (!input) return;
 
-    const val = input.value.trim().toLowerCase();
-
-    if (val === ANSWERS['keter']) {
+    if (input.value.trim().toLowerCase() === ANSWERS['keter']) {
         addXP(100);
-        alert("ПРОТОКОЛ ВЫПОЛНЕН!\n\nМОГ «Девятихвостая лиса» прибыла вовремя. SCP-682 заблокирован в кислотном баке. Вы спасли Зону 19 и заняли место в Совете O5!\n\nПОБЕДА (КОНЦОВКА ФОНДА).");
+        alert("ПРОТОКОЛ ВЫПОЛНЕН!\n\nМОГ «Девятихвостая лиса» прибыла вовремя. SCP-682 заблокирован в кислотном баке. Вы спасли Зону 19!\n\nПОБЕДА (КОНЦОВКА ФОНДА).");
         resetProgress();
     } else {
-        // Ошибка перенаправляет к Повстанцам Хаоса
         triggerHorrorEffect();
-        alert("ОШИБКА СДЕРЖИВАНИЯ!\n\nСистема не распознала позывной. Защита заслонки отключена. SCP-682 пробивает стену!\n\nСВЯЗЬ ПЕРЕХВАТАНА ПОВСТАНЦАМИ ХАОСА...");
+        alert("ОШИБКА СДЕРЖИВАНИЯ!\n\nСистема не распознала позывной. SCP-682 пробивает стену!\n\nСВЯЗЬ ПЕРЕХВАТАНА ПОВСТАНЦАМИ ХАОСА...");
         input.value = '';
         showBlock('block-chaos');
     }
 }
 
-// Финал: Ветка Повстанцев Хаоса
+// Концовка Повстанцев Хаоса
 function quizChaos() {
     const input = document.getElementById('input-block-chaos');
     if (!input) return;
 
-    const val = input.value.trim().toLowerCase();
-
-    if (val === ANSWERS['chaos']) {
+    if (input.value.trim().toLowerCase() === ANSWERS['chaos']) {
         addXP(100);
-        alert("ШИФР ДЕТОНАЦИИ ПРИНЯТ!\n\nПодземные заряды активированы. Зона 19 уничтожена вместе со всеми объектами и Советом O5. Вы эвакуированы вертолетом Повстанцев.\n\nПОБЕДА (КОНЦОВКА ХАОСА).");
+        alert("ШИФР ДЕТОНАЦИИ ПРИНЯТ!\n\nПодземные заряды активированы. Зона 19 уничтожена. Вы эвакуированы вертолетом Повстанцев.\n\nПОБЕДА (КОНЦОВКА ХАОСА).");
         resetProgress();
     } else {
         triggerHorrorEffect();
-        alert("НЕВЕРНЫЙ ШИФР!\n\nДельта-Командование оборвало связь, посчитав вас двойным агентом. Вы сгорели в пламени комплекса.");
+        alert("НЕВЕРНЫЙ ШИФР!\n\nДельта-Командование оборвало связь. Вы сгорели в пламени комплекса.");
     }
 }
 
 // ==========================================
-// 5. ВПОМОГАТЕЛЬНЫЕ И ХОРРОР ЭФФЕКТЫ
+// 5. ЗВУКОВЫЕ И ХОРРОР ЭФФЕКТЫ
 // ==========================================
 
-// Визуальный сбой экрана и воспроизведение звука
+// Запуск постоянного эмбиента (белый шум + VHS)
+function startAmbientSound() {
+    const staticSnd = document.getElementById('snd-static');
+    const vhsSnd = document.getElementById('snd-vhs');
+
+    if (staticSnd && vhsSnd) {
+        staticSnd.volume = 0.12; // Тихий белый шум
+        vhsSnd.volume = 0.20;    // Гул магнитофона
+
+        staticSnd.play().catch(() => {});
+        vhsSnd.play().catch(() => {});
+    }
+}
+
+// Резкое усиление шума при ошибке
+function boostStaticNoise() {
+    const staticSnd = document.getElementById('snd-static');
+    if (staticSnd) {
+        staticSnd.volume = 0.55;
+        setTimeout(() => {
+            staticSnd.volume = 0.12;
+        }, 600);
+    }
+}
+
+// Остановка звука
+function stopAmbientSound() {
+    const staticSnd = document.getElementById('snd-static');
+    const vhsSnd = document.getElementById('snd-vhs');
+
+    if (staticSnd) staticSnd.pause();
+    if (vhsSnd) vhsSnd.pause();
+}
+
+// Визуальные сбои и глитч-звук при ошибке
 function triggerHorrorEffect() {
-    // Звук глитча
+    boostStaticNoise();
+
     const audio = document.getElementById('snd-glitch');
     if (audio) {
         audio.currentTime = 0;
-        audio.play().catch(() => {}); // Игнорируем блокировку автовоспроизведения браузером
+        audio.play().catch(() => {});
     }
 
-    // Вспышка красным цветом
     document.body.style.backgroundColor = '#500';
     document.body.style.filter = 'invert(1)';
     
@@ -251,7 +282,7 @@ function triggerHorrorEffect() {
     }, 200);
 }
 
-// Рандомные пугающие сообщения при неправильном вводе
+// Случайные пугающие ошибки
 function showCreepyError() {
     const messages = [
         "ОШИБКА: Ментальная инфекция прогрессирует. Вы уверены, что это ваши мысли?",
@@ -260,12 +291,12 @@ function showCreepyError() {
         "ОШИБКА: {ДАННЫЕ УДАЛЕНЫ}. Субъект теряет человеческую форму...",
         "ГОЛОС В ДИНАМИКЕ: Вы никогда отсюда не выйдете."
     ];
-    const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-    alert(randomMsg);
+    alert(messages[Math.floor(Math.random() * messages.length)]);
 }
 
-// Выход из игры в Главное меню
+// Выход в Главное меню
 function exitGame() {
+    stopAmbientSound();
     showBlock('block-menu');
 }
 
@@ -283,7 +314,7 @@ function loadProgress() {
         try {
             gameState = JSON.parse(saved);
         } catch (e) {
-            console.error("Ошибка чтения сохранения, сброс...", e);
+            console.error("Ошибка чтения сохранения", e);
         }
     }
 }
@@ -296,6 +327,7 @@ function resetProgress() {
         rank: 'Подопытный D-9341',
         unlockedArchive: []
     };
+    stopAmbientSound();
     updateUI();
     showBlock('block-menu');
 }
