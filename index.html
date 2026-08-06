@@ -295,7 +295,6 @@
         });
     }
 
-    // Сохранение и разблокировка карточек в зависимости от прогресса сюжета
     function updateArchiveStorage() {
         let currentLevel = localStorage.getItem("scp_secure_level") || "Class_D";
         if (currentLevel === "Level_0") {
@@ -384,15 +383,15 @@
             });
         } else {
             triggerGlitch();
-            alert("КРИТИЧЕСКАЯ ОШИБКА. Вы посмотрели на лицо объекта. SCP-096 разорвал вас.");
+            alert("КРИТИЧЕСКАЯ ОШИБКА. SCP-096 разорвал вас на части.");
             resetProgress();
         }
     }
 
     function quizKeter() {
         let mogAnswer = prompt("Введите позывной МОГ для усмирения Кэтеров (например: омега-7):");
-        if (mogAnswer && (mogAnswer.toLowerCase().trim() === "эпсилон-11" || mogAnswer.toLowerCase().trim() === "epsilon-11")) {
-            alert("СИГНАЛ ПРИНЯТ. Силы МОГ Эпсилон-11 вошли в сектор. Бак залит кислотой. Вы спасли Зону 19!");
+        if (mogAnswer && (mogAnswer.toLowerCase().trim().replace(/ё/g, "е") === "эпсилон-11")) {
+            alert("СИГНАЛ ПРИНЯТ. Силы МОГ Эпсилон-11 («Девятихвостая лиса») вошли в сектор. Бак залит кислотой. Вы победили в симуляции!");
             resetProgress();
         } else {
             triggerGlitch();
@@ -402,8 +401,8 @@
     }
 
     function quizChaos() {
-        let chaosAnswer = prompt("Введите кодовое название ударной ячейки Хаоса (5 букв на латыни):");
-        if (chaosAnswer && chaosAnswer.toLowerCase().trim() === "hydra") {
+        let chaosAnswer = prompt("Введите кодовое название ударной ячейки Хаоса (5 букв на русском):");
+        if (chaosAnswer && chaosAnswer.toLowerCase().trim() === "гидра") {
             alert("КОД ПОДТВЕРЖДЕН. Повстанцы Хаоса взрывают Зону 19! Вы успешно эвакуированы со всеми чертежами. Секретный финал пройден!");
             resetProgress();
         } else {
@@ -422,13 +421,14 @@
     function verifyCode(correctCode, targetLevel) {
         let userCode = prompt("Введите секретный ключ терминала:");
         if (!userCode) return;
-        let cleanedInput = userCode.toLowerCase().trim();
+        let cleanedInput = userCode.toLowerCase().trim().replace(/ё/g, "е");
         
+        // СЕКРЕТНЫЙ ПУТЬ: Ввод слова "хаос" перекидывает к Повстанцам из любого окна!
         if (cleanedInput === "хаос") {
             fakeLoad("Level_Chaos", () => { localStorage.setItem("scp_secure_level", "Level_Chaos"); checkAccess(); });
             return;
         }
-        if (cleanedInput === correctCode.toLowerCase().trim()) {
+        if (cleanedInput === correctCode.toLowerCase().trim().replace(/ё/g, "е")) {
             fakeLoad(targetLevel, () => { localStorage.setItem("scp_secure_level", targetLevel); checkAccess(); });
         } else {
             triggerGlitch(); alert("ОТКАЗ В ДОСТУПЕ. Неверная сигнатура ключа.");
