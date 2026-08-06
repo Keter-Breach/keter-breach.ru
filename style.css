@@ -1,6 +1,6 @@
-/* style.css */
+/* Базовые CRT-эффекты старых ламповых мониторов и атмосферный фон бункера */
 body { 
-    background-image: url('images/bg.jpg');
+    background-image: url('https://unsplash.com');
     background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat;
     color: #00ff66; font-family: 'Courier New', monospace; padding: 20px; overflow-x: hidden; position: relative;
     transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
@@ -45,31 +45,10 @@ body::before {
 .hidden { display: none; } hr { border: 0; border-top: 1px solid currentColor; margin: 25px 0; opacity: 0.3; }
 ul { padding-left: 20px; } li { margin-bottom: 12px; line-height: 1.5; }
 
-/* === ИЗМЕНЕНИЯ: КВАДРАТНЫЕ ФОТО В АРХИВЕ === */
 .archive-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
 .object-card { border: 1px solid rgba(0, 255, 102, 0.3); padding: 15px; border-radius: 4px; background: rgba(0,0,0,0.6); display: flex; flex-direction: column; }
-.object-card .scp-image { 
-    width: 100%; 
-    max-width: 100%; 
-    height: 240px; /* Фиксированная высота */
-    object-fit: cover; /* Обрезка под размер без искажений */
-    aspect-ratio: 1 / 1; /* Квадратные пропорции 1:1 */
-    margin: 10px 0; 
-}
-
-/* === ИЗМЕНЕНИЯ: ГЛАВНОЕ МЕНЮ === */
-.menu-container {
-    text-align: center;
-    padding: 50px 20px;
-}
-.menu-buttons {
-    display: flex;
-    flex-direction: column;
-    max-width: 280px;
-    margin: 30px auto 0 auto;
-    gap: 10px;
-}
-.menu-buttons .btn {
-    margin-top: 0;
-    width: 100%;
-}
+.object-card .scp-image { width: 100%; max-width: 100%; height: 240px; object-fit: cover; aspect-ratio: 1 / 1; margin: 10px 0; }
+.locked-card { color: #555 !important; border-color: #333 !important; text-align: center; padding: 60px 15px; background: rgba(0,0,0,0.3); font-weight: bold; }
+.menu-container { text-align: center; padding: 50px 20px; }
+.menu-buttons { display: flex; flex-direction: column; max-width: 280px; margin: 30px auto 0 auto; gap: 10px; }
+.menu-buttons .btn { margin-top: 0; width: 100%; }
