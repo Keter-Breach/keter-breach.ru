@@ -1,15 +1,11 @@
-/* ==========================================
-   ОСНОВНЫЕ СТИЛИ И ПЕРЕМЕННЫЕ
-   ========================================== */
 :root {
-    --bg-color: #080c10;
-    --panel-bg: rgba(13, 22, 33, 0.85);
-    --text-primary: #e0e6ed;
+    --bg-color: #05070a;
+    --panel-bg: rgba(10, 14, 20, 0.92);
+    --text-primary: #b0c4de;
     --accent-green: #00ff66;
     --accent-warning: #ffaa00;
-    --accent-danger: #ff4444;
-    --accent-purple: #b366ff;
-    --border-color: #1e2d3d;
+    --accent-danger: #ff2222;
+    --border-color: #1a2634;
     --font-mono: 'Courier New', Courier, monospace;
 }
 
@@ -24,120 +20,107 @@ body {
     align-items: center;
     min-height: 100vh;
     box-sizing: border-box;
-    /* Эффект легкой сетки на фоне */
-    background-image: radial-gradient(rgba(0, 255, 102, 0.05) 1px, transparent 0);
-    background-size: 24px 24px;
+    overflow-x: hidden;
 }
 
-/* Эффект сканирующих линий старого монитора (Scanlines) */
+/* Эффект шума VHS и сканирующих линий */
 body::before {
     content: " ";
     position: fixed;
     top: 0; left: 0; bottom: 0; right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-    background-size: 100% 4px;
+    background: 
+        linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%),
+        linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+    background-size: 100% 3px, 6px 100%;
     z-index: 100;
     pointer-events: none;
-    opacity: 0.6;
+    opacity: 0.7;
 }
 
-/* ==========================================
-   ВЕРХНЯЯ ПАНЕЛЬ И КОНТЕЙНЕРЫ (ТЕРМИНАЛ)
-   ========================================== */
-.top-panel {
-    width: 100%;
-    max-width: 900px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--panel-bg);
-    border: 1px solid var(--border-color);
-    padding: 12px 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+/* Дрожание кадра (VHS jitter) */
+@keyframes vhs-shake {
+    0% { transform: translate(0, 0); }
+    10% { transform: translate(-1px, 1px); }
+    20% { transform: translate(1px, -1px); }
+    30% { transform: translate(-2px, 0px); }
+    40% { transform: translate(1px, 2px); }
+    50% { transform: translate(-1px, -1px); }
+    60% { transform: translate(0px, 1px); }
+    100% { transform: translate(0, 0); }
 }
 
 .terminal {
     width: 100%;
     max-width: 900px;
     background: var(--panel-bg);
-    border: 1px solid var(--accent-green);
-    border-radius: 4px;
+    border: 1px solid #1c2d42;
+    border-left: 3px solid var(--accent-danger);
     padding: 25px;
-    box-shadow: 0 0 20px rgba(0, 255, 102, 0.15);
+    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.9), 0 0 15px rgba(255, 0, 0, 0.1);
     box-sizing: border-box;
-    backdrop-filter: blur(5px);
+    animation: vhs-shake 6s infinite alternate;
 }
 
-.hidden {
-    display: none !important;
+.hidden { display: none !important; }
+
+/* Стиль заглушек [ДАННЫЕ УДАЛЕНЫ] */
+.redacted {
+    background-color: #111;
+    color: #ff2222;
+    padding: 2px 6px;
+    border: 1px solid #331111;
+    font-weight: bold;
+    letter-spacing: 1px;
+    user-select: none;
 }
 
-/* ==========================================
-   ТИПОГРАФИКА И ЭФФЕКТЫ СВЕЧЕНИЯ
-   ========================================== */
-h1, h2, h3 {
-    margin-top: 0;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-}
-
+/* Текстовые акценты */
 h1.glow-text {
-    color: var(--accent-green);
-    text-shadow: 0 0 10px var(--accent-green);
+    color: var(--accent-danger);
+    text-shadow: 2px 0 10px rgba(255, 34, 34, 0.7), -2px 0 5px rgba(0, 255, 102, 0.3);
     font-size: 2.2rem;
 }
 
 h2 {
-    color: var(--accent-green);
-    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--accent-danger);
     padding-bottom: 8px;
-    font-size: 1.2rem;
-}
-
-p {
-    line-height: 1.6;
-    margin: 12px 0;
+    font-size: 1.1rem;
 }
 
 .warning-flash {
     color: var(--accent-danger);
     font-weight: bold;
-    animation: blink 1.5s infinite;
+    animation: blink 0.8s infinite alternate;
 }
 
 @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+    0% { opacity: 1; text-shadow: 0 0 8px var(--accent-danger); }
+    100% { opacity: 0.2; text-shadow: none; }
 }
 
-/* ==========================================
-   ЭЛЕМЕНТЫ ВВОДА И КНОПКИ
-   ========================================== */
+/* Кнопки и инпуты */
 input[type="text"], input[type="number"] {
     width: 100%;
     max-width: 400px;
-    background: rgba(0, 0, 0, 0.6);
-    border: 1px solid var(--accent-green);
-    color: #fff;
+    background: #000;
+    border: 1px solid var(--accent-danger);
+    color: var(--text-primary);
     padding: 12px 15px;
     font-family: var(--font-mono);
-    font-size: 1rem;
     margin: 10px 0 15px 0;
     box-sizing: border-box;
     outline: none;
-    transition: all 0.3s ease;
 }
 
 input[type="text"]:focus, input[type="number"]:focus {
-    box-shadow: 0 0 10px var(--accent-green);
-    background: rgba(0, 255, 102, 0.05);
+    box-shadow: 0 0 8px var(--accent-danger);
 }
 
 .btn {
-    background: transparent;
-    color: var(--accent-green);
-    border: 1px solid var(--accent-green);
+    background: rgba(20, 0, 0, 0.6);
+    color: var(--text-primary);
+    border: 1px solid var(--accent-danger);
     padding: 10px 20px;
     font-family: var(--font-mono);
     font-weight: bold;
@@ -148,24 +131,23 @@ input[type="text"]:focus, input[type="number"]:focus {
 }
 
 .btn:hover {
-    background: var(--accent-green);
+    background: var(--accent-danger);
     color: #000;
-    box-shadow: 0 0 12px var(--accent-green);
+    box-shadow: 0 0 15px var(--accent-danger);
 }
 
-/* Вариации кнопок */
-.btn-warning { color: var(--accent-warning); border-color: var(--accent-warning); }
-.btn-warning:hover { background: var(--accent-warning); color: #000; box-shadow: 0 0 12px var(--accent-warning); }
+.top-panel {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    padding: 12px 20px;
+    margin-bottom: 20px;
+}
 
-.btn-danger { color: var(--accent-danger); border-color: var(--accent-danger); }
-.btn-danger:hover { background: var(--accent-danger); color: #000; box-shadow: 0 0 12px var(--accent-danger); }
-
-.btn-half-opacity { opacity: 0.6; }
-.btn-half-opacity:hover { opacity: 1; }
-
-/* ==========================================
-   КАРТОЧКИ АРХИВА SCP
-   ========================================== */
 .archive-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -174,15 +156,14 @@ input[type="text"]:focus, input[type="number"]:focus {
 }
 
 .object-card {
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.7);
     border: 1px solid var(--border-color);
     padding: 15px;
-    border-radius: 4px;
 }
 
 .locked-card {
-    border: 1px dashed #555;
-    color: #777;
+    border: 1px dashed #441111;
+    color: #664444;
     text-align: center;
     padding: 30px 10px;
 }
@@ -191,17 +172,10 @@ input[type="text"]:focus, input[type="number"]:focus {
     width: 100%;
     max-height: 200px;
     object-fit: cover;
-    border: 1px solid var(--border-color);
-    margin: 10px 0;
-    filter: grayscale(40%);
-    transition: filter 0.3s;
+    border: 1px solid #333;
+    filter: grayscale(80%) contrast(120%);
 }
 
-.scp-image:hover {
-    filter: grayscale(0%);
-}
-
-/* Флекс-контейнер для блока с картинкой и текстом */
 .flex-container {
     display: flex;
     gap: 20px;
@@ -212,5 +186,4 @@ input[type="text"]:focus, input[type="number"]:focus {
 
 @media (max-width: 600px) {
     .flex-container { flex-direction: column; }
-    .scp-image { width: 100%; }
 }
