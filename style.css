@@ -1,7 +1,3 @@
-/* ==========================================
-   PROJECT: KETER — ЭЛТ И РЕТРО-ФУТУРИЗМ СТИЛИ
-   ========================================== */
-
 * {
     box-sizing: border-box;
     margin: 0;
@@ -16,8 +12,69 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    overflow-x: hidden;
+    overflow: hidden;
     position: relative;
+}
+
+/* ОВЕРЛЕЙ ДЛЯ ВКЛЮЧЕНИЯ АУДИО */
+#start-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: #000;
+    z-index: 20000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    text-align: center;
+    border: 4px solid #00ff66;
+}
+
+.overlay-content {
+    animation: pulse 1.5s infinite alternate;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+/* 3D CANVAS */
+#game-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+}
+
+/* ПРИЦЕЛ */
+#crosshair {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #00ff66;
+    font-size: 24px;
+    z-index: 100;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* ПОДСКАЗКА ВЗАИМОДЕЙСТВИЯ */
+#interaction-prompt {
+    position: fixed;
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid #00ff66;
+    color: #00ff66;
+    padding: 10px 20px;
+    font-weight: bold;
+    z-index: 100;
+    pointer-events: none;
 }
 
 /* ЭФФЕКТ СТАРЕДНИХ ЭЛТ-МОНИТОРОВ И ПОМЕХ */
@@ -31,32 +88,6 @@ body::before {
     z-index: 9999;
     background-size: 100% 3px, 6px 100%;
     pointer-events: none;
-    animation: crtFlicker 0.15s infinite;
-}
-
-/* ПОЛОСА VHS */
-body::after {
-    content: " ";
-    display: block;
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 8px;
-    background: rgba(0, 255, 102, 0.15);
-    opacity: 0.6;
-    z-index: 10000;
-    pointer-events: none;
-    animation: scanline 8s linear infinite;
-}
-
-@keyframes crtFlicker {
-    0% { opacity: 0.95; }
-    50% { opacity: 1; }
-    100% { opacity: 0.97; }
-}
-
-@keyframes scanline {
-    0% { top: -10%; }
-    100% { top: 110%; }
 }
 
 /* ВЕРХНЯЯ ПАНЕЛЬ ИГРОКА */
@@ -79,16 +110,16 @@ body::after {
     text-shadow: 0 0 5px #00ff66;
 }
 
-/* ОСНОВНОЙ КОНТЕЙНЕР ТЕРМИНАЛА */
 .container {
     width: 90%;
     max-width: 800px;
     margin-top: 50px;
     padding: 20px;
+    z-index: 10;
 }
 
 .terminal {
-    background: rgba(3, 12, 3, 0.92);
+    background: rgba(3, 12, 3, 0.95);
     border: 2px solid #00ff66;
     border-radius: 4px;
     padding: 30px;
@@ -102,10 +133,9 @@ body::after {
 h1, h2, h3, h4 {
     margin-bottom: 15px;
     text-transform: uppercase;
-    letter-spacing: 2px;
 }
 
-h1.glitch-text {
+.glitch-text {
     font-size: 2.2rem;
     color: #00ff66;
     text-shadow: 2px 2px #ff0000, -2px -2px #0000ff;
@@ -117,27 +147,11 @@ p {
     color: #aaffcc;
 }
 
-.lore-text {
-    font-style: italic;
-    color: #88ccaa;
-    border-left: 2px solid #00ff66;
-    padding-left: 10px;
-    margin: 15px 0;
-}
-
 .warning-text {
     color: #ff3333;
     font-weight: bold;
-    text-shadow: 0 0 5px #ff0000;
 }
 
-.question {
-    color: #ffff00;
-    font-style: italic;
-    margin: 20px 0;
-}
-
-/* ПОЛЯ ВВОДА И КНОПКИ */
 .input-group {
     display: flex;
     gap: 10px;
@@ -151,12 +165,7 @@ input[type="text"] {
     color: #00ff66;
     padding: 10px;
     font-family: inherit;
-    font-size: 1rem;
     outline: none;
-}
-
-input[type="text"]:focus {
-    box-shadow: 0 0 8px #00ff66;
 }
 
 button {
@@ -167,13 +176,11 @@ button {
     cursor: pointer;
     font-family: inherit;
     font-weight: bold;
-    transition: all 0.2s;
 }
 
 button:hover {
     background: #00ff66;
     color: #000000;
-    box-shadow: 0 0 10px #00ff66;
 }
 
 .btn-main {
@@ -181,19 +188,11 @@ button:hover {
     width: 100%;
     margin-bottom: 12px;
     padding: 14px;
-    font-size: 1.05rem;
 }
 
 .btn-danger {
     border-color: #ff3333;
     color: #ff3333;
-    background: #220000;
-}
-
-.btn-danger:hover {
-    background: #ff3333;
-    color: #000;
-    box-shadow: 0 0 10px #ff3333;
 }
 
 .btn-small {
@@ -201,34 +200,15 @@ button:hover {
     font-size: 0.8rem;
 }
 
-.choice-buttons button {
-    display: block;
-    width: 100%;
-    margin-bottom: 10px;
-    text-align: left;
-}
-
-/* СЕТКА АРХИВА SCP */
 .archive-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 15px;
     margin-top: 20px;
-    max-height: 60vh;
-    overflow-y: auto;
 }
 
 .archive-card {
     background: #000;
     border: 1px solid #00ff66;
     padding: 15px;
-}
-
-.archive-card.locked {
-    border-color: #444444;
-    color: #666666;
-}
-
-.archive-card.locked h4 {
-    color: #777777;
 }
