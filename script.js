@@ -1,29 +1,92 @@
-// === УПРАВЛЕНИЕ ГЛАВНЫМ МЕНЮ И УДАЛЕННЫЙ ТЕРМИНАЛ ===
+// Инициализация аудиоконтекста браузера
+let audioCtx = null;
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
+
+// Синтезатор аналоговых звуков терминала
+function playTerminalSound(type) {
+    try {
+        initAudio();
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+
+        if (type === 'click') { 
+            osc.type = 'sine'; osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.04, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.04);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+        } else if (type === 'alarm') { 
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(500, audioCtx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        }
+    } catch(e) { console.log("Audio integration skipped"); }
+}
+
+// Первоначальный запуск интерфейса после загрузки страницы
+document.addEventListener("DOMContentLoaded", () => {
+    let headers = document.querySelectorAll("h2");
+    headers.forEach(h => { h.innerHTML += '<span class="warning-flash" style="animation: blink 0.8s infinite; color: inherit;">_</span>'; });
+    
+    document.querySelectorAll('button').forEach(b => { 
+        b.addEventListener('click', () => {
+            initAudio(); 
+            playTerminalSound('click');
+        }); 
+    });
+    updateArchiveStorage(); updateXPDisplay(); checkAccess();
+});
+// Автоматический перевод игры в полноэкранный режим
+function activateFullScreen() {
+    try {
+        let element = document.documentElement;
+        if (element.requestFullscreen) { element.requestFullscreen(); }
+        else if (element.mozRequestFullScreen) { element.mozRequestFullScreen(); }
+        else if (element.webkitRequestFullscreen) { element.webkitRequestFullscreen(); }
+        else if (element.msRequestFullscreen) { element.msRequestFullscreen(); }
+    } catch(e) { console.log("Полноэкранный режим заблокирован"); }
+}
+
+// Управление главным меню и запуском игры
 let openedFromMenu = false;
 
 function startGame() {
-    document.getElementById('block-menu').classList.add('hidden');
+    activateFullScreen(); 
     localStorage.setItem("scp_in_game", "true"); 
-    checkAccess();
+    
+    fakeLoad("Class_D", () => {
+        document.getElementById('block-menu').classList.add('hidden');
+        checkAccess();
+    });
 }
 
 function openArchiveFromMenu() {
+    activateFullScreen();
     openedFromMenu = true;
     document.getElementById('block-menu').classList.add('hidden');
     document.getElementById('block-encyclopedia').classList.remove('hidden');
-    document.getElementById('archive-close-btn').innerText = "Назад в меню";
+    let closeBtn = document.getElementById('archive-close-btn');
+    if (closeBtn) closeBtn.innerText = "Назад в меню";
     renderArchiveData();
 }
 
 function exitGame() {
-    if(confirm("Вы уверены, что хотите закрыть терминал и очистить текущую сессию СБ?")) {
-        localStorage.removeItem("scp_in_game");
-        localStorage.setItem("scp_secure_level", "Class_D");
-        localStorage.setItem("scp_user_xp", "0");
-        updateXPDisplay();
-        location.reload();
-    }
+    localStorage.removeItem("scp_in_game");
+    localStorage.setItem("scp_secure_level", "Class_D");
+    localStorage.setItem("scp_user_xp", "0");
+    updateXPDisplay();
+    window.close();
+    setTimeout(() => { location.reload(); }, 100);
 }
+// Начисление опыта сотрудникам
 function addXP(amount) {
     let currentXP = parseInt(localStorage.getItem("scp_user_xp") || "0");
     currentXP += amount;
@@ -31,16 +94,35 @@ function addXP(amount) {
     updateXPDisplay();
 }
 
+function updateXPDisplay() {
+    let xp = parseInt(localStorage.getItem("scp_user_xp") || "0");
+    let rankText = "Класс D (Расходник)";
+    let rankColor = "#ff4444";
+
+    if (xp >= 150 && xp < 300) { rankText = "Уровень 0 (Техник базы)"; rankColor = "#33ccff"; }
+    else if (xp >= 300 && xp < 450) { rankText = "Уровень 1 (Лаборант)"; rankColor = "#33ff33"; }
+    else if (xp >= 450 && xp < 600) { rankText = "Уровень 2 (Исследователь)"; rankColor = "#ffaa00"; }
+    else if (xp >= 600 && xp < 750) { rankText = "Уровень 3 (Старший ученый)"; rankColor = "#ff00ff"; }
+    else if (xp >= 750 && xp < 900) { rankText = "Уровень 4 (Директор Зоны)"; rankColor = "#e6b800"; }
+    else if (xp >= 900) { rankText = "Уровень 5 (Смотритель O5)"; rankColor = "#ffffff"; }
+
+    let xpElement = document.getElementById("player-xp");
+    let rankElement = document.getElementById("player-rank");
+    if (xpElement) xpElement.innerText = xp;
+    if (rankElement) { rankElement.innerText = rankText; rankElement.style.color = rankColor; }
+}
+
+// Фикс кнопки закрытия Архива
 function toggleArchiveView() {
     let mainElements = ['block-d', 'block-0', 'block-1', 'block-2', 'block-3', 'block-4', 'block-5', 'block-keter', 'block-chaos'];
     let archiveBtn = document.getElementById('archive-toggle-btn');
     
     if (!isArchiveOpen) {
         mainElements.forEach(id => { if(document.getElementById(id)) document.getElementById(id).classList.add('hidden'); });
+        document.getElementById('block-menu').classList.add('hidden');
         document.getElementById('block-encyclopedia').classList.remove('hidden');
         if(archiveBtn) archiveBtn.innerText = "[ВЕРНУТЬСЯ В ТЕРМИНАЛ]"; 
         isArchiveOpen = true; 
-        openedFromMenu = false;
         renderArchiveData();
     } else {
         document.getElementById('block-encyclopedia').classList.add('hidden');
@@ -49,6 +131,7 @@ function toggleArchiveView() {
         
         if (openedFromMenu) {
             document.getElementById('block-menu').classList.remove('hidden');
+            openedFromMenu = false;
         } else {
             checkAccess();
         }
@@ -60,13 +143,8 @@ function renderArchiveData() {
         let isUnlocked = localStorage.getItem("unlocked_" + m) === "true";
         let cardOpen = document.getElementById("card-" + m);
         let cardClose = document.getElementById("card-" + m + "-locked");
-        if (isUnlocked && cardOpen && cardClose) {
-            cardOpen.style.display = "block";
-            cardClose.style.display = "none";
-        } else if (cardOpen && cardClose) {
-            cardOpen.style.display = "none";
-            cardClose.style.display = "block";
-        }
+        if (isUnlocked && cardOpen && cardClose) { cardOpen.style.display = "block"; cardClose.style.display = "none"; }
+        else if (cardOpen && cardClose) { cardOpen.style.display = "none"; cardClose.style.display = "block"; }
     });
 }
 
@@ -77,6 +155,7 @@ function updateArchiveStorage() {
     else if (currentLevel === "Level_2") { localStorage.setItem("unlocked_scp096", "true"); localStorage.setItem("unlocked_scp076", "true"); }
     else if (currentLevel === "Level_Keter") localStorage.setItem("unlocked_scp682", "true");
 }
+
 function checkAccess() {
     if (isArchiveOpen) return; 
     
@@ -119,7 +198,6 @@ function quizLevel0() {
     }
 }
 
-// Тест на Уровне 1 (Скромник)
 function quizLevel2(choice) {
     if (choice === 'закрыть глаза') {
         addXP(150);
@@ -128,6 +206,7 @@ function quizLevel2(choice) {
         triggerGlitch(); alert("КРИТИЧЕСКАЯ ОШИБКА. SCP-096 разорвал вас на части."); resetProgress();
     }
 }
+
 function quizKeter() {
     let mogAnswer = prompt("Введите позывной МОГ для усмирения Кэтеров:");
     if (mogAnswer && (mogAnswer.toLowerCase().trim().replace(/ё/g, "е") === "эпсилон-11")) {
@@ -137,6 +216,7 @@ function quizKeter() {
     }
 }
 
+// Финал Повстанцев Хаоса. Ответ: гидра
 function quizChaos() {
     let chaosAnswer = prompt("Введите кодовое название ударной ячейки Хаоса:");
     if (chaosAnswer && chaosAnswer.toLowerCase().trim() === "гидра") {
@@ -145,6 +225,7 @@ function quizChaos() {
         triggerGlitch(); alert("ВСПЫШКА КВАНТОВОЙ ЗАЩИТЫ. Терминал уничтожен."); resetProgress();
     }
 }
+
 function triggerGlitch() {
     playTerminalSound('alarm'); 
     document.body.style.transform = "skewX(15deg) scaleY(1.1)"; document.body.style.filter = "hue-rotate(90deg) invert(1)";
