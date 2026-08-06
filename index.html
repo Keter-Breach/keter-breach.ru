@@ -2,80 +2,174 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>SCP TERMINAL</title>
+    <title>TERMINAL://SITE-19_SECURE_GRID</title>
     <style>
-        body { background-color: #0d0d0d; color: #00ff66; font-family: monospace; padding: 30px; }
-        .terminal { border: 2px solid #00ff66; padding: 25px; border-radius: 5px; max-width: 600px; margin: 0 auto; }
-        .btn { background: transparent; color: #00ff66; border: 1px solid #00ff66; padding: 10px 20px; font-family: monospace; cursor: pointer; margin-top: 15px; }
-        .btn:hover { background: #00ff66; color: #0d0d0d; }
+        body { background-color: #030303; font-family: 'Courier New', monospace; padding: 20px; transition: all 0.5s ease; }
+        .terminal { border: 2px solid #66fcf1; padding: 30px; border-radius: 4px; max-width: 850px; margin: 20px auto; background-color: rgba(10, 12, 16, 0.98); box-shadow: 0 0 30px rgba(102,252,241,0.05); }
+        .btn { background: transparent; border: 1px solid #66fcf1; padding: 12px 24px; font-family: monospace; cursor: pointer; margin-top: 20px; transition: 0.3s; text-transform: uppercase; font-weight: bold; font-size: 13px; }
+        .redacted { background-color: #444; color: #444; padding: 0 4px; cursor: help; }
+        .redacted:hover { color: #fff; background-color: transparent; }
+        .warning-flash { color: #ff3333; font-weight: bold; animation: blink 1.5s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        
+        .status-d { color: #ff4444; border-color: #ff4444; } .btn-d { color: #ff4444; border-color: #ff4444; } .btn-d:hover { background: #ff4444; color: #030303; box-shadow: 0 0 15px #ff4444; }
+        .status-0 { color: #33ccff; border-color: #33ccff; } .btn-0 { color: #33ccff; border-color: #33ccff; } .btn-0:hover { background: #33ccff; color: #030303; box-shadow: 0 0 15px #33ccff; }
+        .status-1 { color: #33ff33; border-color: #33ff33; } .btn-1 { color: #33ff33; border-color: #33ff33; } .btn-1:hover { background: #33ff33; color: #030303; box-shadow: 0 0 15px #33ff33; }
+        .status-2 { color: #ffaa00; border-color: #ffaa00; } .btn-2 { color: #ffaa00; border-color: #ffaa00; } .btn-2:hover { background: #ffaa00; color: #030303; box-shadow: 0 0 15px #ffaa00; }
+        .status-3 { color: #ff00ff; border-color: #ff00ff; box-shadow: 0 0 35px rgba(255,0,255,0.2); } .btn-3 { color: #ff00ff; border-color: #ff00ff; } .btn-3:hover { background: #ff00ff; color: #030303; box-shadow: 0 0 15px #ff00ff; }
+
         .hidden { display: none; }
+        hr { border: 0; border-top: 1px solid currentColor; margin: 20px 0; opacity: 0.4; }
+        ul { padding-left: 20px; } li { margin-bottom: 10px; line-height: 1.4; }
     </style>
 </head>
 <body>
-
-<!-- ЭКРАН 1: КЛАСС D -->
-<div id="block-d" class="terminal hidden">
-    <h1>ТЕРМИНАЛ: КЛАСС D</h1>
-    <p>Статус: Расходный персонал. Доступ к архивам заблокирован.</p>
-    <p><i>[Подсказка: Введите код "новичок"]</i></p>
-    <button class="btn" onclick="verifyCode('новичок', 'Level_0')">Ввести код доступа</button>
+<!-- ================= БЛОК КЛАССА D ================= -->
+<div id="block-d" class="terminal status-d hidden">
+    <h2>[БЛОК ЗАДЕРЖАНИЯ D-CLASS // СЕКТОР ТЕСТИРОВАНИЯ]</h2>
+    <p><b>СУБЪЕКТ:</b> D-9341 (Разжалован за критическое нарушение протоколов секретности).</p>
+    <p><b>СИТУАЦИЯ:</b> Зона 19 содрогается от далеких взрывов. Дверь вашей камеры заклинило. На экране пульта горит защитный протокол СБ: <i>"Для разблокировки шлюзов сектора снабжения подтвердите базовые когнитивные функции сотрудника".</i></p>
+    <hr>
+    <p class="warning-flash">ТЕСТ НА ЛОГИКУ ДЛЯ ВЫЖИВАНИЯ (УРОВЕНЬ: НОВИЧОК):</p>
+    <p>«В испытании SCP-173 участвовало 12 сотрудников класса D. Трое моргнули одновременно — их ликвидировали на месте. Двое попытались сбежать, и охрана устранила их в коридоре. Еще четверо успешно очистили камеру содержания и были возвращены в блок. Сколько выживших сотрудников класса D осталось заперто в тестовой камере?»</p>
+    <p><i>[Подсказка: Посчитайте внимательно тех, кто остался в живых внутри камеры, и введите число]</i></p>
+    <button class="btn btn-d" onclick="quizLevel0()">Ввести ответ и открыть шлюз</button>
 </div>
 
-<!-- ЭКРАН 2: УРОВЕНЬ 0 -->
-<div id="block-0" class="terminal hidden">
-    <h1>ТЕРМИНАЛ: УРОВЕНЬ 0</h1>
-    <p>Статус: Технический персонал. Доступ к лабораториям ограничен.</p>
-    <p><i>[Подсказка: Введите код "трудяга"]</i></p>
-    <button class="btn" onclick="verifyCode('трудяга', 'Level_1')">Повысить допуск</button>
-    <button class="btn" style="margin-left: 10px;" onclick="resetProgress()">Выйти</button>
+<!-- ================= БЛОК УРОВНЯ 0 ================= -->
+<div id="block-0" class="terminal status-0 hidden">
+    <h2>[СЕТЬ ТЕХНИЧЕСКОГО ОБЕСПЕЧЕНИЯ // ДОПУСК: УРОВЕНЬ 0]</h2>
+    <p><b>АВТОРИЗАЦИЯ:</b> Автоматический дежурный терминал хоз-блока.</p>
+    <hr>
+    <h3>ЖУРНАЛ ЗАПИСЕЙ И ОТЧЕТОВ ПО ЗОНЕ 19 (СТАТУС: ТРУДЯГА):</h3>
+    <ul>
+        <li><b>Отчет об инциденте:</b> Доктор <span class="redacted">Андрей Клеф</span> запросил экстренную доставку 500 литров латексного раствора в крыло содержания <b>SCP-049</b>. Доктор утверждает, что аномальный субъект («Чумной доктор») стал проявлять чрезмерную агрессию и кричать о некой "Поветрии", которая поразила персонал.</li>
+        <li><b>Секретная записка электрика:</b> <i>"Парни, я случайно узнал, как ученые кодируют свои архивы младшего персонала. Они берут название главного хобби Чумного доктора на латыни. Слово из 7 букв. Вроде пишется как <b style="color: #fff; text-shadow: 0 0 5px #33ccff;">medicus</b>. Введите его в терминал архива, чтобы открыть папки исследований".</i></li>
+    </ul>
+    <hr>
+    <button class="btn btn-0" onclick="verifyCode('medicus', 'Level_1')">Авторизоваться в Архиве Исследований</button>
+    <button class="btn btn-0" style="margin-left: 10px;" onclick="resetProgress()">Сбросить терминал</button>
 </div>
 
-<!-- ЭКРАН 3: УРОВЕНЬ 1 -->
-<div id="block-1" class="terminal hidden">
-    <h1>ТЕРМИНАЛ: УРОВЕНЬ 1</h1>
-    <p>Статус: Младший исследователь. Допуск разрешен.</p>
-    <hr style="border-color: #00ff66;">
-    <h3>СЕКРЕТНЫЙ ОБЪЕКТ: SCP-173</h3>
-    <p>Класс: Евклид. Скульптура из бетона. Нападает, если разорвать зрительный контакт. При работе с объектом запрещено моргать без предупреждения.</p>
-    <hr style="border-color: #00ff66;">
-    <button class="btn" onclick="resetProgress()">Заблокировать терминал</button>
+<!-- ================= БЛОК УРОВНЯ 1 ================= -->
+<div id="block-1" class="terminal status-1 hidden">
+    <h2>[АРХИВ МЛАДШИХ ИССЛЕДОВАТЕЛЕЙ // ДОПУСК: УРОВЕНЬ 1]</h2>
+    <p><b>СЕКТОР:</b> Медико-биологическое крыло сдерживания.</p>
+    <hr>
+    <h3>ОБЪЕКТ: SCP-049 («Чумной доктор»)</h3>
+    <p><b>Класс:</b> Евклид. Гуманоидное существо в одежде чумного доктора. Способен мгновенно умерщвлять людей прикосновением руки, после чего превращает трупы в зомби.</p>
+    
+    <h3>ОБЪЕКТ: SCP-173 («Скульптура»)</h3>
+    <p><b>Класс:</b> Евклид. Изготовлен из бетона и арматуры. Движение начинается только в моменты отсутствия прямого визуального контакта.</p>
+    <hr>
+    <p class="warning-flash">ВНИМАНИЕ! КРИТИЧЕСКАЯ УГРОЗА В СОСЕДНЕМ СЕКТОРЕ:</p>
+    <p>Зафиксировано нарушение условий содержания <b>SCP-096 («Скромник»)</b>. Какой протокол действий вы обязаны применить?</p>
+    
+    <button class="btn btn-1" onclick="quizLevel2('бежать')">А: Бежать в противоположную сторону</button>
+    <button class="btn btn-1" style="margin-left: 10px;" onclick="quizLevel2('смотреть')">Б: Пристально смотреть ему в глаза</button>
+    <button class="btn btn-1" style="margin-left: 10px;" onclick="quizLevel2('закрыть глаза')">В: Закрыть глаза и не смотреть на лицо</button>
 </div>
 
+<!-- ================= БЛОК УРОВНЯ 2 ================= -->
+<div id="block-2" class="terminal status-2 hidden">
+    <h2>[ЦЕНТРАЛЬНЫЙ СЕРВЕР УПРАВЛЕНИЯ ЗОНЫ // ДОПУСК: УРОВЕНЬ 2]</h2>
+    <p><b>СТАТУС:</b> Старший научный сотрудник / Командир группы сдерживания.</p>
+    <hr>
+    <h3>ОБЪЕКТ: SCP-096 («Скромник»)</h3>
+    <p><b>Класс:</b> Евклид. Если кто-то видит его лицо, субъект впадает в ярость, бежит к цели с огромной скоростью и неизбежно уничтожает её.</p>
+
+    <h3>ОБЪЕКТ: SCP-682 («Неуязвимая рептилия»)</h3>
+    <p><b>Класс: КЕТЕР.</b> Крупное существо, обладающее абсолютной регенерацией. Ненавидит всю органическую жизнь.</p>
+    <hr>
+    <p style="color: #ffaa00; font-weight: bold;">[СООБЩЕНИЕ ОТ СОВЕТА О5]:</p>
+    <p>Файлы заблокированы квантовым шифром. Введите главный девиз всей организации на русском языке...</p>
+    
+    <button class="btn btn-2" onclick="verifyCode('обезопасить удержать сохранить', 'Level_3')">Ввести девиз Фонда (Уровень 3)</button>
+    <button class="btn btn-2" style="margin-left: 10px;" onclick="resetProgress()">Выйти</button>
+</div>
+
+<!-- ================= БЛОК УРОВНЯ 3 ================= -->
+<div id="block-3" class="terminal status-3 hidden">
+    <h2>[СЕКРЕТНЫЙ ЯДЕРНЫЙ ТЕРМИНАЛ // СОВЕТ О5 — ВЫСШИЙ ДОПУСК]</h2>
+    <p><b>ПОЛЬЗОВАТЕЛЬ:</b> O5-1 (Смотритель)</p>
+    <p class="warning-flash">[ДОСТУП К ТАЙНАМ СОВЕТА: РАЗРЕШЕН]</p>
+    <hr>
+    <p>Вы получили доступ к главному терминалу. Отсюда вы можете запустить протокол Альфа-боеголовок.</p>
+    <h3>МЕМОРАНДУМ О5: ИСТИННАЯ СУТЬ ФОНДА</h3>
+    <p>Мы строим тюрьму для самой реальности. Если мы проиграем, мир рухнет.</p>
+    <hr>
+    <button class="btn btn-3" onclick="alert('ПРОТОКОЛ АЛЬФА-БОЕГОЛОВОК АКТИВИРОВАН. ЭВАКУАЦИЯ: 90 СЕКУНД.')">Активировать Альфа-боеголовки</button>
+    <button class="btn btn-3" style="margin-left: 10px;" onclick="resetProgress()">Перезагрузить симуляцию</button>
+</div>
 <script>
     function checkAccess() {
         document.getElementById('block-d').classList.add('hidden');
         document.getElementById('block-0').classList.add('hidden');
         document.getElementById('block-1').classList.add('hidden');
+        document.getElementById('block-2').classList.add('hidden');
+        document.getElementById('block-3').classList.add('hidden');
 
-        let currentLevel = localStorage.getItem("scp_simple_level");
+        let currentLevel = localStorage.getItem("scp_secure_level");
         
         if (!currentLevel) {
             currentLevel = "Class_D";
-            localStorage.setItem("scp_simple_level", "Class_D");
+            localStorage.setItem("scp_secure_level", "Class_D");
         }
 
         if (currentLevel === "Class_D") {
             document.getElementById('block-d').classList.remove('hidden');
+            document.body.style.backgroundColor = "#150202";
         } else if (currentLevel === "Level_0") {
             document.getElementById('block-0').classList.remove('hidden');
+            document.body.style.backgroundColor = "#020c15";
         } else if (currentLevel === "Level_1") {
             document.getElementById('block-1').classList.remove('hidden');
+            document.body.style.backgroundColor = "#021506";
+        } else if (currentLevel === "Level_2") {
+            document.getElementById('block-2').classList.remove('hidden');
+            document.body.style.backgroundColor = "#1c1301";
+        } else if (currentLevel === "Level_3") {
+            document.getElementById('block-3').classList.remove('hidden');
+            document.body.style.backgroundColor = "#18011c";
+        }
+    }
+
+    function quizLevel0() {
+        let answer = prompt("Сколько выживших сотрудников класса D осталось внутри камеры?");
+        if (answer === "3") {
+            localStorage.setItem("scp_secure_level", "Level_0");
+            alert("СТАТУС ИЗМЕНЕН: Вы переведены в Хоз-блок. Дверь открыта.");
+            checkAccess();
+        } else {
+            alert("НЕВЕРНО. Защитные турели активированы. Вы ликвидированы.");
+            resetProgress();
+        }
+    }
+
+    function quizLevel2(choice) {
+        if (choice === 'закрыть глаза') {
+            localStorage.setItem("scp_secure_level", "Level_2");
+            alert("ВЫ СВЕРНУЛИ ЗА УГОЛ И ЗАКРЫЛИ ГЛАЗА. Допуск повышен.");
+            checkAccess();
+        } else {
+            alert("ВЫ ПОСМОТРЕЛИ НА НЕГО. SCP-096 разорвал вас на части.");
+            resetProgress();
         }
     }
 
     function verifyCode(correctCode, targetLevel) {
-        let userCode = prompt("Введите код авторизации:");
-        if (userCode && userCode.toLowerCase().trim() === correctCode) {
-            localStorage.setItem("scp_simple_level", targetLevel);
-            alert("Доступ предоставлен!");
+        let userCode = prompt("Введите секретный ключ терминала:");
+        if (userCode && userCode.toLowerCase().trim() === correctCode.toLowerCase().trim()) {
+            localStorage.setItem("scp_secure_level", targetLevel);
+            alert("ДОСТУП ОБНОВЛЕН. Загрузка протоколов...");
             checkAccess();
         } else {
-            alert("Ошибка! Неверный код доступа.");
+            alert("КРИТИЧЕСКАЯ ОШИБКА ДОСТУПА. Попытка взлома зафиксирована.");
         }
     }
 
     function resetProgress() {
-        localStorage.setItem("scp_simple_level", "Class_D");
+        localStorage.setItem("scp_secure_level", "Class_D");
         checkAccess();
     }
 
