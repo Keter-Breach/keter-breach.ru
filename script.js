@@ -1,12 +1,12 @@
 // ==========================================
-// 1. ИНИЦИАЛИЗАЦИЯ И СОСТОЯНИЕ ИГРЫ
+// PROJECT: KETER — ИГРОВАЯ ЛОГИКА
 // ==========================================
 
 let gameState = {
     currentBlock: 'block-menu',
     xp: 0,
     rank: 'Подопытный D-9341',
-    unlockedArchive: [] // Хранит ID открытых SCP (например, ['scp173', 'scp049'])
+    unlockedArchive: []
 };
 
 // Правильные ответы для каждого терминала
@@ -15,22 +15,21 @@ const ANSWERS = {
     'block-0': 'медик',
     'block-2': 'обезопасить удержать сохранить',
     'block-3': 'брайт',
-    'block-4': ['а', 'a', 'f'], // Вариативность языков и клавиш
+    'block-4': ['а', 'a', 'f'],
     'keter': 'девятихвостая лиса-1',
     'chaos': 'гидра'
 };
 
-// Загрузка при открытии страницы
+// Инициализация игры
 document.addEventListener('DOMContentLoaded', () => {
     loadProgress();
     updateUI();
 });
 
 // ==========================================
-// 2. УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ И НАВИГАЦИЕЙ
+// УПРАВЛЕНИЕ ЭКРАНАМИ И ИНТЕРФЕЙСОМ
 // ==========================================
 
-// Переключение экранов терминала
 function showBlock(blockId) {
     const allBlocks = document.querySelectorAll('.terminal');
     allBlocks.forEach(b => b.classList.add('hidden'));
@@ -42,7 +41,6 @@ function showBlock(blockId) {
         saveProgress();
     }
 
-    // Верхняя панель видна только во время игры
     const topPanel = document.getElementById('player-panel');
     if (topPanel) {
         if (blockId === 'block-menu' || blockId === 'block-encyclopedia') {
@@ -53,23 +51,19 @@ function showBlock(blockId) {
     }
 }
 
-// Запуск игры из меню
 function startGame() {
-    startAmbientSound(); // Включаем фоновый VHS-шум
-    
-    // Если игрок был в меню, запускаем с первого уровня (или сохраненного)
+    startAmbientSound();
     const targetBlock = (gameState.currentBlock === 'block-menu') ? 'block-d' : gameState.currentBlock;
     showBlock(targetBlock);
 }
 
-// Начисление XP и рост ранга
 function addXP(amount) {
     gameState.xp += amount;
     
     if (gameState.xp >= 300) {
         gameState.rank = 'Бывший Директор Зоны';
     } else if (gameState.xp >= 150) {
-        gameState.rank = 'Спецагент Фонда';
+        gameState.rank = 'Спецагент KETER';
     } else if (gameState.xp >= 50) {
         gameState.rank = 'Ученый без памяти';
     }
@@ -78,7 +72,6 @@ function addXP(amount) {
     updateUI();
 }
 
-// Обновление верха экрана и карточек архива
 function updateUI() {
     const rankEl = document.getElementById('player-rank');
     const xpEl = document.getElementById('player-xp');
@@ -86,7 +79,6 @@ function updateUI() {
     if (rankEl) rankEl.textContent = gameState.rank;
     if (xpEl) xpEl.textContent = gameState.xp;
 
-    // Синхронизация открытых карточек SCP
     const allScpKeys = ['scp173', 'scp049', 'scp999', 'scp096', 'scp076', 'scp682'];
     
     allScpKeys.forEach(scp => {
@@ -106,7 +98,7 @@ function updateUI() {
 }
 
 // ==========================================
-// 3. ЭНЦИКЛОПЕДИЯ / АРХИВ
+// ЭНЦИКЛОПЕДИЯ / АРХИВ
 // ==========================================
 
 function openArchiveFromMenu() {
@@ -133,7 +125,7 @@ function unlockArchiveCard(scpId) {
 }
 
 // ==========================================
-// 4. ЛОГИКА УРОВНЕЙ И ТЕСТОВ
+// ПРОВЕРКА ОТВЕТОВ И ПРОХОЖДЕНИЕ
 // ==========================================
 
 function verifyCode(blockId) {
@@ -146,17 +138,15 @@ function verifyCode(blockId) {
     const isCorrect = Array.isArray(correctAns) ? correctAns.includes(userVal) : userVal === correctAns;
 
     if (isCorrect) {
-        alert("ДОСТУП ВОССТАНОВЛЕН. ПАМЯТЬ ОБНОВЛЕНА.");
+        alert("PROJECT: KETER — ДОСТУП РАЗРЕШЕН.");
         input.value = '';
         addXP(50);
         
-        // Разблокировка объектов
         if (blockId === 'block-d') unlockArchiveCard('scp173');
         if (blockId === 'block-0') { unlockArchiveCard('scp049'); unlockArchiveCard('scp999'); }
         if (blockId === 'block-2') unlockArchiveCard('scp076');
         if (blockId === 'block-3') unlockArchiveCard('scp682');
 
-        // Маршрут движения по секторам
         const nextMap = {
             'block-d': 'block-0',
             'block-0': 'block-1',
@@ -172,7 +162,6 @@ function verifyCode(blockId) {
     }
 }
 
-// Уровень 1: SCP-096 (Выбор действий)
 function quizLevel2(choice) {
     unlockArchiveCard('scp096');
 
@@ -193,14 +182,13 @@ function goToKeterSector() {
     showBlock('block-keter');
 }
 
-// Концовка Фонда
 function quizKeter() {
     const input = document.getElementById('input-block-keter');
     if (!input) return;
 
     if (input.value.trim().toLowerCase() === ANSWERS['keter']) {
         addXP(100);
-        alert("ПРОТОКОЛ ВЫПОЛНЕН!\n\nМОГ «Девятихвостая лиса» прибыла вовремя. SCP-682 заблокирован в кислотном баке. Вы спасли Зону 19!\n\nПОБЕДА (КОНЦОВКА ФОНДА).");
+        alert("ПРОТОКОЛ KETER ВЫПОЛНЕН!\n\nМОГ «Девятихвостая лиса» прибыла вовремя. SCP-682 заблокирован в кислотном баке.\n\nПОБЕДА (КОНЦОВКА ФОНДА).");
         resetProgress();
     } else {
         triggerHorrorEffect();
@@ -210,7 +198,6 @@ function quizKeter() {
     }
 }
 
-// Концовка Повстанцев Хаоса
 function quizChaos() {
     const input = document.getElementById('input-block-chaos');
     if (!input) return;
@@ -226,24 +213,22 @@ function quizChaos() {
 }
 
 // ==========================================
-// 5. ЗВУКОВЫЕ И ХОРРОР ЭФФЕКТЫ
+// АУДИО И ХОРРОР-ЭФФЕКТЫ
 // ==========================================
 
-// Запуск постоянного эмбиента (белый шум + VHS)
 function startAmbientSound() {
     const staticSnd = document.getElementById('snd-static');
     const vhsSnd = document.getElementById('snd-vhs');
 
     if (staticSnd && vhsSnd) {
-        staticSnd.volume = 0.12; // Тихий белый шум
-        vhsSnd.volume = 0.20;    // Гул магнитофона
+        staticSnd.volume = 0.12;
+        vhsSnd.volume = 0.20;
 
         staticSnd.play().catch(() => {});
         vhsSnd.play().catch(() => {});
     }
 }
 
-// Резкое усиление шума при ошибке
 function boostStaticNoise() {
     const staticSnd = document.getElementById('snd-static');
     if (staticSnd) {
@@ -254,7 +239,6 @@ function boostStaticNoise() {
     }
 }
 
-// Остановка звука
 function stopAmbientSound() {
     const staticSnd = document.getElementById('snd-static');
     const vhsSnd = document.getElementById('snd-vhs');
@@ -263,7 +247,6 @@ function stopAmbientSound() {
     if (vhsSnd) vhsSnd.pause();
 }
 
-// Визуальные сбои и глитч-звук при ошибке
 function triggerHorrorEffect() {
     boostStaticNoise();
 
@@ -282,10 +265,9 @@ function triggerHorrorEffect() {
     }, 200);
 }
 
-// Случайные пугающие ошибки
 function showCreepyError() {
     const messages = [
-        "ОШИБКА: Ментальная инфекция прогрессирует. Вы уверены, что это ваши мысли?",
+        "PROJECT: KETER — Несанкционированный доступ.",
         "СИСТЕМА: SCP-173 за вашей спиной. Не моргайте.",
         "ВНИМАНИЕ: Зафиксирован разрыв тканей реальности.",
         "ОШИБКА: {ДАННЫЕ УДАЛЕНЫ}. Субъект теряет человеческую форму...",
@@ -294,22 +276,21 @@ function showCreepyError() {
     alert(messages[Math.floor(Math.random() * messages.length)]);
 }
 
-// Выход в Главное меню
 function exitGame() {
     stopAmbientSound();
     showBlock('block-menu');
 }
 
 // ==========================================
-// 6. СОХРАНЕНИЕ И СБРОС ПРОГРЕССА
+// СОХРАНЕНИЕ И СБРОС ПРОГРЕССА
 // ==========================================
 
 function saveProgress() {
-    localStorage.setItem('keter_game_state', JSON.stringify(gameState));
+    localStorage.setItem('project_keter_state', JSON.stringify(gameState));
 }
 
 function loadProgress() {
-    const saved = localStorage.getItem('keter_game_state');
+    const saved = localStorage.getItem('project_keter_state');
     if (saved) {
         try {
             gameState = JSON.parse(saved);
@@ -320,7 +301,7 @@ function loadProgress() {
 }
 
 function resetProgress() {
-    localStorage.removeItem('keter_game_state');
+    localStorage.removeItem('project_keter_state');
     gameState = {
         currentBlock: 'block-menu',
         xp: 0,
