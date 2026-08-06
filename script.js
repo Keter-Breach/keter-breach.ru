@@ -1,4 +1,4 @@
-// Состояние игры по умолчанию
+// Инициализация общего состояния игры
 let gameState = {
     currentBlock: 'block-menu',
     xp: 0,
@@ -6,31 +6,46 @@ let gameState = {
     unlockedArchive: []
 };
 
-// Правильные ответы для текстовых ввода (хранятся в JS, а не в HTML)
+// Хранилище правильных ответов
 const ANSWERS = {
     'block-d': '3',
     'block-0': 'медик',
     'block-2': 'обезопасить удержать сохранить',
     'block-3': 'брайт',
-    'block-4': 'f', // Каноничный амнезиак полной очистки
+    'block-4': 'f',
     'keter': 'девятихвостая лиса-1',
     'chaos': 'гидра'
 };
 
-// Инициализация при загрузке страницы
+// Загрузка состояния при запуске
 document.addEventListener('DOMContentLoaded', () => {
     loadProgress();
     updateUI();
 });
 
-// Начать игру
+// Вызов хоррор-эффекта и вспышки крови при ошибках
+function triggerHorrorEffect() {
+    const snd = document.getElementById('snd-glitch');
+    if (snd) { 
+        snd.currentTime = 0; 
+        snd.play().catch(() => {}); 
+    }
+    
+    document.body.classList.add('screen-damage');
+    setTimeout(() => {
+        document.body.classList.remove('screen-damage');
+    }, 350);
+}
+
+// Запуск игрового процесса
 function startGame() {
     hideAllBlocks();
+    document.getElementById('player-panel').classList.remove('hidden');
     showBlock('block-d');
     addXP(10);
 }
 
-// Переключение блоков
+// Управление видимостью терминальных блоков
 function showBlock(blockId) {
     hideAllBlocks();
     const target = document.getElementById(blockId);
@@ -46,7 +61,7 @@ function hideAllBlocks() {
     blocks.forEach(b => b.classList.add('hidden'));
 }
 
-// Система проверки текстовых ответов
+// Проверка текстовых ответов
 function verifyCode(blockId, nextLevel) {
     const input = document.getElementById(`input-${blockId}`);
     if (!input) return;
@@ -58,11 +73,9 @@ function verifyCode(blockId, nextLevel) {
         input.value = '';
         addXP(50);
         
-        // Разблокировка объектов в Архиве
         if (blockId === 'block-0') unlockArchiveCard('scp999');
         if (blockId === 'block-2') unlockArchiveCard('scp076');
         
-        // Переход дальше
         const nextMap = {
             'block-d': 'block-0',
             'block-0': 'block-1',
@@ -72,11 +85,18 @@ function verifyCode(blockId, nextLevel) {
         };
         showBlock(nextMap[blockId]);
     } else {
-        alert("ОШИБКА ДОСТУПА: Неверный код или пароль!");
+        triggerHorrorEffect();
+        const creepyMessages = [
+            "ОШИБКА: Объект SCP-173 находится прямо за вами. Не моргайте.",
+            "СИСТЕМА: Потеря био-сигнала оператора. Кто вводит данные?",
+            "ВНИМАНИЕ: Неуязвимая рептилия пробила изоляцию сектора.",
+            "ОШИБКА: {ДАННЫЕ УДАЛЕНЫ}. Слышны шаги в вентиляции..."
+        ];
+        alert(creepyMessages[Math.floor(Math.random() * creepyMessages.length)]);
     }
 }
 
-// Вопрос выбора на Уровне 1 (SCP-096)
+// Выбор действий на Уровне 1
 function quizLevel2(choice) {
     if (choice === 'close_eyes') {
         alert("Вы закрыли глаза и отвернулись. Скромник пробежал мимо, игнорируя вас!");
@@ -84,18 +104,19 @@ function quizLevel2(choice) {
         unlockArchiveCard('scp096');
         showBlock('block-2');
     } else {
+        triggerHorrorEffect();
         alert("КРИТИЧЕСКАЯ ОШИБКА: SCP-096 вошел в состояние ярости. Вы уничтожены.");
         resetProgress();
     }
 }
 
-// Переход в Сектор Кэтер
+// Эвакуация в Сектор Кэтер
 function goToKeterSector() {
     unlockArchiveCard('scp682');
     showBlock('block-keter');
 }
 
-// Финал: Заливка кислотой
+// Финальные проверки
 function quizKeter() {
     const input = document.getElementById('input-block-keter');
     const val = input ? input.value.trim().toLowerCase() : '';
@@ -103,14 +124,14 @@ function quizKeter() {
     if (val === ANSWERS['keter']) {
         alert("ГИДРОХЛОРИДНАЯ КИСЛОТА ПОДАНА. SCP-682 УСЫПЛЕН. ЗОНА 19 СПАСЕНА!");
         addXP(500);
-        showBlock('block-menu');
+        location.reload();
     } else {
+        triggerHorrorEffect();
         alert("ОШИБКА СИСТЕМЫ: SCP-682 пробил защитный барьер...");
-        showBlock('block-chaos'); // При ошибке перехватывают Повстанцы
+        showBlock('block-chaos');
     }
 }
 
-// Финал: Повстанцы Хаоса
 function quizChaos() {
     const input = document.getElementById('input-block-chaos');
     const val = input ? input.value.trim().toLowerCase() : '';
@@ -119,23 +140,28 @@ function quizChaos() {
         alert("ЗАРЯДЫ АКТИВИРОВАНЫ. ЗОНА 19 УНИЧТОЖЕНА. ВЫ ВЫБРАЛИ ПУТЬ ХАОСА.");
         resetProgress();
     } else {
+        triggerHorrorEffect();
         alert("НЕВЕРНЫЙ ШИФР: Система безопасности Фонда успела выжечь терминал.");
         resetProgress();
     }
 }
 
-// Управление архивом
+// Управление Архивом с перезагрузкой при закрытии
 function toggleArchiveView() {
     const enc = document.getElementById('block-encyclopedia');
-    if (enc.classList.contains('hidden')) {
-        enc.classList.remove('hidden');
+    
+    // Если Архив уже открыт — при нажатии "Вернуться" перезагружаем страницу
+    if (!enc.classList.contains('hidden')) {
+        location.reload(); 
     } else {
-        enc.classList.add('hidden');
+        hideAllBlocks();
+        enc.classList.remove('hidden');
     }
 }
 
 function openArchiveFromMenu() {
-    showBlock('block-encyclopedia');
+    hideAllBlocks();
+    document.getElementById('block-encyclopedia').classList.remove('hidden');
 }
 
 function unlockArchiveCard(scpId) {
@@ -155,7 +181,7 @@ function updateArchiveUI() {
     });
 }
 
-// Опыт и ранги
+// Система опыта
 function addXP(amount) {
     gameState.xp += amount;
     if (gameState.xp >= 500) gameState.rank = 'Смотритель O5';
@@ -174,7 +200,7 @@ function updateUI() {
     updateArchiveUI();
 }
 
-// Сохранение и сброс (LocalStorage)
+// LocalStorage операции
 function saveProgress() {
     localStorage.setItem('scp_game_state', JSON.stringify(gameState));
 }
@@ -188,10 +214,8 @@ function loadProgress() {
 
 function resetProgress() {
     localStorage.removeItem('scp_game_state');
-    gameState = { currentBlock: 'block-menu', xp: 0, rank: 'Класс D', unlockedArchive: [] };
-    alert("Память очищена (Сброс). Перезапуск терминала...");
-    showBlock('block-menu');
-    updateUI();
+    alert("Память очищена. Перезапуск системы...");
+    location.reload();
 }
 
 function exitGame() {
