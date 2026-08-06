@@ -1,62 +1,29 @@
+// === УПРАВЛЕНИЕ ГЛАВНЫМ МЕНЮ И УДАЛЕННЫЙ ТЕРМИНАЛ ===
+let openedFromMenu = false;
 
-// Инициализация аудиоконтекста браузера
-let audioCtx = null;
-
-function initAudio() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-}
-
-// Синтезатор аналоговых звуков (Без внешних аудиофайлов)
-function playTerminalSound(type) {
-    try {
-        initAudio();
-        let osc = audioCtx.createOscillator();
-        let gain = audioCtx.createGain();
-        osc.connect(gain); 
-        gain.connect(audioCtx.destination);
-
-        if (type === 'click') { 
-            osc.type = 'sine'; 
-            osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.04, audioCtx.currentTime); 
-            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.04);
-            osc.start(); 
-            osc.stop(audioCtx.currentTime + 0.04);
-        } else if (type === 'alarm') { 
-            osc.type = 'sawtooth'; 
-            osc.frequency.setValueAtTime(180, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(500, audioCtx.currentTime + 0.3);
-            gain.gain.setValueAtTime(0.08, audioCtx.currentTime); 
-            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3);
-            osc.start(); 
-            osc.stop(audioCtx.currentTime + 0.3);
-        }
-    } catch(e) { 
-        console.log("Аудио-система терминала временно недоступна"); 
-    }
-}
-
-// Первоначальный запуск интерфейса после загрузки DOM
-document.addEventListener("DOMContentLoaded", () => {
-    let headers = document.querySelectorAll("h2");
-    headers.forEach(h => { h.innerHTML += '<span class="warning-flash" style="animation: blink 0.8s infinite; color: inherit;">_</span>'; });
-    
-    document.querySelectorAll('button').forEach(b => { 
-        b.addEventListener('click', () => {
-            initAudio(); 
-            playTerminalSound('click');
-        }); 
-    });
-    updateArchiveStorage(); 
-    updateXPDisplay(); 
+function startGame() {
+    document.getElementById('block-menu').classList.add('hidden');
+    localStorage.setItem("scp_in_game", "true"); 
     checkAccess();
-});
-// Начисление опыта за правильные ответы
+}
+
+function openArchiveFromMenu() {
+    openedFromMenu = true;
+    document.getElementById('block-menu').classList.add('hidden');
+    document.getElementById('block-encyclopedia').classList.remove('hidden');
+    document.getElementById('archive-close-btn').innerText = "Назад в меню";
+    renderArchiveData();
+}
+
+function exitGame() {
+    if(confirm("Вы уверены, что хотите закрыть терминал и очистить текущую сессию СБ?")) {
+        localStorage.removeItem("scp_in_game");
+        localStorage.setItem("scp_secure_level", "Class_D");
+        localStorage.setItem("scp_user_xp", "0");
+        updateXPDisplay();
+        location.reload();
+    }
+}
 function addXP(amount) {
     let currentXP = parseInt(localStorage.getItem("scp_user_xp") || "0");
     currentXP += amount;
@@ -64,48 +31,29 @@ function addXP(amount) {
     updateXPDisplay();
 }
 
-// Обновление панели рангов сотрудника Зоны 19
-function updateXPDisplay() {
-    let xp = parseInt(localStorage.getItem("scp_user_xp") || "0");
-    let rankText = "Класс D (Расходник)";
-    let rankColor = "#ff4444";
-
-    if (xp >= 150 && xp < 300) { rankText = "Уровень 0 (Техник базы)"; rankColor = "#33ccff"; }
-    else if (xp >= 300 && xp < 450) { rankText = "Уровень 1 (Лаборант)"; rankColor = "#33ff33"; }
-    else if (xp >= 450 && xp < 600) { rankText = "Уровень 2 (Исследователь)"; rankColor = "#ffaa00"; }
-    else if (xp >= 600 && xp < 750) { rankText = "Уровень 3 (Старший ученый)"; rankColor = "#ff00ff"; }
-    else if (xp >= 750 && xp < 900) { rankText = "Уровень 4 (Директор Зоны)"; rankColor = "#e6b800"; }
-    else if (xp >= 900) { rankText = "Уровень 5 (Смотритель O5)"; rankColor = "#ffffff"; }
-
-    let xpElement = document.getElementById("player-xp");
-    let rankElement = document.getElementById("player-rank");
-    
-    if (xpElement) xpElement.innerText = xp;
-    if (rankElement) {
-        rankElement.innerText = rankText;
-        rankElement.style.color = rankColor;
-    }
-}
-
-// Открытие и закрытие справочника объектов
-let isArchiveOpen = false;
 function toggleArchiveView() {
     let mainElements = ['block-d', 'block-0', 'block-1', 'block-2', 'block-3', 'block-4', 'block-5', 'block-keter', 'block-chaos'];
     let archiveBtn = document.getElementById('archive-toggle-btn');
+    
     if (!isArchiveOpen) {
         mainElements.forEach(id => { if(document.getElementById(id)) document.getElementById(id).classList.add('hidden'); });
         document.getElementById('block-encyclopedia').classList.remove('hidden');
-        if (archiveBtn) archiveBtn.innerText = "[ВЕРНУТЬСЯ В ТЕРМИНАЛ]"; 
+        if(archiveBtn) archiveBtn.innerText = "[ВЕРНУТЬСЯ В ТЕРМИНАЛ]"; 
         isArchiveOpen = true; 
+        openedFromMenu = false;
         renderArchiveData();
     } else {
         document.getElementById('block-encyclopedia').classList.add('hidden');
-        if (archiveBtn) archiveBtn.innerText = "[ОТКРЫТЬ АРХИВ ОБЪЕКТОВ]"; 
+        if(archiveBtn) archiveBtn.innerText = "[ОТКРЫТЬ АРХИВ ОБЪЕКТОВ]"; 
         isArchiveOpen = false; 
-        checkAccess();
+        
+        if (openedFromMenu) {
+            document.getElementById('block-menu').classList.remove('hidden');
+        } else {
+            checkAccess();
+        }
     }
 }
-// Проверка разблокированных карточек в энциклопедии
 function renderArchiveData() {
     let monsters = ['scp173', 'scp049', 'scp999', 'scp096', 'scp076', 'scp682'];
     monsters.forEach(m => {
@@ -122,7 +70,6 @@ function renderArchiveData() {
     });
 }
 
-// Автоматический сбор карточек аномалий на этапах сюжета
 function updateArchiveStorage() {
     let currentLevel = localStorage.getItem("scp_secure_level") || "Class_D";
     if (currentLevel === "Level_0") localStorage.setItem("unlocked_scp999", "true");
@@ -130,17 +77,27 @@ function updateArchiveStorage() {
     else if (currentLevel === "Level_2") { localStorage.setItem("unlocked_scp096", "true"); localStorage.setItem("unlocked_scp076", "true"); }
     else if (currentLevel === "Level_Keter") localStorage.setItem("unlocked_scp682", "true");
 }
-
-// Менеджер экранов и фонового освещения бункера
 function checkAccess() {
     if (isArchiveOpen) return; 
+    
+    if (localStorage.getItem("scp_in_game") !== "true") {
+        document.getElementById('block-menu').classList.remove('hidden');
+        document.getElementById('player-panel').classList.add('hidden');
+        let mainElements = ['block-d', 'block-0', 'block-1', 'block-2', 'block-3', 'block-4', 'block-5', 'block-keter', 'block-chaos'];
+        mainElements.forEach(id => { if(document.getElementById(id)) document.getElementById(id).classList.add('hidden'); });
+        document.body.style.backgroundColor = "#030405";
+        return;
+    }
+
     updateArchiveStorage();
     let mainElements = ['block-d', 'block-0', 'block-1', 'block-2', 'block-3', 'block-4', 'block-5', 'block-keter', 'block-chaos'];
     mainElements.forEach(id => { if(document.getElementById(id)) document.getElementById(id).classList.add('hidden'); });
+    document.getElementById('block-menu').classList.add('hidden');
 
     let currentLevel = localStorage.getItem("scp_secure_level") || "Class_D";
     let pPanel = document.getElementById('player-panel');
     if(pPanel) pPanel.style.display = (currentLevel === "Level_Chaos") ? "none" : "flex";
+    if(pPanel && currentLevel !== "Level_Chaos") pPanel.classList.remove('hidden');
 
     if (currentLevel === "Class_D") { document.getElementById('block-d').classList.remove('hidden'); document.body.style.backgroundColor = "#100202"; }
     else if (currentLevel === "Level_0") { document.getElementById('block-0').classList.remove('hidden'); document.body.style.backgroundColor = "#020a12"; }
@@ -152,7 +109,6 @@ function checkAccess() {
     else if (currentLevel === "Level_Keter" && document.getElementById('block-keter')) { document.getElementById('block-keter').classList.remove('hidden'); document.body.style.backgroundColor = "#2a0101"; }
     else if (currentLevel === "Level_Chaos" && document.getElementById('block-chaos')) { document.getElementById('block-chaos').classList.remove('hidden'); document.body.style.backgroundColor = "#040d02"; }
 }
-// Задача экрана Класса D. Ответ: 3
 function quizLevel0() {
     let answer = prompt("Сколько выживших сотрудников класса D осталось внутри камеры?");
     if (answer && answer.trim() === "3") {
@@ -163,7 +119,7 @@ function quizLevel0() {
     }
 }
 
-// Тест на Уровне 1 (Скромник). Вариант В
+// Тест на Уровне 1 (Скромник)
 function quizLevel2(choice) {
     if (choice === 'закрыть глаза') {
         addXP(150);
@@ -172,8 +128,6 @@ function quizLevel2(choice) {
         triggerGlitch(); alert("КРИТИЧЕСКАЯ ОШИБКА. SCP-096 разорвал вас на части."); resetProgress();
     }
 }
-
-// Испытание Сектора Кэтер. Ответ: эпсилон-11
 function quizKeter() {
     let mogAnswer = prompt("Введите позывной МОГ для усмирения Кэтеров:");
     if (mogAnswer && (mogAnswer.toLowerCase().trim().replace(/ё/g, "е") === "эпсилон-11")) {
@@ -183,7 +137,6 @@ function quizKeter() {
     }
 }
 
-// Финал Повстанцев Хаоса. Ответ: гидра
 function quizChaos() {
     let chaosAnswer = prompt("Введите кодовое название ударной ячейки Хаоса:");
     if (chaosAnswer && chaosAnswer.toLowerCase().trim() === "гидра") {
@@ -192,16 +145,12 @@ function quizChaos() {
         triggerGlitch(); alert("ВСПЫШКА КВАНТОВОЙ ЗАЩИТЫ. Терминал уничтожен."); resetProgress();
     }
 }
-
-// Искажение экрана (Глитч) при неверных кодах
 function triggerGlitch() {
     playTerminalSound('alarm'); 
-    document.body.style.transform = "skewX(15deg) scaleY(1.1)"; 
-    document.body.style.filter = "hue-rotate(90deg) invert(1)";
+    document.body.style.transform = "skewX(15deg) scaleY(1.1)"; document.body.style.filter = "hue-rotate(90deg) invert(1)";
     setTimeout(() => { document.body.style.transform = "none"; document.body.style.filter = "none"; }, 150);
 }
 
-// Универсальная система сверки паролей и пасхалка "хаос"
 function verifyCode(correctCode, targetLevel) {
     let userCode = prompt("Введите секретный ключ терминала:");
     if (!userCode) return;
@@ -218,21 +167,19 @@ function verifyCode(correctCode, targetLevel) {
     }
 }
 
-// Полное обнуление прогресса при гибели
 function resetProgress() {
+    localStorage.removeItem("scp_in_game"); 
     localStorage.setItem("scp_user_xp", "0"); 
     updateXPDisplay();
     fakeLoad("Class_D", () => { localStorage.setItem("scp_secure_level", "Class_D"); checkAccess(); });
 }
 
-// Имитация шкалы загрузки в процентах
 function fakeLoad(targetLevel, callback) {
-    let mainElements = ['block-d', 'block-0', 'block-1', 'block-2', 'block-3', 'block-4', 'block-5', 'block-keter', 'block-chaos', 'block-encyclopedia'];
+    let mainElements = ['block-d', 'block-0', 'block-1', 'block-2', 'block-3', 'block-4', 'block-5', 'block-keter', 'block-chaos', 'block-encyclopedia', 'block-menu'];
     mainElements.forEach(id => { if(document.getElementById(id)) document.getElementById(id).classList.add('hidden'); });
     
     let screen = document.getElementById('loading-screen');
-    let bar = document.getElementById('p-bar'); 
-    let text = document.getElementById('p-text');
+    let bar = document.getElementById('p-bar'); let text = document.getElementById('p-text');
     
     if (targetLevel === "Level_0") screen.className = "terminal status-0";
     if (targetLevel === "Level_1") screen.className = "terminal status-1";
@@ -244,8 +191,7 @@ function fakeLoad(targetLevel, callback) {
     if (targetLevel === "Level_Chaos") screen.className = "terminal";
     if (targetLevel === "Class_D") screen.className = "terminal status-d";
 
-    screen.style.display = "block"; 
-    let width = 0;
+    screen.style.display = "block"; let width = 0;
     let interval = setInterval(() => {
         if (width >= 100) { clearInterval(interval); screen.style.display = "none"; callback(); }
         else { width += 5; bar.style.width = width + '%'; text.innerText = width + '%'; }
