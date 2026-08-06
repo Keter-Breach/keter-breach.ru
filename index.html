@@ -7,211 +7,256 @@
 </head>
 <body>
 
+    <!-- Верхняя панель игрока -->
     <div class="top-panel hidden" id="player-panel">
-        <div class="xp-display">СОТРУДНИК: <span id="player-rank" style="color: #ff4444;">ЗАГРУЗКА...</span> | ОПЫТ: <span id="player-xp" style="color: #fff;">0</span> XP</div>
+        <div class="xp-display">
+            СОТРУДНИК: <span id="player-rank" class="text-danger">ЗАГРУЗКА...</span> | 
+            ОПЫТ: <span id="player-xp">0</span> XP
+        </div>
         <button class="btn btn-archive" id="archive-toggle-btn" onclick="toggleArchiveView()">[ОТКРЫТЬ АРХИВ ОБЪЕКТОВ]</button>
     </div>
 
-<div id="block-menu" class="terminal" style="color: #00ff66; border-color: #00ff66;">
-    <div class="menu-container">
-        <h1 style="letter-spacing: 5px; text-shadow: 0 0 10px #00ff66;">PROJECT: KETER</h1>
-        <p style="opacity: 0.7; font-size: 13px;">СИТУАЦИОННЫЙ СИМУЛЯТОР СДЕРЖИВАНИЯ // ЗОНА 19</p>
-        <div class="menu-buttons">
-            <button class="btn" onclick="startGame()">ИГРАТЬ</button>
-            <button class="btn" style="color: #ffaa00; border-color: #ffaa00;" onclick="openArchiveFromMenu()">АРХИВ</button>
-            <button class="btn" style="color: #ff4444; border-color: #ff4444;" onclick="exitGame()">ВЫХОД</button>
+    <!-- Главное меню -->
+    <div id="block-menu" class="terminal text-success-border">
+        <div class="menu-container">
+            <h1 class="glow-text">PROJECT: KETER</h1>
+            <p class="subtitle">СИТУАЦИОННЫЙ СИМУЛЯТОР СДЕРЖИВАНИЯ // ЗОНА 19</p>
+            <div class="menu-buttons">
+                <button class="btn" onclick="startGame()">ИГРАТЬ</button>
+                <button class="btn btn-warning" onclick="openArchiveFromMenu()">АРХИВ</button>
+                <button class="btn btn-danger" onclick="exitGame()">ВЫХОД</button>
+            </div>
         </div>
     </div>
-</div>
-<div id="block-encyclopedia" class="terminal hidden" style="color: #ffaa00; border-color: #ffaa00;">
-    <h2>[ЦЕНТРАЛЬНЫЙ СПРАВОЧНИК АНОМАЛИЙ // PROJECT: KETER]</h2>
-    <p>Доступ к файлам и фото-отчетам разблокируется автоматически при прохождении.</p>
-    <hr style="border-color: #ffaa00;">
-    <div class="archive-grid">
-        <div id="card-scp173" class="object-card">
-            <h3>• SCP-173 («Скульптура»)</h3>
-            <img src="images/scp173.jpg" class="scp-image" alt="SCP-173">
-            <p><b>Класс:</b> Евклид. Подвижна только вне зоны видимости. Ломает шею у основания черепа.</p>
-        </div>
-        <div id="card-scp173-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Встретьте объект на Уровне 1]</div>
 
-        <div id="card-scp049" class="object-card">
-            <h3>• SCP-049 («Чумной доктор»)</h3>
-            <img src="images/scp049.jpg" class="scp-image" alt="SCP-049">
-            <p><b>Класс:</b> Евклид. Пытается «вылечить» Поветрие. Его касание смертельно.</p>
-        </div>
-        <div id="card-scp049-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Встретьте объект на Уровне 1]</div>
+    <!-- Энциклопедия SCP -->
+    <div id="block-encyclopedia" class="terminal hidden text-warning-border">
+        <h2>[ЦЕНТРАЛЬНЫЙ СПРАВОЧНИК АНОМАЛИЙ // PROJECT: KETER]</h2>
+        <p>Доступ к файлам и фото-отчетам разблокируется автоматически при прохождении.</p>
+        <hr class="hr-warning">
+        
+        <div class="archive-grid">
+            <!-- SCP-173 -->
+            <div id="card-scp173" class="object-card">
+                <h3>• SCP-173 («Скульптура»)</h3>
+                <img src="images/scp173.jpg" class="scp-image" alt="SCP-173">
+                <p><b>Класс:</b> Евклид. Подвижна только вне зоны видимости. Ломает шею у основания черепа.</p>
+            </div>
+            <div id="card-scp173-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН]<br>Встретьте объект на Уровне 1</div>
 
-        <div id="card-scp999" class="object-card">
-            <h3>• SCP-999 («Щекоточный монстр»)</h3>
+            <!-- SCP-049 -->
+            <div id="card-scp049" class="object-card">
+                <h3>• SCP-049 («Чумной доктор»)</h3>
+                <img src="images/scp049.jpg" class="scp-image" alt="SCP-049">
+                <p><b>Класс:</b> Евклид. Пытается «вылечить» Поветрие. Его касание смертельно.</p>
+            </div>
+            <div id="card-scp049-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН]<br>Встретьте объект на Уровне 1</div>
+
+            <!-- SCP-999 -->
+            <div id="card-scp999" class="object-card">
+                <h3>• SCP-999 («Щекоточный монстр»)</h3>
+                <img src="images/scp999.jpg" class="scp-image" alt="SCP-999">
+                <p><b>Класс:</b> Безопасный. Оранжевое желе. Вызывает у существ приливы эйфории.</p>
+            </div>
+            <div id="card-scp999-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН]<br>Найдите объект на Уровне 0</div>
+
+            <!-- SCP-096 -->
+            <div id="card-scp096" class="object-card">
+                <h3>• SCP-096 («Скромник»)</h3>
+                <img src="images/scp096.jpg" class="scp-image" alt="SCP-096">
+                <p><b>Класс:</b> Евклид. Впадает в ярость, если посмотреть на его лицо. Уничтожает цель.</p>
+            </div>
+            <div id="card-scp096-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН]<br>Встретьте объект на Уровне 2</div>
+
+            <!-- SCP-076 -->
+            <div id="card-scp076" class="object-card">
+                <h3>• SCP-076-2 («Авель»)</h3>
+                <img src="images/scp076.jpg" class="scp-image" alt="SCP-076">
+                <p><b>Класс:</b> Кэтер. Бессмертный воин из куба. Материализует оружие из разломов.</p>
+            </div>
+            <div id="card-scp076-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН]<br>Выживите при штурме на Уровне 2</div>
+
+            <!-- SCP-682 -->
+            <div id="card-scp682" class="object-card">
+                <h3>• SCP-682 («Неуязвимая рептилия»)</h3>
+                <img src="images/scp682.jpg" class="scp-image" alt="SCP-682">
+                <p><b>Класс:</b> Кэтер. Обладает абсолютной регенерацией. Ненавидит всю жизнь.</p>
+            </div>
+            <div id="card-scp682-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН]<br>Доберитесь до Сектора Кэтер</div>
+        </div>
+
+        <hr class="hr-warning">
+        <button class="btn btn-warning" id="archive-close-btn" onclick="toggleArchiveView()">Вернуться</button>
+    </div>
+
+    <!-- Экран загрузки -->
+    <div id="loading-screen" class="terminal text-center hidden">
+        <h2>ИНИЦИАЛИЗАЦИЯ ПОТОКОВ ДАННЫХ PROJECT: KETER...</h2>
+        <div class="progress-container">
+            <div class="progress-bar" id="p-bar"></div>
+        </div>
+        <p id="p-text" class="progress-text">0%</p>
+    </div>
+
+    <!-- УРОВЕНЬ 0: Класс D -->
+    <div id="block-d" class="terminal status-d hidden">
+        <h2>[БЛОК ЗАДЕРЖАНИЯ D-CLASS // СЕКТОР ТЕСТИРОВАНИЯ]</h2>
+        <p><b>СУБЪЕКТ:</b> D-9341 (Бывший доктор, разжалован за нарушение секретности).</p>
+        <p><b>СИТУАЦИЯ:</b> Сирены воют, Зона 19 содрогается от взрывов. Сдерживание нарушено. Тяжелый гермозатвор заклинило. На экране горит аварийная надпись: <i>«Внимание! ИИ-079 заблокировал сектор. Подтвердите когнитивные функции».</i></p>
+        <hr>
+        <p class="warning-flash">ТЕСТ СЛУЖБЫ БЕЗОПАСНОСТИ ЗОНЫ (УРОВЕНЬ: НОВИЧОК):</p>
+        <p>«В камеру SCP-173 вошли 12 сотрудников класса D. Трое моргнули — Скульптура мгновенно сломала им шеи. Двое запаниковали и побежали к выходу — устранены охраной в коридоре. Еще четверых успели вывести через резервный шлюз. Сколько живых сотрудников класса D осталось внутри запертой тестовой камеры?»</p>
+        
+        <input type="number" id="input-block-d" placeholder="Введите число">
+        <button class="btn" onclick="verifyCode('block-d', 'Level_0')">Ввести число и открыть шлюз</button>
+    </div>
+
+    <!-- УРОВЕНЬ 0: Технические туннели -->
+    <div id="block-0" class="terminal status-0 hidden">
+        <h2>[СЕТЬ ТЕХНИЧЕСКОГО ОБЕСПЕЧЕНИЯ // ДОПУСК: УРОВЕНЬ 0]</h2>
+        <div class="flex-container">
+            <div class="story-text">
+                <p><b>МЕСТО:</b> Технические туннели сектора снабжения Зоны 19.</p>
+                <p><b>СЮЖЕТ:</b> Вы выбрались из камеры! В туннеле темно, но вдруг из-за угла выкатывается дружелюбная оранжевая масса — это <b>SCP-999 («Щекоточный монстр»)</b>. Он забавно урчит, и страх отступает. Рядом лежит КПК погибшего электрика Михалыча с открытой служебной запиской.</p>
+                <hr>
+                <h3>ПЕРЕХВАТ ЛОГОВ (ОТДЕЛ СНАБЖЕНИЯ // СТАТУС: ТРУДЯГА):</h3>
+                <p><i>"Ребята из лазарета кодируют свои терминалы архива простым русским словом, обозначающим профессию Чумного доктора. Слово из 5 букв. Введите его в консоль ниже. Подсказка: <b class="glow-cyan">"медик"</b>."</i></p>
+            </div>
             <img src="images/scp999.jpg" class="scp-image" alt="SCP-999">
-            <p><b>Класс:</b> Безопасный. Оранжевое желе. Вызывает у существ приливы эйфории.</p>
         </div>
-        <div id="card-scp999-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Найдите объект на Уровне 0]</div>
+        <hr>
+        <input type="text" id="input-block-0" placeholder="Введите пароль...">
+        <button class="btn" onclick="verifyCode('block-0', 'Level_1')">Авторизоваться в Архиве Исследований</button>
+        <button class="btn btn-half-opacity" onclick="resetProgress()">Сбросить терминал</button>
+    </div>
 
-        <div id="card-scp096" class="object-card">
-            <h3>• SCP-096 («Скромник»)</h3>
-            <img src="images/scp096.jpg" class="scp-image" alt="SCP-096">
-            <p><b>Класс:</b> Евклид. Впадает в ярость, если посмотреть на его лицо. Уничтожает цель.</p>
+    <!-- УРОВЕНЬ 1: Лазарет / SCP-096 -->
+    <div id="block-1" class="terminal status-1 hidden">
+        <div class="flex-container">
+            <div class="story-text">
+                <h2>[АРХИВ МЛАДШИХ ИССЛЕДОВАТЕЛЕЙ // ДОПУСК: УРОВЕНЬ 1]</h2>
+                <p><b>СЕКТОР:</b> Медико-биологический блок сдерживания Евклидов.</p>
+                <p><b>СЮЖЕТ:</b> Экран мигает зеленым. Открываются медицинские карты SCP-173 и SCP-049. Но внезапно по громкой связи раздается страшный металлический скрежет: <i>«Внимание! Сдерживание объекта <b>SCP-096 («Скромник»)</b> сорвано. Он бежит по коридорам медицинского крыла!»</i> В этот же момент железную дверь вырывает с корнем.</p>
+                <hr>
+                <p class="warning-flash">ЭКСТРЕННАЯ СИТУАЦИЯ СДЕРЖИВАНИЯ:</p>
+                <p>Из пролома в стене появляется долговязое бледное существо. Оно закрывает лицо руками и начинает истошно кричать. Каковы ваши действия, чтобы не умереть на месте?</p>
+            </div>
+            <img src="images/scp049.jpg" class="scp-image" alt="SCP-049">
         </div>
-        <div id="card-scp096-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Встретьте объект на Уровне 2]</div>
+        <div class="choice-buttons">
+            <button class="btn" onclick="quizLevel2('run')">А: Развернуться и бежать по коридору</button>
+            <button class="btn" onclick="quizLevel2('look')">Б: Взять шокер и смотреть ему прямо в глаза</button>
+            <button class="btn" onclick="quizLevel2('close_eyes')">В: Закрыть глаза руками и отвернуться к стене</button>
+        </div>
+    </div>
 
-        <div id="card-scp076" class="object-card">
-            <h3>• SCP-076-2 («Авель»)</h3>
+    <!-- УРОВЕНЬ 2: Оборонный сервер -->
+    <div id="block-2" class="terminal status-2 hidden">
+        <div class="flex-container">
+            <div class="story-text">
+                <h2>[ОБОРОННЫЙ СЕРВЕР // СЕКТОР СТАРШИХ ИССЛЕДОВАТЕЛЕЙ // УРОВЕНЬ 2]</h2>
+                <p><b>СЮЖЕТ:</b> Вы выжили в лазарете! Пробравшись через вентиляцию, вы оказываетесь на мостике наблюдения. Снизу идет настоящая война: из кубического саркофага вырвался <b>SCP-076-2 («Авель»)</b>. Он материализует черные мечи прямо из воздуха и вырезает отряды службы безопасности.</p>
+                <p>Капитан МОГ кричит в рацию: <i>«Нам не удержать Авеля! Оператор, вводи девиз организации на русском языке, чтобы разблокировать центральный ядерный пульт Зоны 19!»</i></p>
+                <hr>
+                <div class="box-warning">
+                    <p class="text-orange"><b>[ЗАПРОС АВТОРИЗАЦИИ СЕТИ]:</b></p>
+                    <p>Введите три главных каноничных слова девиза Фонда через пробел (обезопасить удержать сохранить):</p>
+                </div>
+            </div>
             <img src="images/scp076.jpg" class="scp-image" alt="SCP-076">
-            <p><b>Класс:</b> Кетер. Бессмертный воин из куба. Материализует оружие из разломов.</p>
         </div>
-        <div id="card-scp076-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Выживите при штурме на Уровне 2]</div>
+        <hr>
+        <input type="text" id="input-block-2" placeholder="Введите девиз...">
+        <button class="btn" onclick="verifyCode('block-2', 'Level_3')">Утвердить девиз Фонда (Уровень 3)</button>
+        <button class="btn btn-half-opacity" onclick="resetProgress()">Выйти из терминала</button>
+    </div>
 
-        <div id="card-scp682" class="object-card">
-            <h3>• SCP-682 («Неуязвимая рептилия»)</h3>
+    <!-- УРОВЕНЬ 3: Секретный терминал -->
+    <div id="block-3" class="terminal status-3 hidden">
+        <h2>[СЕКРЕТНЫЙ ЯДЕРНЫЙ ТЕРМИНАЛ // ВЫСШИЙ ДОПУСК // УРОВЕНЬ 3]</h2>
+        <p><b>СЮЖЕТ:</b> Терминал окрашивается в фиолетовый цвет. Вы получили контроль над Альфа-боеголовками Зоны 19. Авель заперт бронедверями, но датчики фиксируют новую угрозу — в подземных резервуарах проснулась <b>SCP-682 («Неуязвимая рептилия»)</b>.</p>
+        <p>Чтобы перехватить управление и стабилизировать сеть, вам нужно экстренно связаться с Директором Зоны 19 через защищенную линию.</p>
+        <hr>
+        <div class="box-purple">
+            <p><b>КВАНТОВЫЙ ЗАПРОС СВЯЗИ С АДМИНИСТРАЦИЕЙ:</b></p>
+            <p>Личное дело Директора зашифровано фамилией бессмертного доктора Фонда, чей разум заперт в амулете. Введите его фамилию на русском языке (5 букв).</p>
+        </div>
+        <hr>
+        <input type="text" id="input-block-3" placeholder="Введите фамилию...">
+        <button class="btn" onclick="verifyCode('block-3', 'Level_4')">Авторизовать канал Директора (Уровень 4)</button>
+        <button class="btn btn-half-opacity" onclick="resetProgress()">Перезагрузить систему</button>
+    </div>
+
+    <!-- УРОВЕНЬ 4: Дирекция Зоны 19 -->
+    <div id="block-4" class="terminal status-4 hidden">
+        <h2>[ДИРЕКЦИЯ ЗОНЫ 19 // КАБИНЕТ АДМИНИСТРАТОРА // УРОВЕНЬ 4]</h2>
+        <p><b>СЮЖЕТ:</b> Терминал светится золотом. Вы вошли под учетной записью доктора Брайта. Высший Совет Смотрителей O5 запрашивает Классификацию амнезиака, который используется для полного стирания памяти свидетелей.</p>
+        <hr>
+        <div class="box-gold">
+            <p><b>КРИПТОГРАФИЧЕСКИЙ ТЕСТ СЛУЖБЫ БЕЗОПАСНОСТИ:</b></p>
+            <p>Введите класс этого амнезиака одной большой русской буквой.</p>
+        </div>
+        <hr>
+        <input type="text" id="input-block-4" maxlength="1" placeholder="Буква...">
+        <button class="btn" onclick="verifyCode('block-4', 'Level_5')">Подтвердить класс амнезиака (Уровень 5)</button>
+        <button class="btn btn-half-opacity" onclick="resetProgress()">Заблокировать кабинет</button>
+    </div>
+
+    <!-- УРОВЕНЬ 5: Совет O5 -->
+    <div id="block-5" class="terminal status-5 hidden">
+        <h2>[ЦЕНТРАЛЬНЫЙ СЕРВЕР НАДЗОРНОГО СОВЕТА O5 // ТАУМИЭЛЬ]</h2>
+        <p><b>ПОЛЬЗОВАТЕЛЬ:</b> O5-13 (Смотритель).</p>
+        <p><b>СЮЖЕТ:</b> Терминал погружается в абсолютную черно-белую гамму. Перед вами открываются файлы <b>SCP-001 («Страж Врат»)</b>. Вы узнаете страшную правду: мир работает, потому что Фонд удерживает реальность от распада. Но прямо сейчас сектор Кэтер под угрозой полного уничтожения рептилией.</p>
+        <hr>
+        <div class="box-white">
+            <p><b>ДИРЕКТИВА СМОТРИТЕЛЕЙ:</b></p>
+            <p>«Мы существуем во тьме, чтобы вы жили в свете. Неуязвимая рептилия вырвалась наружу. Немедленно эвакуируйтесь в аварийный отсек кислотного удержания и подавите прорыв.»</p>
+        </div>
+        <hr>
+        <button class="btn" onclick="goToKeterSector()">Экстренная эвакуация в Сектор Кэтер</button>
+        <button class="btn btn-half-opacity" onclick="resetProgress()">Очистить память (Сброс)</button>
+    </div>
+
+    <!-- СЕКТОР КЭТЕР -->
+    <div id="block-keter" class="terminal status-keter hidden">
+        <div class="flex-container">
+            <div class="story-text">
+                <h2>[ВНИМАНИЕ: СЕКТОР КЭТЕР // АВАРИЙНЫЙ ОТСЕК КИСЛОТНОГО УДЕРЖАНИЯ]</h2>
+                <p><b>СЮЖЕТ:</b> Терминал полыхает багровым! Огромная <b>SCP-682 («Неуязвимая рептилия»)</b> крушит стены и пытается добраться до вас. Из вентиляции лезет жуткий <b>SCP-1048</b>, а из темноты тянутся слизкие руки <b>SCP-106</b>.</p>
+                <hr>
+                <div class="box-red">
+                    <p class="warning-flash">ФИНАЛЬНЫЙ СЮЖЕТНЫЙ ТЕСТ ФОНДА:</p>
+                    <p>Чтобы залить бак гидрохлоридной кислотой и усыпить рептилию, введите позывной штурмовой Мобильной Опергруппы Зоны 19 («Девятихвостая лиса») на русском языке в формате "название-число".</p>
+                </div>
+            </div>
             <img src="images/scp682.jpg" class="scp-image" alt="SCP-682">
-            <p><b>Класс:</b> Кетер. Обладает абсолютной регенерацией. Ненавидит всю жизнь.</p>
         </div>
-        <div id="card-scp682-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Доберитесь до Сектора Кетер]</div>
+        <hr>
+        <input type="text" id="input-block-keter" placeholder="Девятихвостая лиса-...">
+        <button class="btn" onclick="quizKeter()">Ввести позывной МОГ и спасти комплекс</button>
+        <button class="btn btn-half-opacity" onclick="resetProgress()">Капитулировать (Сброс)</button>
     </div>
-    <hr style="border-color: #ffaa00;">
-    <button class="btn" style="color: #ffaa00; border-color: #ffaa00;" id="archive-close-btn" onclick="toggleArchiveView()">Вернуться</button>
-</div>
 
-<div id="loading-screen" class="terminal" style="display: none; text-align: center;">
-    <h2>ИНИЦИАЛИЗАЦИЯ ПОТОКОВ ДАННЫХ PROJECT: KETER...</h2>
-    <div class="progress-container">
-        <div class="progress-bar" id="p-bar"></div>
-    </div>
-    <p id="p-text" style="margin-top: 15px; font-weight: bold; font-size: 18px;">0%</p>
-</div>
-<div id="block-d" class="terminal status-d hidden">
-    <h2>[БЛОК ЗАДЕРЖАНИЯ D-CLASS // СЕКТОР ТЕСТИРОВАНИЯ]</h2>
-    <p><b>СУБЪЕКТ:</b> D-9341 (Бывший доктор, разжалован за нарушение секретности).</p>
-    <p><b>СИТУАЦИЯ:</b> Сирены воют, Зона 19 содрогается от взрывов. Сдерживание нарушено. Тяжелый гермозатвор заклинило. На экране горит аварийная надпись: <i>"Внимание! ИИ-079 заблокировал сектор. Подтвердите когнитивные функции".</i></p>
-    <hr>
-    <p class="warning-flash">ТЕСТ СЛУЖБЫ БЕЗОПАСНОСТИ ЗОНЫ (УРОВЕНЬ: НОВИЧОК):</p>
-    <p>«В камеру SCP-173 вошли 12 сотрудников класса D. Трое моргнули — Скульптура мгновенно сломала им шеи. Двое запаниковали и побежали к выходу — устранены охраной в коридоре. Еще четверых успели вывести через резервный шлюз. Сколько живых сотрудников класса D осталось внутри запертой тестовой камеры?»</p>
-    <button class="btn" onclick="quizLevel0()">Ввести число и открыть шлюз</button>
-</div>
-
-<div id="block-0" class="terminal status-0 hidden">
-    <h2>[СЕТЬ ТЕХНИЧЕСКОГО ОБЕСПЕЧЕНИЯ // ДОПУСК: УРОВЕНЬ 0]</h2>
-    <div class="flex-container">
-        <div class="story-text">
-            <p><b>МЕСТО:</b> Технические туннели сектора снабжения Зоны 19.</p>
-            <p><b>СЮЖЕТ:</b> Вы выбрались из камеры! В туннеле темно, но вдруг из-за угла выкатывается дружелюбная оранжевая масса — это <b>SCP-999 («Щекоточный монстр»)</b>. Он забавно урчит, и страх отступает. Рядом лежит КПК погибшего электрика Михалыча с открытой служебной запиской.</p>
-            <hr>
-            <h3>ПЕРЕХВАТ ЛОГОВ (ОТДЕЛ СНАБЖЕНИЯ // СТАТУС: ТРУДЯГА):</h3>
-            <p><i>"Ребята из лазарета кодируют свои терминалы архива простым русским словом, обозначающим профессию Чумного доктора. Слово из 5 букв. Введите его в консоль ниже. Подсказка: <b style="color: #fff; text-shadow: 0 0 5px #33ccff;">медик</b>".</i></p>
-        </div>
-        <img src="images/scp999.jpg" class="scp-image" alt="SCP-999">
-    </div>
-    <hr>
-    <button class="btn" onclick="verifyCode('медик', 'Level_1')">Авторизоваться в Архиве Исследований</button>
-    <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Сбросить терминал</button>
-</div>
-
-<div id="block-1" class="terminal status-1 hidden">
-    <div class="flex-container">
-        <div class="story-text">
-            <h2>[АРХИВ МЛАДШИХ ИССЛЕДОВАТЕЛЕЙ // ДОПУСК: УРОВЕНЬ 1]</h2>
-            <p><b>СЕКТОР:</b> Медико-биологический block сдерживания Евклидов.</p>
-            <p><b>СЮЖЕТ:</b> Экран мигает зеленым. Открываются медицинские карты SCP-173 и SCP-049. Но внезапно по громкой связи раздается страшный металлический скрежет: <i>«Внимание! Сдерживание объекта <b>SCP-096 («Скромник»)</b> сорвано. Он бежит по коридорам медицинского крыла!»</i> В этот же момент железную дверь вырывает с корнем.</p>
-            <hr>
-            <p class="warning-flash">ЭКСТРЕННАЯ СИТУАЦИЯ СДЕРЖИВАНИЯ:</p>
-            <p>Из пролома в стене появляется долговязое бледное существо. Оно закрывает лицо руками и начинает истошно кричать. Каковы ваши действия, чтобы не умереть на месте?</p>
-        </div>
-        <img src="images/scp049.jpg" class="scp-image" alt="SCP-049">
-    </div>
-    <button class="btn" onclick="quizLevel2('бежать')">А: Развернуться и бежать по коридору</button>
-    <button class="btn" style="margin-left: 10px;" onclick="quizLevel2('смотреть')">Б: Взять шокер и смотреть ему прямо в глаза</button>
-    <button class="btn" style="margin-left: 10px;" onclick="quizLevel2('закрыть глаза')">В: Закрыть глаза руками и отвернуться к стене</button>
-</div>
-<div id="block-2" class="terminal status-2 hidden">
-    <div class="flex-container">
-        <div class="story-text">
-            <h2>[ОБОРОННЫЙ СЕРВЕР // СЕКТОР СТАРШИХ ИССЛЕДОВАТЕЛЕЙ // УРОВЕНЬ 2]</h2>
-            <p><b>СЮЖЕТ:</b> Вы выжили в лазарете! Пробравшись через вентиляцию, вы оказываетесь на мостике наблюдения. Снизу идет настоящая война: из кубического саркофага вырвался <b>SCP-076-2 («Авель»)</b>. Он материализует черные мечи прямо из воздуха и вырезает отряды службы безопасности.</p>
-            <p>Капитан МОГ кричит в рацию: <i>«Нам не удержать Авеля! Оператор, вводи девиз организации на русском языке, чтобы разблокировать центральный ядерный пульт Зоны 19!»</i></p>
-            <hr>
-            <p style="color: #ffaa00; font-weight: bold;">[ЗАПРОС АВТОРИЗАЦИИ СЕТИ]:</p>
-            <p>Введите три главных каноничных слова девиза Фонда через пробел (обезопасить удержать сохранить):</p>
-        </div>
-        <img src="images/scp076.jpg" class="scp-image" alt="SCP-076">
-    </div>
-    <button class="btn" onclick="verifyCode('обезопасить удержать сохранить', 'Level_3')">Утвердить девиз Фонда (Уровень 3)</button>
-    <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Выйти из терминала</button>
-</div>
-
-<div id="block-3" class="terminal status-3 hidden">
-    <h2>[СЕКРЕТНЫЙ ЯДЕРНЫЙ ТЕРМИНАЛ // ВЫСШИЙ ДОПУСК // УРОВЕНЬ 3]</h2>
-    <p><b>СЮЖЕТ:</b> Терминал окрашивается в фиолетовый цвет. Вы получили контроль над Альфа-боеголовоками Зоны 19. Авель заперт бронедверями, но датчики фиксируют новую угрозу — в подземных резервуарах проснулась <b>SCP-682 («Неуязвимая рептилия»)</b>.</p>
-    <p>Чтобы перехватить управление и стабилизировать сеть, вам нужно экстренно связаться с Директором Зоны 19 через защищенную линию.</p>
-    <hr>
-    <div style="background: rgba(255,0,255,0.03); padding: 15px; border: 1px dashed #ff00ff;">
-        <p><b>КВАНТОВЫЙ ЗАПРОС СВЯЗИ С АДМИНИСТРАЦИЕЙ:</b><br>
-        Личное дело Директора зашифровано фамимией бессмертного доктора Фонда, чей разум заперт в амулете. Введите его фамилию на русском языке (5 букв).</p>
-    </div>
-    <hr>
-    <button class="btn" onclick="verifyCode('брайт', 'Level_4')">Авторизовать канал Директора (Уровень 4)</button>
-    <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Перезагрузить систему</button>
-</div>
-<div id="block-4" class="terminal status-4 hidden">
-    <h2>[ДИРЕКЦИЯ ЗОНЫ 19 // КАБИНЕТ АДМИНИСТРАТОРА // УРОВЕНЬ 4]</h2>
-    <p><b>СЮЖЕТ:</b> Терминал светится золотом. Вы вошли под учетной записью доктора Брайта. Высший Совет Смотрителей O5 запрашивает Классификацию амнезиака, который используется для полного стирания памяти свидетелей.</p>
-    <hr>
-    <div style="background: rgba(230, 184, 0, 0.03); padding: 15px; border: 1px dashed #e6b800;">
-        <p><b>КРИПТОГРАФИЧЕСКИЙ ТЕСТ СЛУЖБЫ БЕЗОПАСНОСТИ:</b><br>
-        Введите класс этого амнезиака одной большой русской буквой.</p>
-    </div>
-    <button class="btn" onclick="verifyCode('А', 'Level_5')">Подтвердить класс амнезиака (Уровень 5)</button>
-    <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Заблокировать кабинет</button>
-</div>
-
-<div id="block-5" class="terminal status-5 hidden">
-    <h2>[ЦЕНТРАЛЬНЫЙ СЕРВЕР НАДЗОРНОГО СОВЕТА O5 // ТАУМИЭЛЬ]</h2>
-    <p><b>ПОЛЬЗОВАТЕЛЬ:</b> O5-13 (Смотритель).</p>
-    <p><b>СЮЖЕТ:</b> Терминал погружается в абсолютную черно-белую гамму. Перед вами открываются файлы **SCP-001 («Страж Врат»)**. Вы узнаете страшную правду: мир работает, потому что Фонд удерживает реальность от распада. Но прямо сейчас сектор Кэтер под угрозой полного уничтожения рептилией.</p>
-    <hr>
-    <div style="background: rgba(255,255,255,0.05); padding: 15px; border: 1px solid #fff;">
-        <p><b>ДИРЕКТИВА СМОТРИТЕЛЕЙ:</b><br>
-        «Мы существуем во тьме, чтобы вы жили в свете. Неуязвимая рептилия вырвалась наружу. Немедленно эвакуируйтесь в аварийный отсек кислотного удержания и подавите прорыв».</p>
-    </div>
-    <hr>
-    <button class="btn" onclick="localStorage.setItem('scp_secure_level', 'Level_Keter'); checkAccess();">Экстренная эвакуация в Сектор Кэтер</button>
-    <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Очистить память (Сброс)</button>
-</div>
-<div id="block-keter" class="terminal status-keter hidden">
-    <div class="flex-container">
-        <div class="story-text">
-            <h2>[ВНИМАНИЕ: СЕКТОР КЕТЕР // АВАРИЙНЫЙ ОТСЕК КИСЛОТНОГО УДЕРЖАНИЯ]</h2>
-            <p><b>СЮЖЕТ:</b> Терминал полыхает багровым! Огромная **SCP-682 («Неуязвимая рептилия»)** крушит стены и пытается добраться до вас. Из вентиляции лезет жуткий **SCP-1048**, а из темноты тянутся склизкие руки **SCP-106**.</p>
-            <hr>
-            <div style="background: rgba(255,0,0,0.03); padding: 15px; border: 1px dashed #ff1111;">
-                <p class="warning-flash">ФИНАЛЬНЫЙ СЮЖЕТНЫЙ ТЕСТ ФОНДА:</p>
-                <p>Чтобы залить бак гидрохлоридной кислотой и усыпить рептилию, введите позывной штурмовой Мобильной Опергруппы Зоны 19 («Девятихвостая лиса») на русском языке в формате "название-число".</p>
+    <!-- ПОВСТАНЦЫ ХАОСА -->
+    <div id="block-chaos" class="terminal hidden text-chaos">
+        <div class="flex-container">
+            <div class="story-text">
+                <h2>[ВЗЛОМ СИСТЕМЫ // ПОВСТАНЦЫ ХАОСА // CI-TERMINAL]</h2>
+                <p><b>СТАТУС ПОДКЛЮЧЕНИЯ:</b> Хакерский прокси-канал развернут Дельта-Командованием.</p>
+                <p><b>СЮЖЕТ:</b> Монитор перекрашивается в ядовито-зеленый цвет. Из динамиков доносится голос оперативника Повстанцев: <i>«Отличная работа, агент. Смотрители O5 лгали тебе. Мы готовы взорвать комплекс Альфа-боеголовками».</i></p>
+                <hr class="hr-chaos">
+                <div class="box-chaos">
+                    <p><b>ШИФР ДЕТОНАЦИИ ДЕЛЬТА-КОМАНДОВАНИЯ:</b></p>
+                    <p>Введите кодовое название нашей главной штурмовой ячейки — имя мифического многоголового чудовища на русском языке (5 букв).</p>
+                </div>
             </div>
+            <img src="images/chaos.jpg" class="scp-image" alt="Chaos">
         </div>
-        <img src="images/scp682.jpg" class="scp-image" alt="SCP-682">
+        <hr class="hr-chaos">
+        <input type="text" id="input-block-chaos" placeholder="Введите шифр...">
+        <button class="btn btn-chaos" onclick="quizChaos()">Активировать заряды и предать Фонд</button>
+        <button class="btn btn-chaos btn-half-opacity" onclick="resetProgress()">Вернуться в симуляцию (Сброс)</button>
     </div>
-    <button class="btn" onclick="quizKeter()">Ввести позывной МОГ и спасти комплекс</button>
-    <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Капитулировать (Сброс)</button>
-</div>
-
-<div id="block-chaos" class="terminal hidden" style="color: #76ff03; border-color: #33691e; box-shadow: 0 0 35px rgba(118, 255, 3, 0.25);">
-    <div class="flex-container">
-        <div class="story-text">
-            <h2>[ВЗЛОМ СИСТЕМЫ // ПОВСТАНЦЫ ХАОСА // CI-TERMINAL]</h2>
-            <p><b>СТАТУС ПОДКЛЮЧЕНИЯ:</b> Хакерский прокси-канал развернут Дельта-Командованием.</p>
-            <p><b>СЮЖЕТ:</b> Монитор перекрашивается в ядовито-зеленый цвет. Из динамиков доносится голос оперативника Повстанцев: <i>«Отличная работа, агент. Смотрители О5 лгали тебе. Мы готовы взорвать комплекс Альфа-боеголовоками»</i>.</p>
-            <hr style="border-color: #76ff03; opacity: 0.5;">
-            <div style="background: rgba(118,255,3,0.03); padding: 15px; border: 1px dashed #76ff03;">
-                <p><b>ШИФР ДЕТОНАЦИИ ДЕЛЬТА-КОМАНДОВАНИЯ:</b><br>
-                Введите кодовое название нашей главной штурмовой ячейки — имя мифического многоголового чудовища на русском языке (5 букв).</p>
-            </div>
-        </div>
-        <img src="images/chaos.jpg" class="scp-image" alt="Chaos">
-    </div>
-    <button class="btn" style="color: #76ff03; border-color: #76ff03;" onclick="quizChaos()">Aктивировать заряды и предать Фонд</button>
-    <button class="btn" style="color: #76ff03; border-color: #76ff03; margin-left: 10px; opacity: 0.6;" onclick="resetProgress()">Вернуться в симуляцию (Сброс)</button>
-</div>
 
     <script src="script.js"></script>
 </body>
