@@ -3,18 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <title>Project: Keter</title>
-    <!-- Подключаем внешний файл стилей -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Верхняя статус-панель (изначально скрыта в меню) -->
     <div class="top-panel hidden" id="player-panel">
         <div class="xp-display">СОТРУДНИК: <span id="player-rank" style="color: #ff4444;">ЗАГРУЗКА...</span> | ОПЫТ: <span id="player-xp" style="color: #fff;">0</span> XP</div>
         <button class="btn btn-archive" id="archive-toggle-btn" onclick="toggleArchiveView()">[ОТКРЫТЬ АРХИВ ОБЪЕКТОВ]</button>
     </div>
 
-<!-- ================= БЛОК: ГЛАВНОЕ МЕНЮ (НОВОЕ) ================= -->
 <div id="block-menu" class="terminal" style="color: #00ff66; border-color: #00ff66;">
     <div class="menu-container">
         <h1 style="letter-spacing: 5px; text-shadow: 0 0 10px #00ff66;">PROJECT: KETER</h1>
@@ -26,13 +23,10 @@
         </div>
     </div>
 </div>
-
-<!-- ================= БЛОК: ЭНЦИКЛОПЕДИЯ ОБЪЕКТОВ ================= -->
 <div id="block-encyclopedia" class="terminal hidden" style="color: #ffaa00; border-color: #ffaa00;">
     <h2>[ЦЕНТРАЛЬНЫЙ СПРАВОЧНИК АНОМАЛИЙ // PROJECT: KETER]</h2>
     <p>Доступ к файлам и фото-отчетам разблокируется автоматически при прохождении.</p>
     <hr style="border-color: #ffaa00;">
-
     <div class="archive-grid">
         <div id="card-scp173" class="object-card">
             <h3>• SCP-173 («Скульптура»)</h3>
@@ -58,7 +52,7 @@
         <div id="card-scp096" class="object-card">
             <h3>• SCP-096 («Скромник»)</h3>
             <img src="images/scp096.jpg" class="scp-image" alt="SCP-096">
-            <p><b>Класс:</b> Евклид. Впадает в ярость, если посмотреть на его лицо. Уничтожает цель со 100% вероятностью.</p>
+            <p><b>Класс:</b> Евклид. Впадает в ярость, если посмотреть на его лицо. Уничтожает цель.</p>
         </div>
         <div id="card-scp096-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Встретьте объект на Уровне 2]</div>
 
@@ -72,7 +66,7 @@
         <div id="card-scp682" class="object-card">
             <h3>• SCP-682 («Неуязвимая рептилия»)</h3>
             <img src="images/scp682.jpg" class="scp-image" alt="SCP-682">
-            <p><b>Класс:</b> Кетер. Обладает абсолютной регенерацией. Ненавидит всю органическую жизнь.</p>
+            <p><b>Класс:</b> Кетер. Обладает абсолютной регенерацией. Ненавидит всю жизнь.</p>
         </div>
         <div id="card-scp682-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Доберитесь до Сектора Кетер]</div>
     </div>
@@ -80,7 +74,6 @@
     <button class="btn" style="color: #ffaa00; border-color: #ffaa00;" id="archive-close-btn" onclick="toggleArchiveView()">Вернуться</button>
 </div>
 
-<!-- СИНХРОНИЗАЦИЯ СЕТИ -->
 <div id="loading-screen" class="terminal" style="display: none; text-align: center;">
     <h2>ИНИЦИАЛИЗАЦИЯ ПОТОКОВ ДАННЫХ PROJECT: KETER...</h2>
     <div class="progress-container">
@@ -88,7 +81,6 @@
     </div>
     <p id="p-text" style="margin-top: 15px; font-weight: bold; font-size: 18px;">0%</p>
 </div>
-<!-- ================= БЛОК КЛАССА D ================= -->
 <div id="block-d" class="terminal status-d hidden">
     <h2>[БЛОК ЗАДЕРЖАНИЯ D-CLASS // СЕКТОР ТЕСТИРОВАНИЯ]</h2>
     <p><b>СУБЪЕКТ:</b> D-9341 (Бывший доктор, разжалован за нарушение секретности).</p>
@@ -99,7 +91,6 @@
     <button class="btn" onclick="quizLevel0()">Ввести число и открыть шлюз</button>
 </div>
 
-<!-- ================= БЛОК УРОВНЯ 0 ================= -->
 <div id="block-0" class="terminal status-0 hidden">
     <h2>[СЕТЬ ТЕХНИЧЕСКОГО ОБЕСПЕЧЕНИЯ // ДОПУСК: УРОВЕНЬ 0]</h2>
     <div class="flex-container">
@@ -108,7 +99,7 @@
             <p><b>СЮЖЕТ:</b> Вы выбрались из камеры! В туннеле темно, но вдруг из-за угла выкатывается дружелюбная оранжевая масса — это <b>SCP-999 («Щекоточный монстр»)</b>. Он забавно урчит, и страх отступает. Рядом лежит КПК погибшего электрика Михалыча с открытой служебной запиской.</p>
             <hr>
             <h3>ПЕРЕХВАТ ЛОГОВ (ОТДЕЛ СНАБЖЕНИЯ // СТАТУС: ТРУДЯГА):</h3>
-            <p><i>"Ребята из лазарета кодируют свои терминалы архива простым русским словом, обозначающим профессию Чумного доктора. Слово из 5 букв. Вроде пишется как <b style="color: #fff; text-shadow: 0 0 5px #33ccff;">медик</b>. Введите его в консоль ниже".</i></p>
+            <p><i>"Ребята из лазарета кодируют свои терминалы архива простым русским словом, обозначающим профессию Чумного доктора. Слово из 5 букв. Введите его в консоль ниже. Подсказка: <b style="color: #fff; text-shadow: 0 0 5px #33ccff;">медик</b>".</i></p>
         </div>
         <img src="images/scp999.jpg" class="scp-image" alt="SCP-999">
     </div>
@@ -117,12 +108,11 @@
     <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Сбросить терминал</button>
 </div>
 
-<!-- ================= БЛОК УРОВНЯ 1 ================= -->
 <div id="block-1" class="terminal status-1 hidden">
     <div class="flex-container">
         <div class="story-text">
             <h2>[АРХИВ МЛАДШИХ ИССЛЕДОВАТЕЛЕЙ // ДОПУСК: УРОВЕНЬ 1]</h2>
-            <p><b>СЕКТОР:</b> Медико-биологический блок сдерживания Евклидов.</p>
+            <p><b>СЕКТОР:</b> Медико-биологический block сдерживания Евклидов.</p>
             <p><b>СЮЖЕТ:</b> Экран мигает зеленым. Открываются медицинские карты SCP-173 и SCP-049. Но внезапно по громкой связи раздается страшный металлический скрежет: <i>«Внимание! Сдерживание объекта <b>SCP-096 («Скромник»)</b> сорвано. Он бежит по коридорам медицинского крыла!»</i> В этот же момент железную дверь вырывает с корнем.</p>
             <hr>
             <p class="warning-flash">ЭКСТРЕННАЯ СИТУАЦИЯ СДЕРЖИВАНИЯ:</p>
@@ -134,8 +124,6 @@
     <button class="btn" style="margin-left: 10px;" onclick="quizLevel2('смотреть')">Б: Взять шокер и смотреть ему прямо в глаза</button>
     <button class="btn" style="margin-left: 10px;" onclick="quizLevel2('закрыть глаза')">В: Закрыть глаза руками и отвернуться к стене</button>
 </div>
-
-<!-- ================= БЛОК УРОВНЯ 2 ================= -->
 <div id="block-2" class="terminal status-2 hidden">
     <div class="flex-container">
         <div class="story-text">
@@ -152,7 +140,6 @@
     <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Выйти из терминала</button>
 </div>
 
-<!-- ================= БЛОК УРОВНЯ 3 ================= -->
 <div id="block-3" class="terminal status-3 hidden">
     <h2>[СЕКРЕТНЫЙ ЯДЕРНЫЙ ТЕРМИНАЛ // ВЫСШИЙ ДОПУСК // УРОВЕНЬ 3]</h2>
     <p><b>СЮЖЕТ:</b> Терминал окрашивается в фиолетовый цвет. Вы получили контроль над Альфа-боеголовоками Зоны 19. Авель заперт бронедверями, но датчики фиксируют новую угрозу — в подземных резервуарах проснулась <b>SCP-682 («Неуязвимая рептилия»)</b>.</p>
@@ -166,8 +153,6 @@
     <button class="btn" onclick="verifyCode('брайт', 'Level_4')">Авторизовать канал Директора (Уровень 4)</button>
     <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Перезагрузить систему</button>
 </div>
-
-<!-- ================= БЛОК УРОВНЯ 4 ================= -->
 <div id="block-4" class="terminal status-4 hidden">
     <h2>[ДИРЕКЦИЯ ЗОНЫ 19 // КАБИНЕТ АДМИНИСТРАТОРА // УРОВЕНЬ 4]</h2>
     <p><b>СЮЖЕТ:</b> Терминал светится золотом. Вы вошли под учетной записью доктора Брайта. Высший Совет Смотрителей O5 запрашивает Классификацию амнезиака, который используется для полного стирания памяти свидетелей.</p>
@@ -179,7 +164,7 @@
     <button class="btn" onclick="verifyCode('А', 'Level_5')">Подтвердить класс амнезиака (Уровень 5)</button>
     <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Заблокировать кабинет</button>
 </div>
-<!-- ================= БЛОК УРОВНЯ 5 ================= -->
+
 <div id="block-5" class="terminal status-5 hidden">
     <h2>[ЦЕНТРАЛЬНЫЙ СЕРВЕР НАДЗОРНОГО СОВЕТА O5 // ТАУМИЭЛЬ]</h2>
     <p><b>ПОЛЬЗОВАТЕЛЬ:</b> O5-13 (Смотритель).</p>
@@ -193,8 +178,6 @@
     <button class="btn" onclick="localStorage.setItem('scp_secure_level', 'Level_Keter'); checkAccess();">Экстренная эвакуация в Сектор Кэтер</button>
     <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Очистить память (Сброс)</button>
 </div>
-
-<!-- ================= БЛОК УРОВНЯ: СЕКТОР КЕТЕР ================= -->
 <div id="block-keter" class="terminal status-keter hidden">
     <div class="flex-container">
         <div class="story-text">
@@ -212,7 +195,6 @@
     <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Капитулировать (Сброс)</button>
 </div>
 
-<!-- ================= БЛОК ПОВСТАНЦЕВ ХАОСА ================= -->
 <div id="block-chaos" class="terminal hidden" style="color: #76ff03; border-color: #33691e; box-shadow: 0 0 35px rgba(118, 255, 3, 0.25);">
     <div class="flex-container">
         <div class="story-text">
@@ -231,7 +213,6 @@
     <button class="btn" style="color: #76ff03; border-color: #76ff03; margin-left: 10px; opacity: 0.6;" onclick="resetProgress()">Вернуться в симуляцию (Сброс)</button>
 </div>
 
-    <!-- Подключаем внешний файл логики -->
     <script src="script.js"></script>
 </body>
 </html>
