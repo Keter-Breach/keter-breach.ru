@@ -5,34 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project: Keter — SCP Foundation Access</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Подключаем Three.js для 3D графики -->
+    <!-- Three.js для 3D графики -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <!-- ОВЕРЛЕЙ ДЛЯ АВТОЗАПУСКА ЗВУКА И ИНИЦИАЛИЗАЦИИ -->
+    <!-- ОВЕРЛЕЙ ДЛЯ ВКЛЮЧЕНИЯ ПИТАНИЯ И ЗВУКА -->
     <div id="start-overlay" onclick="initAudioAndApp()">
         <div class="overlay-content">
             <h1 class="glitch-text">PROJECT: KETER</h1>
-            <p>НАЖМИТЕ В ЛЮБОМ МЕСТЕ ДЛЯ ВКЛЮЧЕНИЯ ПИТАНИЯ ТЕРМИНАЛА И ЗВУКОВОЙ СИСТЕМЫ</p>
+            <p>НАЖМИТЕ ДЛЯ ВКЛЮЧЕНИЯ ТЕРМИНАЛА И ПИТАНИЯ ЗОНЫ 19</p>
         </div>
     </div>
 
-    <!-- 3D CANVAS ДЛЯ ИГРЫ ОТ ПЕРВОГО ЛИЦА -->
+    <!-- 3D CANVAS ДЛЯ ИГРЫ -->
     <canvas id="game-canvas" class="hidden"></canvas>
 
-    <!-- ПРИЦЕЛ ДЛЯ ИГРЫ ОТ ПЕРВОГО ЛИЦА -->
+    <!-- ПРИЦЕЛ -->
     <div id="crosshair" class="hidden">+</div>
     
-    <!-- ПОДСКАЗКА ВЗАИМОДЕЙСТВИЯ -->
-    <div id="interaction-prompt" class="hidden">Нажмите [E] для взаимодействия с терминалом</div>
+    <!-- ИНДИКАТОР ВЗАИМОДЕЙСТВИЯ -->
+    <div id="interaction-prompt" class="hidden">Нажмите [E] для консоли доступа</div>
 
-    <!-- ВЕРХНЯЯ ПАНЕЛЬ ИГРОКА -->
+    <!-- МЕХАНИКА МОРГАНИЯ (ИНТЕРФЕЙС ИГРОКА) -->
+    <div id="blink-container" class="hidden">
+        <div class="blink-label">ЗРИТЕЛЬНЫЙ КОНТАКТ</div>
+        <div id="blink-bar-outer">
+            <div id="blink-bar-inner"></div>
+        </div>
+        <div class="blink-hint">[ПРОБЕЛ] — моргнуть заранее</div>
+    </div>
+
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
     <div id="player-panel" class="hidden">
         <div class="panel-item">ПРОТОКОЛ: <span id="player-rank">Агент C-492</span></div>
         <div class="panel-item">XP: <span id="player-xp">0</span></div>
-        <button class="btn-small" onclick="toggleArchiveView()">БАЗА ДАННЫХ KETER</button>
-        <button class="btn-small btn-danger" onclick="exitGame()">ПРЕРВАТЬ СЕАНС</button>
+        <button class="btn-small" onclick="toggleArchiveView()">БАЗА KETER</button>
+        <button class="btn-small btn-danger" onclick="exitGame()">ВЫХОД</button>
     </div>
 
     <div class="container">
@@ -41,49 +50,49 @@
         <div id="block-menu" class="terminal hidden">
             <h1 class="glitch-text">PROJECT: KETER</h1>
             <h2>ФОНД SCP — ЗОНА 19 [АВАРИЙНЫЙ РЕЖИМ]</h2>
-            <p class="warning-text">ВНИМАНИЕ: Нарушение условий сдержания класса Кэтер. Активирован локальный протокол карантина.</p>
-            <p class="lore-text">Персонаж: Спецагент Коулман (Агент C-492). Место появления: Сектор Сдерживания D-Класса.</p>
+            <p class="warning-text">ВНИМАНИЕ: Скульптура SCP-173 покинула камеру сдержания.</p>
+            <p class="lore-text">Задание: Не спускайте глаз с объекта. Доберитесь до терминала шлюза и введите код блокировки.</p>
             
             <div class="menu-buttons">
                 <button class="btn-main" onclick="startGame3D()">ПРИСТУПИТЬ К ЗАДАЧЕ</button>
-                <button class="btn-main" onclick="openArchiveFromMenu()">БАЗА ДАННЫХ ОБЪЕКТОВ</button>
+                <button class="btn-main" onclick="openArchiveFromMenu()">АРХИВ ОБЪЕКТОВ</button>
                 <button class="btn-main btn-danger" onclick="resetProgress()">СБРОСИТЬ ПРОГРЕСС</button>
             </div>
         </div>
 
-        <!-- ТЕРМИНАЛ ЗАДАЧИ (ОТКРЫВАЕТСЯ ПРИ ПОДОХОДЕ К КОНСОЛИ В 3D) -->
+        <!-- ТЕРМИНАЛ ЗАДАЧИ 1 -->
         <div id="block-d" class="terminal hidden">
-            <h3>[ЗАДАЧА 1] СЕКТОР СОДЕРЖАНИЯ D-КЛАССА</h3>
-            <p>Вы подошли к терминалу контроля дверей. На полу видны следы повреждений. Гермодверь заблокирована.</p>
+            <h3>[ТЕРМИНАЛ D-1] БЛОКИРОВКА ШЛЮЗА</h3>
+            <p>Экран консоли мигает аварийным жёлтым цветом.</p>
             <p class="question">«Сколько сотрудников Class-D требуется для поддержания зрительного контакта и очистки камеры SCP-173?»</p>
             
             <div class="input-group">
-                <input type="text" id="input-block-d" placeholder="Введите количество..." autocomplete="off">
-                <button onclick="verifyCode('block-d')">ПОДТВЕРДИТЬ</button>
+                <input type="text" id="input-block-d" placeholder="Введите ответ..." autocomplete="off">
+                <button onclick="verifyCode('block-d')">ОТПРАВИТЬ</button>
             </div>
-            <button class="btn-small" style="margin-top: 15px;" onclick="closeTerminal()">ОТОЙТИ ОТ ТЕРМИНАЛА</button>
+            <button class="btn-small" style="margin-top: 15px;" onclick="closeTerminal()">ВЫЙТИ ИЗ КОНСОЛИ</button>
         </div>
 
-        <!-- БЛОК ЭНЦИКЛОПЕДИИ / АРХИВА -->
+        <!-- АРХИВ -->
         <div id="block-encyclopedia" class="terminal hidden">
-            <h2>АРХИВ ОБЪЕКТОВ PROJECT: KETER</h2>
+            <h2>АРХИВ ОБЪЕКТОВ</h2>
             <div class="archive-grid">
                 <div id="card-scp173" class="archive-card hidden">
                     <h4>SCP-173 — Скульптура</h4>
                     <p><b>Класс:</b> Евклид</p>
-                    <p>Перемещается при разрыве зрительного контакта.</p>
+                    <p>Состоит из бетона и арматуры. Крайне враждебен. Перемещается при разрыве зрительного контакта.</p>
                 </div>
                 <div id="card-scp173-locked" class="archive-card locked">
                     <h4>SCP-173 — [ЗАСЕКРЕЧЕНО]</h4>
-                    <p>Исследуйте Сектор D для разблокировки.</p>
+                    <p>Завершите задачу в блоке D.</p>
                 </div>
             </div>
-            <button class="btn-main" onclick="toggleArchiveView()" style="margin-top: 20px;">ЗАКРЫТЬ АРХИВ</button>
+            <button class="btn-main" onclick="toggleArchiveView()" style="margin-top: 20px;">ЗАКРЫТЬ</button>
         </div>
 
     </div>
 
-    <!-- АУДИОФАЙЛЫ -->
+    <!-- АУДИО -->
     <audio id="snd-glitch" src="audio/glitch.mp3" preload="auto"></audio>
     <audio id="snd-static" src="audio/static.mp3" loop preload="auto"></audio>
     <audio id="snd-vhs" src="audio/vhs.mp3" loop preload="auto"></audio>
