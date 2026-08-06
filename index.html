@@ -8,10 +8,24 @@
 </head>
 <body>
 
-    <div class="top-panel" id="player-panel">
+    <!-- Верхняя статус-панель (изначально скрыта в меню) -->
+    <div class="top-panel hidden" id="player-panel">
         <div class="xp-display">СОТРУДНИК: <span id="player-rank" style="color: #ff4444;">ЗАГРУЗКА...</span> | ОПЫТ: <span id="player-xp" style="color: #fff;">0</span> XP</div>
         <button class="btn btn-archive" id="archive-toggle-btn" onclick="toggleArchiveView()">[ОТКРЫТЬ АРХИВ ОБЪЕКТОВ]</button>
     </div>
+
+<!-- ================= БЛОК: ГЛАВНОЕ МЕНЮ (НОВОЕ) ================= -->
+<div id="block-menu" class="terminal" style="color: #00ff66; border-color: #00ff66;">
+    <div class="menu-container">
+        <h1 style="letter-spacing: 5px; text-shadow: 0 0 10px #00ff66;">PROJECT: KETER</h1>
+        <p style="opacity: 0.7; font-size: 13px;">СИТУАЦИОННЫЙ СИМУЛЯТОР СДЕРЖИВАНИЯ // ЗОНА 19</p>
+        <div class="menu-buttons">
+            <button class="btn" onclick="startGame()">ИГРАТЬ</button>
+            <button class="btn" style="color: #ffaa00; border-color: #ffaa00;" onclick="openArchiveFromMenu()">АРХИВ</button>
+            <button class="btn" style="color: #ff4444; border-color: #ff4444;" onclick="exitGame()">ВЫХОД</button>
+        </div>
+    </div>
+</div>
 
 <!-- ================= БЛОК: ЭНЦИКЛОПЕДИЯ ОБЪЕКТОВ ================= -->
 <div id="block-encyclopedia" class="terminal hidden" style="color: #ffaa00; border-color: #ffaa00;">
@@ -37,7 +51,7 @@
         <div id="card-scp999" class="object-card">
             <h3>• SCP-999 («Щекоточный монстр»)</h3>
             <img src="images/scp999.jpg" class="scp-image" alt="SCP-999">
-            <p><b>Класс:</b> Безопасный. Оранжевое желе. Вы вызывает у существ приливы эйфории.</p>
+            <p><b>Класс:</b> Безопасный. Оранжевое желе. Вызывает у существ приливы эйфории.</p>
         </div>
         <div id="card-scp999-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Найдите объект на Уровне 0]</div>
 
@@ -63,7 +77,7 @@
         <div id="card-scp682-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Доберитесь до Сектора Кетер]</div>
     </div>
     <hr style="border-color: #ffaa00;">
-    <button class="btn" style="color: #ffaa00; border-color: #ffaa00;" onclick="toggleArchiveView()">Вернуться в терминал</button>
+    <button class="btn" style="color: #ffaa00; border-color: #ffaa00;" id="archive-close-btn" onclick="toggleArchiveView()">Вернуться</button>
 </div>
 
 <!-- СИНХРОНИЗАЦИЯ СЕТИ -->
@@ -74,8 +88,7 @@
     </div>
     <p id="p-text" style="margin-top: 15px; font-weight: bold; font-size: 18px;">0%</p>
 </div>
-
-    <!-- ================= БЛОК КЛАССА D ================= -->
+<!-- ================= БЛОК КЛАССА D ================= -->
 <div id="block-d" class="terminal status-d hidden">
     <h2>[БЛОК ЗАДЕРЖАНИЯ D-CLASS // СЕКТОР ТЕСТИРОВАНИЯ]</h2>
     <p><b>СУБЪЕКТ:</b> D-9341 (Бывший доктор, разжалован за нарушение секретности).</p>
@@ -138,6 +151,7 @@
     <button class="btn" onclick="verifyCode('обезопасить удержать сохранить', 'Level_3')">Утвердить девиз Фонда (Уровень 3)</button>
     <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Выйти из терминала</button>
 </div>
+
 <!-- ================= БЛОК УРОВНЯ 3 ================= -->
 <div id="block-3" class="terminal status-3 hidden">
     <h2>[СЕКРЕТНЫЙ ЯДЕРНЫЙ ТЕРМИНАЛ // ВЫСШИЙ ДОПУСК // УРОВЕНЬ 3]</h2>
@@ -165,7 +179,6 @@
     <button class="btn" onclick="verifyCode('А', 'Level_5')">Подтвердить класс амнезиака (Уровень 5)</button>
     <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Заблокировать кабинет</button>
 </div>
-
 <!-- ================= БЛОК УРОВНЯ 5 ================= -->
 <div id="block-5" class="terminal status-5 hidden">
     <h2>[ЦЕНТРАЛЬНЫЙ СЕРВЕР НАДЗОРНОГО СОВЕТА O5 // ТАУМИЭЛЬ]</h2>
