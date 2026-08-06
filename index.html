@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCP Foundation — Terminal Access</title>
+    <title>Project: Keter — Terminal Access</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- ВЕРХНЯЯ ПАНЕЛЬ ИГРОКА (Скрыта в меню) -->
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ ИГРОКА -->
     <div id="player-panel" class="hidden">
-        <div class="panel-item">РАНГ: <span id="player-rank">Подопытный D-9341</span></div>
+        <div class="panel-item">ПРОТОКОЛ: <span id="player-rank">D-9341</span></div>
         <div class="panel-item">XP: <span id="player-xp">0</span></div>
-        <button class="btn-small" onclick="toggleArchiveView()">АРХИВ SCP</button>
+        <button class="btn-small" onclick="toggleArchiveView()">АРХИВ KETER</button>
         <button class="btn-small btn-danger" onclick="exitGame()">ВЫХОД</button>
     </div>
 
@@ -20,7 +20,7 @@
 
         <!-- ГЛАВНОЕ МЕНЮ -->
         <div id="block-menu" class="terminal">
-            <h1 class="glitch-text">SCP FOUNDATION</h1>
+            <h1 class="glitch-text">PROJECT: KETER</h1>
             <h2>СИСТЕМА ЛОКАЛЬНОГО МОНИТОРИНГА ЗОНЫ 19</h2>
             <p class="warning-text">ВНИМАНИЕ: Нарушение условий сдержания. Автоматические системы заблокированы.</p>
             
@@ -33,7 +33,7 @@
 
         <!-- УРОВЕНЬ 0: БЛОК D (SCP-173) -->
         <div id="block-d" class="terminal hidden">
-            <h3>[ТЕРМИНАЛ D-1] СЕКТОР СОДЕРЖАНИЯ D-КЛАССА</h3>
+            <h3>[PROJECT: KETER] СЕКТОР D-CLASS</h3>
             <p>Вы очнулись в камере. Дверь заклинило. На экране горит вопрос системы безопасности:</p>
             <p class="question">«Сколько сотрудников Class-D требуется для очистки камеры SCP-173?»</p>
             
@@ -45,7 +45,7 @@
 
         <!-- УРОВЕНЬ 1: МЕДБЛОК (SCP-999 / SCP-049) -->
         <div id="block-0" class="terminal hidden">
-            <h3>[ТЕРМИНАЛ M-0] МЕДИЦИНСКИЙ ОТСЕК</h3>
+            <h3>[PROJECT: KETER] МЕДИЦИНСКИЙ ОТСЕК</h3>
             <p>Дверь открылась. Вы в коридоре медицинского блока. Введите специализацию доктора, проводившего эксперименты над чумной палочкой (SCP-049):</p>
             <p class="question">«Специализация сотрудника (Чумной ...):»</p>
             
@@ -57,7 +57,7 @@
 
         <!-- УРОВЕНЬ 2: КОРИДОР СЕРВЕРНОЙ (SCP-096) -->
         <div id="block-1" class="terminal hidden">
-            <h3>[ТРЕВОГА] КОРИДОР СЕРВЕРНОЙ B-2</h3>
+            <h3>[PROJECT: KETER] СЕРВЕРНАЯ B-2</h3>
             <p class="warning-text">Из задымленного коридора доносится громкий плач. Это SCP-096 («Скромник»). Вы заходите за угол и видите его спину. Ваша реакция?</p>
             
             <div class="choice-buttons">
@@ -69,7 +69,7 @@
 
         <!-- УРОВЕНЬ 3: СЕКТОР ЕВКЛИД (SCP-076) -->
         <div id="block-2" class="terminal hidden">
-            <h3>[ТЕРМИНАЛ E-2] СЕКТОР ЕВКЛИД</h3>
+            <h3>[PROJECT: KETER] СЕКТОР ЕВКЛИД</h3>
             <p>Вы пробрались в центр управления. Введите девиз Фонда SCP для разблокировки терминала:</p>
             <p class="question">«Три основных слова Фонда (через пробел):»</p>
             
@@ -79,9 +79,9 @@
             </div>
         </div>
 
-        <!-- УРОВЕНЬ 4: АДМИНИСТРАЦИЯ (КЛАСС АМНЕЗИАКА) -->
+        <!-- УРОВЕНЬ 4: АДМИНИСТРАЦИЯ -->
         <div id="block-3" class="terminal hidden">
-            <h3>[ТЕРМИНАЛ A-3] АДМИНИСТРАТИВНЫЙ БЛОК</h3>
+            <h3>[PROJECT: KETER] АДМИНИСТРАТИВНЫЙ БЛОК</h3>
             <p>Главная консоль заблокирована персональным идентификатором Доктора Брайта.</p>
             <p class="question">«Введите фамилию сотрудника, которому запрещено использовать SCP-963:»</p>
             
@@ -91,9 +91,9 @@
             </div>
         </div>
 
-        <!-- УРОВЕНЬ 5: ОЧИСТКА ПАМЯТИ -->
+        <!-- УРОВЕНЬ 5: МЕМЕТИЧЕСКАЯ ОЧИСТКА -->
         <div id="block-4" class="terminal hidden">
-            <h3>[ТЕРМИНАЛ MEM-4] МЕМЕТИЧЕСКИЙ ФИЛЬТР</h3>
+            <h3>[PROJECT: KETER] МЕМЕТИЧЕСКИЙ ФИЛЬТР</h3>
             <p>Для предотвращения заражения когнитивной угрозой введите класс самого распространенного амнезиака стирания памяти:</p>
             <p class="question">«Буква класса амнезиака (Класс ...):»</p>
             
@@ -103,14 +103,14 @@
             </div>
         </div>
 
-        <!-- УРОВЕНЬ 6: ПЕРЕХОД К СЕКТОРУ КЭТЕР -->
+        <!-- УРОВЕНЬ 6: ПЕРЕХОД К KETER-ШЛЮЗУ -->
         <div id="block-5" class="terminal hidden">
-            <h3>[ТЕРМИНАЛ K-5] ШЛЮЗ СЕКТОРА КЭТЕР</h3>
+            <h3>[PROJECT: KETER] ШЛЮЗ СЕКТОРА KETER</h3>
             <p>Вы подходите к шлюзу глубокого сдерживания SCP-682. Все автоматические протоколы отключены.</p>
-            <button class="btn-main btn-danger" onclick="goToKeterSector()">ВОЙТИ В СЕКТОР КЭТЕР</button>
+            <button class="btn-main btn-danger" onclick="goToKeterSector()">ВОЙТИ В СЕКТОР KETER</button>
         </div>
 
-        <!-- ФИНАЛ 1: СЕКТОР КЭТЕР (ФОНД) -->
+        <!-- ФИНАЛ 1: СЕКТОР KETER (ФОНД) -->
         <div id="block-keter" class="terminal hidden">
             <h3>[КРИТИЧЕСКАЯ УГРОЗА] СЕКТОР KETER — SCP-682</h3>
             <p>Рептилия пробивает бак с кислотой! Введите код вызова Мобильной Оперативной Группы:</p>
@@ -137,8 +137,8 @@
 
         <!-- БЛОК ЭНЦИКЛОПЕДИИ / АРХИВА -->
         <div id="block-encyclopedia" class="terminal hidden">
-            <h2>БАЗА ДАННЫХ ОБЪЕКТОВ SCP</h2>
-            <p>Карточки разблокируются по мере прохождения игры:</p>
+            <h2>БАЗА ДАННЫХ PROJECT: KETER</h2>
+            <p>Карточки разблокируются по мере прохождения:</p>
 
             <div class="archive-grid">
                 <!-- SCP-173 -->
