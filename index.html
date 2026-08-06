@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Project: Keter</title>
     <style>
-        /* Базовые CRT-эффекты и атмосферный фон секретного бункера */
+        /* Базовые CRT-эффекты, шрифты и атмосферный фон */
         body { 
             background-image: url('https://unsplash.com');
             background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat;
@@ -13,7 +13,7 @@
         }
         body::after {
             content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
-            background: rgba(3, 4, 5, 0.89); backdrop-filter: blur(5px); z-index: -1; pointer-events: none;
+            background: rgba(3, 4, 5, 0.90); backdrop-filter: blur(5px); z-index: -1; pointer-events: none;
         }
         body::before {
             content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
@@ -32,13 +32,22 @@
         }
         .btn:hover { background: currentColor; color: #030405 !important; box-shadow: 0 0 20px currentColor; }
         
-        .nav-bar { max-width: 850px; margin: 0 auto; text-align: right; }
+        /* ВЕРХНЯЯ ПАНЕЛЬ С РАНГОМ, XP И КНОПКОЙ АРХИВА */
+        .top-panel { max-width: 850px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 4px; border: 1px solid rgba(0,255,102,0.2); }
+        .xp-display { font-weight: bold; font-size: 13px; letter-spacing: 1px; }
         .btn-archive { color: #ffaa00; border-color: #ffaa00; padding: 8px 16px; font-size: 11px; margin-top: 0; }
         .btn-archive:hover { background: #ffaa00; box-shadow: 0 0 15px #ffaa00; }
 
+        /* СТИЛИЗАЦИЯ ИЗОБРАЖЕНИЙ ОБЪЕКТОВ */
+        .scp-image { width: 100%; max-width: 300px; height: auto; border: 1px solid currentColor; margin: 15px 0; filter: grayscale(40%) contrast(1.2); box-shadow: 0 0 15px rgba(0,255,102,0.1); border-radius: 3px; display: block; }
+        .flex-container { display: flex; gap: 25px; align-items: flex-start; }
+        .story-text { flex: 1; }
+
+        /* СЕТКА ЭНЦИКЛОПЕДИИ */
         .archive-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-        .object-card { border: 1px dashed rgba(0, 255, 102, 0.3); padding: 15px; border-radius: 4px; background: rgba(0,0,0,0.5); }
-        .locked-card { color: #555 !important; border-color: #333 !important; text-align: center; padding: 30px 15px; background: rgba(0,0,0,0.2); }
+        .object-card { border: 1px solid rgba(0, 255, 102, 0.3); padding: 15px; border-radius: 4px; background: rgba(0,0,0,0.6); }
+        .object-card .scp-image { max-width: 100%; max-height: 180px; object-fit: cover; margin: 10px 0; }
+        .locked-card { color: #555 !important; border-color: #333 !important; text-align: center; padding: 60px 15px; background: rgba(0,0,0,0.3); font-weight: bold; }
 
         .redacted { background-color: #333; color: #333; padding: 0 5px; cursor: help; transition: color 0.3s, background-color 0.3s; }
         .redacted:hover { color: #fff; background-color: transparent; }
@@ -55,52 +64,59 @@
     </style>
 </head>
 <body>
-    <div class="nav-bar">
+    <div class="top-panel" id="player-panel">
+        <div class="xp-display">СОТРУДНИК: <span id="player-rank" style="color: #ff4444;">ЗАГРУЗКА...</span> | ОПЫТ: <span id="player-xp" style="color: #fff;">0</span> XP</div>
         <button class="btn btn-archive" id="archive-toggle-btn" onclick="toggleArchiveView()">[ОТКРЫТЬ АРХИВ ОБЪЕКТОВ]</button>
     </div>
 
-<!-- ================= БЛОК: СУПЕР-ЭНЦИКЛОПЕДИЯ ОБЪЕКТОВ ================= -->
+<!-- ================= БЛОК: СУПЕР-ЭНЦИКЛОПЕДИЯ С КАРТИНКАМИ ================= -->
 <div id="block-encyclopedia" class="terminal hidden" style="color: #ffaa00; border-color: #ffaa00;">
-    <h2>[БАЗА ДАННЫХ СИНХРОНИЗАЦИИ // PROJECT: KETER]</h2>
-    <p>Доступ к файлам разблокируется автоматически, когда вы сталкиваетесь с аномалиями во время инцидентов в Зоне 19.</p>
+    <h2>[ЦЕНТРАЛЬНЫЙ СПРАВОЧНИК АНОМАЛИЙ // PROJECT: KETER]</h2>
+    <p>Доступ к файлам и фото-отчетам разблокируется автоматически, когда вы сталкиваетесь с аномалиями во время инцидентов в Зоне 19.</p>
     <hr style="border-color: #ffaa00;">
 
     <div class="archive-grid">
         <div id="card-scp173" class="object-card">
-            <h3 style="color: #33ff33;">• SCP-173 («Скульптура»)</h3>
+            <h3>• SCP-173 («Скульптура»)</h3>
+            <img src="https://unsplash.com" class="scp-image" alt="SCP-173">
             <p><b>Класс:</b> Евклид. Двигается со скоростью звука, когда на неё не смотрят. Ломает шею у основания черепа.</p>
         </div>
-        <div id="card-scp173-locked" class="object-card locked-card">[ДАННЫЕ ЗАБЛОКИРОВАНЫ<br>Встретьте объект на Уровне 1]</div>
+        <div id="card-scp173-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Встретьте объект на Уровне 1]</div>
 
         <div id="card-scp049" class="object-card">
-            <h3 style="color: #33ff33;">• SCP-049 («Чумной доктор»)</h3>
-            <p><b>Класс:</b> Евклид. Пытается «вылечить» человечество от Поветрии. Его касание смертельно для клеток.</p>
+            <h3>• SCP-049 («Чумной доктор»)</h3>
+            <img src="https://unsplash.com" class="scp-image" alt="SCP-049">
+            <p><b>Класс:</b> Евклид. Пытается «вылечить» человечество от Поветрии. Его касание смертельно для живых клеток.</p>
         </div>
-        <div id="card-scp049-locked" class="object-card locked-card">[ДАННЫЕ ЗАБЛОКИРОВАНЫ<br>Встретьте объект на Уровне 1]</div>
+        <div id="card-scp049-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Встретьте объект на Уровне 1]</div>
 
         <div id="card-scp999" class="object-card">
-            <h3 style="color: #33ccff;">• SCP-999 («Щекоточный монстр»)</h3>
-            <p><b>Класс:</b> Безопасный. Оранжевая желеобразная масса. Вызывает у существ приливы эйфории. Способен подавить ярость SCP-682.</p>
+            <h3>• SCP-999 («Щекоточный монстр»)</h3>
+            <img src="https://unsplash.com" class="scp-image" alt="SCP-999">
+            <p><b>Класс:</b> Безопасный. Оранжевая желеобразная масса. Вызывает у существ приливы тотальной эйфории и радости.</p>
         </div>
-        <div id="card-scp999-locked" class="object-card locked-card">[ДАННЫЕ ЗАБЛОКИРОВАНЫ<br>Найдите объект на Уровне 0]</div>
+        <div id="card-scp999-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Найдите объект на Уровне 0]</div>
 
         <div id="card-scp096" class="object-card">
-            <h3 style="color: #ffaa00;">• SCP-096 («Скромник»)</h3>
-            <p><b>Класс:</b> Евклид. Худощавый гуманоид. Любой, кто увидит его лицо, становится его целью до полного уничтожения.</p>
+            <h3>• SCP-096 («Скромник»)</h3>
+            <img src="https://unsplash.com" class="scp-image" alt="SCP-096">
+            <p><b>Класс:</b> Евклид. Бледный худой гуманоид. Любой, кто увидит его лицо, становится целью до полного уничтожения.</p>
         </div>
-        <div id="card-scp096-locked" class="object-card locked-card">[ДАННЫЕ ЗАБЛОКИРОВАНЫ<br>Встретьте объект на Уровне 2]</div>
+        <div id="card-scp096-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Встретьте объект на Уровне 2]</div>
 
         <div id="card-scp076" class="object-card">
-            <h3 style="color: #ffaa00;">• SCP-076-2 («Авель»)</h3>
-            <p><b>Класс:</b> Кетер. Бессмертный воин из каменного гроба. Материализует холодное клинковое оружие из пространственных разломов.</p>
+            <h3>• SCP-076-2 («Авель»)</h3>
+            <img src="https://unsplash.com" class="scp-image" alt="SCP-076">
+            <p><b>Класс:</b> Кетер. Бессмертный воин из каменного куба. Материализует клинковое оружие из пространственных разломов.</p>
         </div>
-        <div id="card-scp076-locked" class="object-card locked-card">[ДАННЫЕ ЗАБЛОКИРОВАНЫ<br>Выживите при штурме на Уровне 2]</div>
+        <div id="card-scp076-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Выживите при штурме на Уровне 2]</div>
 
         <div id="card-scp682" class="object-card">
-            <h3 style="color: #ff1111;">• SCP-682 («Неуязвимая рептилия»)</h3>
-            <p><b>Класс:</b> Кетер. Гигантское ящероподобное существо. Регенерирует из отдельных атомов. Адаптируется к любым типам урона.</p>
+            <h3>• SCP-682 («Неуязвимая рептилия»)</h3>
+            <img src="https://unsplash.com" class="scp-image" alt="SCP-682">
+            <p><b>Класс:</b> Кетер. Крупное ящероподобное существо. Регенерирует из отдельных атомов и адаптируется к любой угрозе.</p>
         </div>
-        <div id="card-scp682-locked" class="object-card locked-card">[ДАННЫЕ ЗАБЛОКИРОВАНЫ<br>Доберитесь до Сектора Кетер]</div>
+        <div id="card-scp682-locked" class="object-card locked-card">[ФОТО-МАТЕРИАЛ ЗАБЛОКИРОВАН<br>Доберитесь до Сектора Кетер]</div>
     </div>
     <hr style="border-color: #ffaa00;">
     <button class="btn" style="color: #ffaa00; border-color: #ffaa00;" onclick="toggleArchiveView()">Вернуться в терминал</button>
@@ -115,7 +131,7 @@
     <p id="p-text" style="margin-top: 15px; font-weight: bold; font-size: 18px;">0%</p>
 </div>
 
-    <!-- ================= БЛОК КЛАССА D (ЭКРАН 1) ================= -->
+<!-- ================= БЛОК КЛАССА D (ЭКРАН 1) ================= -->
 <div id="block-d" class="terminal status-d hidden">
     <h2>[БЛОК ЗАДЕРЖАНИЯ D-CLASS // СЕКТОР ТЕСТИРОВАНИЯ]</h2>
     <p><b>СУБЪЕКТ:</b> D-9341 (Бывший доктор <span class="redacted">[ДАННЫЕ УДАЛЕНЫ]</span>, разжалован за нарушение секретности).</p>
@@ -130,14 +146,16 @@
 <!-- ================= БЛОК УРОВНЯ 0 (ЭКРАН 2) ================= -->
 <div id="block-0" class="terminal status-0 hidden">
     <h2>[СЕТЬ ТЕХНИЧЕСКОГО ОБЕСПЕЧЕНИЯ // ДОПУСК: УРОВЕНЬ 0]</h2>
-    <p><b>МЕСТО:</b> Технические туннели сектора снабжения Зоны 19.</p>
-    <p><b>СЮЖЕТ:</b> Вы выбрались из камеры! В туннеле темно, но вдруг из-за угла выкатывается дружелюбная оранжевая масса — это <b>SCP-999 («Щекоточный монстр»)</b>. Он забавно урчит, и страх отступает. Рядом лежит КПК погибшего электрика Михалыча с открытой служебной запиской.</p>
-    <hr>
-    <h3>ПЕРЕХВАТ ЛОГОВ (ОТДЕЛ СНАБЖЕНИЯ // СТАТУС: ТРУДЯГА):</h3>
-    <ul>
-        <li><b>Лог-1:</b> Доктор Клеф экстренно затребовал костюмы химзащиты. Субъект <b>SCP-049</b> («Чумной доктор») пробил стену лазарета и ищет «лекарство».</li>
-        <li><b>Записка Михалыча:</b> <i>"Ребята из лазарета кодируют свои терминалы архива простым русским словом, обозначающим профессию Чумного доктора. Слово из 5 букв. Вроде пишется как <b style="color: #fff; text-shadow: 0 0 5px #33ccff;">медик</b>. Введите его в консоль ниже".</i></li>
-    </ul>
+    <div class="flex-container">
+        <div class="story-text">
+            <p><b>МЕСТО:</b> Технические туннели сектора снабжения Зоны 19.</p>
+            <p><b>СЮЖЕТ:</b> Вы выбрались из камеры! В туннеле темно, но вдруг из-за угла выкатывается дружелюбная оранжевая масса — это <b>SCP-999 («Щекоточный монстр»)</b>. Он забавно урчит, и страх отступает. Рядом лежит КПК погибшего электрика Михалыча с открытой служебной запиской.</p>
+            <hr>
+            <h3>ПЕРЕХВАТ ЛОГОВ (ОТДЕЛ СНАБЖЕНИЯ // СТАТУС: ТРУДЯГА):</h3>
+            <p><i>"Ребята из лазарета кодируют свои терминалы архива простым русским словом, обозначающим профессию Чумного доктора. Слово из 5 букв. Вроде пишется как <b style="color: #fff; text-shadow: 0 0 5px #33ccff;">медик</b>. Введите его в консоль ниже".</i></p>
+        </div>
+        <img src="https://unsplash.com" class="scp-image" alt="SCP-999">
+    </div>
     <hr>
     <button class="btn" onclick="verifyCode('медик', 'Level_1')">Авторизоваться в Архиве Исследований</button>
     <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Сбросить терминал</button>
@@ -146,24 +164,34 @@
 <!-- ================= БЛОК УРОВНЯ 1 (ЭКРАН 3) ================= -->
 <div id="block-1" class="terminal status-1 hidden">
     <h2>[АРХИВ МЛАДШИХ ИССЛЕДОВАТЕЛЕЙ // ДОПУСК: УРОВЕНЬ 1]</h2>
-    <p><b>СЕКТОР:</b> Медико-биологический блок сдерживания Евклидов.</p>
-    <p><b>СЮЖЕТ:</b> Экран мигает зеленым. Открываются медицинские карты SCP-173 и SCP-049. Но внезапно по громкой связи раздается страшный металлический скрежет: <i>«Внимание! Сдерживание объекта <b>SCP-096 («Скромник»)</b> сорвано. Он бежит по коридорам медицинского крыла!»</i> В этот же момент железную дверь вырывает с корнем.</p>
-    <hr>
-    <p class="warning-flash">ЭКСТРЕННАЯ СИТУАЦИЯ СДЕРЖИВАНИЯ:</p>
-    <p>Из пролома в стене появляется долговязое бледное существо. Оно закрывает лицо руками и начинает истошно кричать. Каковы ваши действия, чтобы не умереть на месте?</p>
+    <div class="flex-container">
+        <div class="story-text">
+            <p><b>СЕКТОР:</b> Медико-биологический блок сдерживания Евклидов.</p>
+            <p><b>СЮЖЕТ:</b> Экран мигает зеленым. Открываются медицинские карты SCP-173 и SCP-049. Но внезапно по громкой связи раздается страшный металлический скрежет: <i>«Внимание! Сдерживание объекта <b>SCP-096 («Скромник»)</b> сорвано. Он бежит по коридорам медицинского крыла!»</i> В этот же момент железную дверь вырывает с корнем.</p>
+            <hr>
+            <p class="warning-flash">ЭКСТРЕННАЯ СИТУАЦИЯ СДЕРЖИВАНИЯ:</p>
+            <p>Из пролома в стене появляется долговязое бледное существо. Оно закрывает лицо руками и начинает истошно кричать. Каковы ваши действия, чтобы не умереть на месте?</p>
+        </div>
+        <img src="https://unsplash.com" class="scp-image" alt="SCP-049">
+    </div>
     <button class="btn" onclick="quizLevel2('бежать')">А: Развернуться и бежать по коридору</button>
     <button class="btn" style="margin-left: 10px;" onclick="quizLevel2('смотреть')">Б: Взять шокер и смотреть ему прямо в глаза</button>
     <button class="btn" style="margin-left: 10px;" onclick="quizLevel2('закрыть глаза')">В: Закрыть глаза руками и отвернуться к стене</button>
 </div>
-    
-<!-- ================= БЛОК УРОВНЯ 2 (ЭКРАН 4) ================= -->
+
+    <!-- ================= БЛОК УРОВНЯ 2 (ЭКРАН 4) ================= -->
 <div id="block-2" class="terminal status-2 hidden">
     <h2>[ОБОРОННЫЙ СЕРВЕР // СЕКТОР СТАРШИХ ИССЛЕДОВАТЕЛЕЙ // УРОВЕНЬ 2]</h2>
-    <p><b>СЮЖЕТ:</b> Вы выжили в лазарете! Пробравшись через вентиляцию, вы оказываетесь на мостике наблюдения. Снизу идет настоящая война: из кубического саркофага вырвался <b>SCP-076-2 («Авель»)</b>. Он материализует черные мечи прямо из воздуха и вырезает отряды службы безопасности.</p>
-    <p>Капитан МОГ кричит в рацию: <i>«Нам не удержать Авеля! Оператор, вводи девиз организации на русском языке, чтобы разблокировать центральный ядерный пульт Зоны 19 и выжечь этот сектор термическими зарядами!»</i></p>
-    <hr>
-    <p style="color: #ffaa00; font-weight: bold;">[ЗАПРОС АВТОРИЗАЦИИ СЕТИ]:</p>
-    <p>Введите три главных каноничных слова девиза Фонда через пробел (подсказка: обезопасить...):</p>
+    <div class="flex-container">
+        <div class="story-text">
+            <p><b>СЮЖЕТ:</b> Вы выжили в лазарете! Пробравшись через вентиляцию, вы оказываетесь на мостике наблюдения. Снизу идет настоящая война: из кубического саркофага вырвался <b>SCP-076-2 («Авель»)</b>. Он материализует черные мечи прямо из воздуха и вырезает отряды службы безопасности.</p>
+            <p>Капитан МОГ кричит в рацию: <i>«Нам не удержать Авеля! Оператор, вводи девиз организации на русском языке, чтобы разблокировать центральный ядерный пульт Зоны 19 и выжечь этот сектор термическими зарядами!»</i></p>
+            <hr>
+            <p style="color: #ffaa00; font-weight: bold;">[ЗАПРОС АВТОРИЗАЦИИ СЕТИ]:</p>
+            <p>Введите три главных каноничных слова девиза Фонда через пробел (в формате: слово слово слово):</p>
+        </div>
+        <img src="https://unsplash.com" class="scp-image" alt="SCP-076">
+    </div>
     <button class="btn" onclick="verifyCode('обезопасить удержать сохранить', 'Level_3')">Утвердить девиз Фонда (Уровень 3)</button>
     <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Выйти из терминала</button>
 </div>
@@ -172,7 +200,7 @@
 <div id="block-3" class="terminal status-3 hidden">
     <h2>[СЕКРЕТНЫЙ ЯДЕРНЫЙ ТЕРМИНАЛ // ВЫСШИЙ ДОПУСК // УРОВЕНЬ 3]</h2>
     <p><b>СЮЖЕТ:</b> Терминал окрашивается в фиолетовый цвет. Вы получили контроль над Альфа-боеголовоками Зоны 19. Авель заперт бронедверями, но датчики фиксируют новую угрозу — в подземных резервуарах проснулась <b>SCP-682 («Неуязвимая рептилия»)</b>.</p>
-    <p>Экран искажается помехами, и на нем появляется текстовое сообщение от ИИ Старика. Чтобы перехватить управление, вам нужно экстренно связаться с Директором Зоны 19 через защищенную линию.</p>
+    <p>Чтобы перехватить управление и стабилизировать сеть, вам нужно экстренно связаться с Директором Зоны 19 через защищенную линию.</p>
     <hr>
     <div style="background: rgba(255,0,255,0.03); padding: 15px; border: 1px dashed #ff00ff;">
         <p><b>КВАНТОВЫЙ ЗАПРОС СВЯЗИ С АДМИНИСТРАЦИЕЙ:</b><br>
@@ -182,30 +210,14 @@
     <button class="btn" onclick="verifyCode('брайт', 'Level_4')">Авторизовать канал Директора (Уровень 4)</button>
     <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Перезагрузить систему</button>
 </div>
-
-    <!-- ================= БЛОК УРОВНЯ 4 ================= -->
-<div id="block-4" class="terminal status-4 hidden">
-    <h2>[ДИРЕКЦИЯ ЗОНЫ 19 // СТАТУС: АДМИНИСТРАТОР]</h2>
-    <p><b>УРОВЕНЬ ДОПУСКА:</b> УРОВЕНЬ 4 (Для служебного пользования)</p>
-    <p><b>ДОСТУП ПРЕДОСТАВЛЕН:</b> Доктор <span class="redacted">[ДАННЫЕ УДАЛЕНЫ]</span></p>
-    <hr>
-    <p><b>SCP-106 («Старик»):</b> Прорыв локализован силами МОГ. Протокол «Бедренная дробилка» отработал штатно.</p>
-    <div style="background: rgba(230, 184, 0, 0.03); padding: 15px; border: 1px dashed #e6b800; margin-top: 15px;">
-        <p class="warning-flash">ПРОВЕРКА НА ВЫСШИЙ КВАНТОВЫЙ ДОПУСК (СОВЕТ О5):</p>
-        <p>Терминал Совета запрашивает Классификацию амнезиака, который используется для полного стирания памяти свидетелей. Введите класс одной латинской буквой.</p>
-    </div>
-    <button class="btn" onclick="verifyCode('A', 'Level_5')">Подтвердить класс амнезиака (Уровень 5)</button>
-    <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Заблокировать кабинет</button>
-</div>
-
 <!-- ================= БЛОК УРОВНЯ 4 (ЭКРАН 6) ================= -->
 <div id="block-4" class="terminal status-4 hidden">
     <h2>[ДИРЕКЦИЯ ЗОНЫ 19 // КАБИНЕТ АДМИНИСТРАТОРА // УРОВЕНЬ 4]</h2>
-    <p><b>СЮЖЕТ:</b> Терминал светится золотом. Вы вошли под учетной записью доктора Брайта. Компьютер показывает, что ситуация критическая: <span class="redacted">[ДАННЫЕ УДАЛЕНЫ]</span>. Высший Совет Смотрителей O5 требует подтвердить вашу личность через тест на знание классификации хим-препаратов Фонда.</p>
+    <p><b>СЮЖЕТ:</b> Терминал светится золотом. Вы вошли под учетной записью доктора Брайта. Компьютер показывает, что ситуация критическая: <span class="redacted">[ДАННЫЕ УДАЛЕНЫ]</span>. Высший Совет Смотрителей O5 запрашивает Классификацию амнезиака, который используется для полного стирания памяти свидетелей.</p>
     <hr>
     <div style="background: rgba(230, 184, 0, 0.03); padding: 15px; border: 1px dashed #e6b800;">
         <p><b>КРИПТОГРАФИЧЕСКИЙ ТЕСТ СЛУЖБЫ БЕЗОПАСНОСТИ:</b><br>
-        Для связи с Советом подтвердите класс амнезиака планетарного масштаба, полностью стирающего память свидетелей. Введите класс этого амнезиака одной большой русской буквой.</p>
+        Введите класс этого амнезиака одной большой русской буквой.</p>
     </div>
     <button class="btn" onclick="verifyCode('А', 'Level_5')">Подтвердить класс амнезиака (Уровень 5)</button>
     <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Заблокировать кабинет</button>
@@ -215,7 +227,7 @@
 <div id="block-5" class="terminal status-5 hidden">
     <h2>[ЦЕНТРАЛЬНЫЙ СЕРВЕР НАДЗОРНОГО СОВЕТА O5 // ТАУМИЭЛЬ]</h2>
     <p><b>ПОЛЬЗОВАТЕЛЬ:</b> O5-13 (Смотритель). Высшая инстанция человечества.</p>
-    <p><b>СЮЖЕТ:</b> Терминал погружается в абсолютную черно-белую гамму. Перед вами открываются файлы **SCP-001 («Страж Врат»)**. Это гигантский ангел с огненным мечом на реке Евфрат. Вы узнаете страшную правду: мир работает, потому что Фонд удерживает реальность от распада. Но прямо сейчас сектор Кэтер под угрозой уничтожения.</p>
+    <p><b>СЮЖЕТ:</b> Терминал погружается в абсолютную черно-белую гамму. Перед вами открываются файлы **SCP-001 («Страж Врат»)**. Вы узнаете страшную правду: мир работает, потому что Фонд удерживает реальность от распада. Но прямо сейчас сектор Кэтер под угрозой полного уничтожения рептилией.</p>
     <hr>
     <div style="background: rgba(255,255,255,0.05); padding: 15px; border: 1px solid #fff;">
         <p><b>ДИРЕКТИВА СМОТРИТЕЛЕЙ:</b><br>
@@ -229,11 +241,16 @@
 <!-- ================= БЛОК УРОВНЯ: СЕКТОР КЕТЕР (ЭКРАН 8) ================= -->
 <div id="block-keter" class="terminal status-keter hidden">
     <h2>[ВНИМАНИЕ: СЕКТОР КЕТЕР // АВАРИЙНЫЙ ОТСЕК КИСЛОТНОГО УДЕРЖАНИЯ]</h2>
-    <p><b>СЮЖЕТ:</b> Терминал полыхает багровым! Вы стоите на платформе над огромным резервуаром. Огромная **SCP-682 («Неуязвимая рептилия»)** крушит стены и пытается добраться до вас. Из вентиляции лезет жуткий **SCP-1048 («Мишка-строитель»)**, а из темноты тянутся склизкие руки **SCP-106 («Старика»)**.</p>
-    <hr>
-    <div style="background: rgba(255,0,0,0.03); padding: 15px; border: 1px dashed #ff1111;">
-        <p class="warning-flash">ФИНАЛЬНЫЙ СЮЖЕТНЫЙ ТЕСТ ФОНДА:</p>
-        <p>Чтобы залить бак гидрохлоридной кислотой и усыпить рептилию, введите позывной штурмовой Мобильной Опергруппы Зоны 19 («Девятихвостая лиса») на русском языке в формате "название-число" (через дефис).</p>
+    <div class="flex-container">
+        <div class="story-text">
+            <p><b>СЮЖЕТ:</b> Терминал полыхает багровым! Вы стоите на платформе над огромным резервуаром. Огромная **SCP-682 («Неуязвимая рептилия»)** крушит стены и пытается добраться до вас. Из вентиляции лезет жуткий **SCP-1048**, а из темноты тянутся склизкие руки **SCP-106**.</p>
+            <hr>
+            <div style="background: rgba(255,0,0,0.03); padding: 15px; border: 1px dashed #ff1111;">
+                <p class="warning-flash">ФИНАЛЬНЫЙ СЮЖЕТНЫЙ ТЕСТ ФОНДА:</p>
+                <p>Чтобы залить бак гидрохлоридной кислотой и усыпить рептилию, введите позывной штурмовой Мобильной Опергруппы Зоны 19 («Девятихвостая лиса») на русском языке в формате "название-число".</p>
+            </div>
+        </div>
+        <img src="https://unsplash.com" class="scp-image" alt="SCP-682">
     </div>
     <button class="btn" onclick="quizKeter()">Ввести позывной МОГ и спасти комплекс</button>
     <button class="btn" style="margin-left: 10px; opacity: 0.5;" onclick="resetProgress()">Капитулировать (Сброс)</button>
@@ -242,43 +259,89 @@
 <!-- ================= БЛОК ПОВСТАНЦЕВ ХАОСА (СЕКРЕТНЫЙ ФИНАЛ) ================= -->
 <div id="block-chaos" class="terminal hidden" style="color: #76ff03; border-color: #33691e; box-shadow: 0 0 35px rgba(118, 255, 3, 0.25);">
     <h2>[ВЗЛОМ СИСТЕМЫ // ПОВСТАНЦЫ ХАОСА // CI-TERMINAL]</h2>
-    <p><b>СТАТУС ПОДКЛЮЧЕНИЯ:</b> Хакерский прокси-канал развернут Дельта-Командованием.</p>
-    <p><b>СЮЖЕТ:</b> Монитор перекрашивается в ядовито-зеленый цвет. Протоколы Фонда SCP принудительно отключены. Из динамиков доносится голос оперативника Повстанцев: <i>«Отличная работа, агент. Смотрители О5 лгали тебе. Мы пришли не сдерживать монстров, а использовать их. Мы заперли О5 в бункере и готовы взорвать комплекс Альфа-боеголовоками»</i>.</p>
-    <hr style="border-color: #76ff03; opacity: 0.5;">
-    <div style="background: rgba(118,255,3,0.03); padding: 15px; border: 1px dashed #76ff03;">
-        <p><b>ШИФР ДЕТОНАЦИИ ДЕЛЬТА-КОМАНДОВАНИЯ:</b><br>
-        Введите кодовое название нашей главной штурмовой ячейки — имя мифического многоголового чудовища на русском языке (5 букв, подсказка: змееподобная ...).</p>
+    <div class="flex-container">
+        <div class="story-text">
+            <p><b>СТАТУС ПОДКЛЮЧЕНИЯ:</b> Хакерский прокси-канал развернут Дельта-Командованием.</p>
+            <p><b>СЮЖЕТ:</b> Монитор перекрашивается в ядовито-зеленый цвет. Протоколы Фонда SCP отключены. Из динамиков доносится голос оперативника Повстанцев: <i>«Отличная работа, агент. Смотрители О5 лгали тебе. Мы пришли не сдерживать монстров, а использовать их. Мы готовы взорвать комплекс Альфа-боеголовоками»</i>.</p>
+            <hr style="border-color: #76ff03; opacity: 0.5;">
+            <div style="background: rgba(118,255,3,0.03); padding: 15px; border: 1px dashed #76ff03;">
+                <p><b>ШИФР ДЕТОНАЦИИ ДЕЛЬТА-КОМАНДОВАНИЯ:</b><br>
+                Введите кодовое название нашей главной штурмовой ячейки — имя мифического многоголового чудовища на русском языке (5 букв).</p>
+            </div>
+        </div>
+        <img src="https://unsplash.com" class="scp-image" alt="Chaos">
     </div>
     <button class="btn" style="color: #76ff03; border-color: #76ff03;" onclick="quizChaos()">Активировать заряды и предать Фонд</button>
     <button class="btn" style="color: #76ff03; border-color: #76ff03; margin-left: 10px; opacity: 0.6;" onclick="resetProgress()">Вернуться в симуляцию (Сброс)</button>
 </div>
 
     <script>
-    // Добавляем эффект мигающего текстового курсора ко всем заголовкам при инициализации
+    // Генераторы каноничных звуков терминала через Web Audio API (Без внешних файлов!)
+    let audioCtx = null;
+    function playTerminalSound(type) {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'click') { 
+                osc.type = 'sine'; osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.05);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            } else if (type === 'alarm') { 
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            }
+        } catch(e) { console.log("Audio error"); }
+    }
+
+    // Навешиваем клики на все кнопки сайта и запускаем текстовый курсор
     document.addEventListener("DOMContentLoaded", () => {
         let headers = document.querySelectorAll("h2");
-        headers.forEach(h => {
-            h.innerHTML += '<span class="warning-flash" style="animation: blink 0.8s infinite; color: inherit;">_</span>';
-        });
-        updateArchiveStorage();
+        headers.forEach(h => { h.innerHTML += '<span class="warning-flash" style="animation: blink 0.8s infinite; color: inherit;">_</span>'; });
+        document.querySelectorAll('button').forEach(b => { b.addEventListener('click', () => playTerminalSound('click')); });
+        updateArchiveStorage(); updateXPDisplay();
     });
 
+    // СИСТЕМА ОЧКОВ ОПЫТА И РАНГОВ СОТРУДНИКА
+    function addXP(amount) {
+        let currentXP = parseInt(localStorage.getItem("scp_user_xp") || "0");
+        currentXP += amount;
+        localStorage.setItem("scp_user_xp", currentXP.toString());
+        updateXPDisplay();
+    }
+
+    function updateXPDisplay() {
+        let xp = parseInt(localStorage.getItem("scp_user_xp") || "0");
+        let rankText = "Класс D (Расходник)";
+        let rankColor = "#ff4444";
+
+        if (xp >= 150 && xp < 300) { rankText = "Уровень 0 (Техник базы)"; rankColor = "#33ccff"; }
+        else if (xp >= 300 && xp < 450) { rankText = "Уровень 1 (Лаборант)"; rankColor = "#33ff33"; }
+        else if (xp >= 450 && xp < 600) { rankText = "Уровень 2 (Исследователь)"; rankColor = "#ffaa00"; }
+        else if (xp >= 600 && xp < 750) { rankText = "Уровень 3 (Старший ученый)"; rankColor = "#ff00ff"; }
+        else if (xp >= 750 && xp < 900) { rankText = "Уровень 4 (Директор Зоны)"; rankColor = "#e6b800"; }
+        else if (xp >= 900) { rankText = "Уровень 5 (Смотритель O5)"; rankColor = "#ffffff"; }
+
+        document.getElementById("player-xp").innerText = xp;
+        let rankElement = document.getElementById("player-rank");
+        rankElement.innerText = rankText;
+        rankElement.style.color = rankColor;
+    }
     let isArchiveOpen = false;
     function toggleArchiveView() {
         let mainElements = ['block-d', 'block-0', 'block-1', 'block-2', 'block-3', 'block-4', 'block-5', 'block-keter', 'block-chaos'];
         let archiveBtn = document.getElementById('archive-toggle-btn');
-        
         if (!isArchiveOpen) {
             mainElements.forEach(id => { if(document.getElementById(id)) document.getElementById(id).classList.add('hidden'); });
             document.getElementById('block-encyclopedia').classList.remove('hidden');
-            archiveBtn.innerText = "[ВЕРНУТЬСЯ В ТЕРМИНАЛ]";
-            isArchiveOpen = true;
-            renderArchiveData();
+            archiveBtn.innerText = "[ВЕРНУТЬСЯ В ТЕРМИНАЛ]"; isArchiveOpen = true; renderArchiveData();
         } else {
             document.getElementById('block-encyclopedia').classList.add('hidden');
-            archiveBtn.innerText = "[ОТКРЫТЬ АРХИВ ОБЪЕКТОВ]";
-            isArchiveOpen = false;
-            checkAccess();
+            archiveBtn.innerText = "[ОТКРЫТЬ АРХИВ ОБЪЕКТОВ]"; isArchiveOpen = false; checkAccess();
         }
     }
 
@@ -298,124 +361,70 @@
 
     function updateArchiveStorage() {
         let currentLevel = localStorage.getItem("scp_secure_level") || "Class_D";
-        if (currentLevel === "Level_0") {
-            localStorage.setItem("unlocked_scp999", "true");
-        } else if (currentLevel === "Level_1") {
-            localStorage.setItem("unlocked_scp173", "true");
-            localStorage.setItem("unlocked_scp049", "true");
-        } else if (currentLevel === "Level_2") {
-            localStorage.setItem("unlocked_scp096", "true");
-            localStorage.setItem("unlocked_scp076", "true");
-        } else if (currentLevel === "Level_Keter") {
-            localStorage.setItem("unlocked_scp682", "true");
-        }
+        if (currentLevel === "Level_0") localStorage.setItem("unlocked_scp999", "true");
+        else if (currentLevel === "Level_1") { localStorage.setItem("unlocked_scp173", "true"); localStorage.setItem("unlocked_scp049", "true"); }
+        else if (currentLevel === "Level_2") { localStorage.setItem("unlocked_scp096", "true"); localStorage.setItem("unlocked_scp076", "true"); }
+        else if (currentLevel === "Level_Keter") localStorage.setItem("unlocked_scp682", "true");
     }
-    function checkAccess() {
-        if (isArchiveOpen) return; 
-        updateArchiveStorage();
 
-        document.getElementById('block-d').classList.add('hidden');
-        document.getElementById('block-0').classList.add('hidden');
-        document.getElementById('block-1').classList.add('hidden');
-        document.getElementById('block-2').classList.add('hidden');
-        document.getElementById('block-3').classList.add('hidden');
-        
-        let block4 = document.getElementById('block-4');
-        let block5 = document.getElementById('block-5');
-        let keterBlock = document.getElementById('block-keter');
-        let chaosBlock = document.getElementById('block-chaos');
-        
-        if (block4) block4.classList.add('hidden');
-        if (block5) block5.classList.add('hidden');
-        if (keterBlock) keterBlock.classList.add('hidden');
-        if (chaosBlock) chaosBlock.classList.add('hidden');
+    function checkAccess() {
+        if (isArchiveOpen) return; updateArchiveStorage();
+        let mainElements = ['block-d', 'block-0', 'block-1', 'block-2', 'block-3', 'block-4', 'block-5', 'block-keter', 'block-chaos'];
+        mainElements.forEach(id => { if(document.getElementById(id)) document.getElementById(id).classList.add('hidden'); });
 
         let currentLevel = localStorage.getItem("scp_secure_level") || "Class_D";
+        document.getElementById('player-panel').style.display = (currentLevel === "Level_Chaos") ? "none" : "flex";
 
-        if (currentLevel === "Class_D") {
-            document.getElementById('block-d').classList.remove('hidden');
-            document.body.style.backgroundColor = "#100202"; 
-        } else if (currentLevel === "Level_0") {
-            document.getElementById('block-0').classList.remove('hidden');
-            document.body.style.backgroundColor = "#020a12"; 
-        } else if (currentLevel === "Level_1") {
-            document.getElementById('block-1').classList.remove('hidden');
-            document.body.style.backgroundColor = "#021204"; 
-        } else if (currentLevel === "Level_2") {
-            document.getElementById('block-2').classList.remove('hidden');
-            document.body.style.backgroundColor = "#1a1102"; 
-        } else if (currentLevel === "Level_3") {
-            document.getElementById('block-3').classList.remove('hidden');
-            document.body.style.backgroundColor = "#15021a"; 
-        } else if (currentLevel === "Level_4" && block4) {
-            block4.classList.remove('hidden');
-            document.body.style.backgroundColor = "#1c1701"; 
-        } else if (currentLevel === "Level_5" && block5) {
-            block5.classList.remove('hidden');
-            document.body.style.backgroundColor = "#000000"; 
-        } else if (currentLevel === "Level_Keter" && keterBlock) {
-            keterBlock.classList.remove('hidden');
-            document.body.style.backgroundColor = "#2a0101"; 
-        } else if (currentLevel === "Level_Chaos" && chaosBlock) {
-            chaosBlock.classList.remove('hidden');
-            document.body.style.backgroundColor = "#040d02"; 
-        }
+        if (currentLevel === "Class_D") { document.getElementById('block-d').classList.remove('hidden'); document.body.style.backgroundColor = "#100202"; }
+        else if (currentLevel === "Level_0") { document.getElementById('block-0').classList.remove('hidden'); document.body.style.backgroundColor = "#020a12"; }
+        else if (currentLevel === "Level_1") { document.getElementById('block-1').classList.remove('hidden'); document.body.style.backgroundColor = "#021204"; }
+        else if (currentLevel === "Level_2") { document.getElementById('block-2').classList.remove('hidden'); document.body.style.backgroundColor = "#1a1102"; }
+        else if (currentLevel === "Level_3") { document.getElementById('block-3').classList.remove('hidden'); document.body.style.backgroundColor = "#15021a"; }
+        else if (currentLevel === "Level_4" && document.getElementById('block-4')) { document.getElementById('block-4').classList.remove('hidden'); document.body.style.backgroundColor = "#1c1701"; }
+        else if (currentLevel === "Level_5" && document.getElementById('block-5')) { document.getElementById('block-5').classList.remove('hidden'); document.body.style.backgroundColor = "#000000"; }
+        else if (currentLevel === "Level_Keter" && document.getElementById('block-keter')) { document.getElementById('block-keter').classList.remove('hidden'); document.body.style.backgroundColor = "#2a0101"; }
+        else if (currentLevel === "Level_Chaos" && document.getElementById('block-chaos')) { document.getElementById('block-chaos').classList.remove('hidden'); document.body.style.backgroundColor = "#040d02"; }
     }
     function quizLevel0() {
         let answer = prompt("Сколько выживших сотрудников класса D осталось внутри камеры?");
         if (answer && answer.trim() === "3") {
-            fakeLoad("Level_0", () => {
-                localStorage.setItem("scp_secure_level", "Level_0");
-                checkAccess();
-            });
+            addXP(150); 
+            fakeLoad("Level_0", () => { localStorage.setItem("scp_secure_level", "Level_0"); checkAccess(); });
         } else {
-            triggerGlitch();
-            alert("НЕВЕРНО. Защитные турели активированы. Вы ликвидированы.");
-            resetProgress();
+            triggerGlitch(); alert("НЕВЕРНО. Защитные турели активированы. Ликвидация."); resetProgress();
         }
     }
 
     function quizLevel2(choice) {
         if (choice === 'закрыть глаза') {
-            fakeLoad("Level_2", () => {
-                localStorage.setItem("scp_secure_level", "Level_2");
-                alert("ВЫ СВЕРНУЛИ ЗА УГОЛ И ЗАКРЫЛИ ГЛАЗА. SCP-096 пробежал мимо. Допуск повышен.");
-                checkAccess();
-            });
+            addXP(150);
+            fakeLoad("Level_2", () => { localStorage.setItem("scp_secure_level", "Level_2"); alert("ВЫ СВЕРНУЛИ ЗА УГОЛ И ЗАКРЫЛИ ГЛАЗА. SCP-096 пробежал мимо. Допуск повышен."); checkAccess(); });
         } else {
-            triggerGlitch();
-            alert("КРИТИЧЕСКАЯ ОШИБКА. SCP-096 разорвал вас на части.");
-            resetProgress();
+            triggerGlitch(); alert("КРИТИЧЕСКАЯ ОШИБКА. SCP-096 разорвал вас."); resetProgress();
         }
     }
 
     function quizKeter() {
-        let mogAnswer = prompt("Введите позывной МОГ для усмирения Кэтеров (например: омега-7):");
+        let mogAnswer = prompt("Введите позывной МОГ для усмирения Кэтеров:");
         if (mogAnswer && (mogAnswer.toLowerCase().trim().replace(/ё/g, "е") === "эпсилон-11")) {
-            alert("СИГНАЛ ПРИНЯТ. Силы МОГ Эпсилон-11 («Девятихвостая лиса») вошли в сектор. Бак залит кислотой. Вы победили в симуляции!");
-            resetProgress();
+            addXP(200); alert("СИГНАЛ ПРИНЯТ. Бак залит кислотой. Вы прошли финал Фонда!"); resetProgress();
         } else {
-            triggerGlitch();
-            alert("ОШИБКА. SCP-682 уничтожил терминал вместе с вами.");
-            resetProgress();
+            triggerGlitch(); alert("ОШИБКА. SCP-682 уничтожил терминал вместе с вами."); resetProgress();
         }
     }
 
     function quizChaos() {
-        let chaosAnswer = prompt("Введите кодовое название ударной ячейки Хаоса (5 букв на русском):");
+        let chaosAnswer = prompt("Введите кодовое название ударной ячейки Хаоса:");
         if (chaosAnswer && chaosAnswer.toLowerCase().trim() === "гидра") {
-            alert("КОД ПОДТВЕРЖДЕН. Повстанцы Хаоса взрывают Зону 19! Вы успешно эвакуированы со всеми чертежами. Секретный финал пройден!");
-            resetProgress();
+            alert("КОД ПОДТВЕРЖДЕН. Повстанцы Хаоса взрывают Зону 19! Секретный финал пройден!"); resetProgress();
         } else {
-            triggerGlitch();
-            alert("ВСПЫШКА КВАНТОВОЙ ЗАЩИТЫ. Терминал уничтожен.");
-            resetProgress();
+            triggerGlitch(); alert("ВСПЫШКА КВАНТОВОЙ ЗАЩИТЫ. Терминал уничтожен."); resetProgress();
         }
     }
 
     function triggerGlitch() {
-        document.body.style.transform = "skewX(15deg) scaleY(1.1)";
-        document.body.style.filter = "hue-rotate(90deg) invert(1)";
+        playTerminalSound('alarm'); 
+        document.body.style.transform = "skewX(15deg) scaleY(1.1)"; document.body.style.filter = "hue-rotate(90deg) invert(1)";
         setTimeout(() => { document.body.style.transform = "none"; document.body.style.filter = "none"; }, 150);
     }
 
@@ -424,12 +433,11 @@
         if (!userCode) return;
         let cleanedInput = userCode.toLowerCase().trim().replace(/ё/g, "е");
         
-        // СЕКРЕТНЫЙ ПУТЬ: Ввод слова "хаос" перекидывает к Повстанцам из любого окна!
         if (cleanedInput === "хаос") {
-            fakeLoad("Level_Chaos", () => { localStorage.setItem("scp_secure_level", "Level_Chaos"); checkAccess(); });
-            return;
+            fakeLoad("Level_Chaos", () => { localStorage.setItem("scp_secure_level", "Level_Chaos"); checkAccess(); }); return;
         }
         if (cleanedInput === correctCode.toLowerCase().trim().replace(/ё/g, "е")) {
+            addXP(150);
             fakeLoad(targetLevel, () => { localStorage.setItem("scp_secure_level", targetLevel); checkAccess(); });
         } else {
             triggerGlitch(); alert("ОТКАЗ В ДОСТУПЕ. Неверная сигнатура ключа.");
@@ -437,20 +445,14 @@
     }
 
     function resetProgress() {
+        localStorage.setItem("scp_user_xp", "0"); 
+        updateXPDisplay();
         fakeLoad("Class_D", () => { localStorage.setItem("scp_secure_level", "Class_D"); checkAccess(); });
     }
 
     function fakeLoad(targetLevel, callback) {
-        document.getElementById('block-d').classList.add('hidden');
-        document.getElementById('block-0').classList.add('hidden');
-        document.getElementById('block-1').classList.add('hidden');
-        document.getElementById('block-2').classList.add('hidden');
-        document.getElementById('block-3').classList.add('hidden');
-        if(document.getElementById('block-4')) document.getElementById('block-4').classList.add('hidden');
-        if(document.getElementById('block-5')) document.getElementById('block-5').classList.add('hidden');
-        if(document.getElementById('block-keter')) document.getElementById('block-keter').classList.add('hidden');
-        if(document.getElementById('block-chaos')) document.getElementById('block-chaos').classList.add('hidden');
-        document.getElementById('block-encyclopedia').classList.add('hidden');
+        let mainElements = ['block-d', 'block-0', 'block-1', 'block-2', 'block-3', 'block-4', 'block-5', 'block-keter', 'block-chaos', 'block-encyclopedia'];
+        mainElements.forEach(id => { if(document.getElementById(id)) document.getElementById(id).classList.add('hidden'); });
         
         let screen = document.getElementById('loading-screen');
         let bar = document.getElementById('p-bar'); let text = document.getElementById('p-text');
@@ -468,7 +470,7 @@
         screen.style.display = "block"; let width = 0;
         let interval = setInterval(() => {
             if (width >= 100) { clearInterval(interval); screen.style.display = "none"; callback(); }
-            else { width += 4; bar.style.width = width + '%'; text.innerText = width + '%'; }
+            else { width += 5; bar.style.width = width + '%'; text.innerText = width + '%'; }
         }, 20);
     }
     checkAccess();
