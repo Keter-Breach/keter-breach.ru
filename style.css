@@ -1,7 +1,6 @@
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+  margin: 0; padding: 0;
   font-family: 'Courier New', Courier, monospace;
   user-select: none;
 }
@@ -14,139 +13,54 @@ body {
   align-items: center;
   min-height: 100vh;
   overflow: hidden;
-  position: relative;
 }
 
-/* --- ТЯЖЕЛЫЕ VHS ЭФФЕКТЫ --- */
+/* VHS-Эффекты */
 .vhs-scanlines {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%, 
-    rgba(0, 0, 0, 0.4) 50%
-  );
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%);
   background-size: 100% 3px;
-  z-index: 10;
-  pointer-events: none;
+  z-index: 10; pointer-events: none;
 }
 
 .vhs-noise {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0, 255, 102, 0.03);
-  z-index: 9;
-  pointer-events: none;
+  z-index: 9; pointer-events: none;
   animation: vhs-glitch 0.1s infinite;
 }
 
 .vhs-vignette {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.9) 100%);
-  z-index: 11;
-  pointer-events: none;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.95) 100%);
+  z-index: 11; pointer-events: none;
 }
 
 .vhs-tracking-line {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 8px;
-  background: rgba(255, 255, 255, 0.15);
-  filter: blur(2px);
-  z-index: 12;
-  pointer-events: none;
+  position: fixed; top: 0; left: 0; width: 100%; height: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  filter: blur(2px); z-index: 12; pointer-events: none;
   animation: tracking 6s infinite linear;
 }
 
-@keyframes tracking {
-  0% { top: -10%; }
-  100% { top: 110%; }
-}
+@keyframes tracking { 0% { top: -10%; } 100% { top: 110%; } }
+@keyframes vhs-glitch { 0% { transform: translate(0, 0); } 50% { transform: translate(-1px, 1px); } }
 
-@keyframes vhs-glitch {
-  0% { opacity: 0.8; transform: translate(0, 0); }
-  50% { opacity: 0.5; transform: translate(-1px, 1px); }
-  100% { opacity: 0.9; transform: translate(1px, -1px); }
-}
-
-.vhs-tag {
-  color: #ff0055;
-  font-size: 0.85rem;
-  font-weight: bold;
-  letter-spacing: 2px;
-  text-shadow: 2px 0 #00ffff;
-  margin-bottom: 5px;
-}
-
-/* --- ИНТЕРФЕЙС И 3D --- */
+/* HUD и Текст */
 .game-container {
-  width: 100%;
-  max-width: 800px;
-  background-color: #080808;
-  border: 2px solid #00ff66;
-  padding: 20px;
-  box-shadow: 0 0 25px rgba(0, 255, 102, 0.2);
-  z-index: 1;
+  width: 100%; max-width: 800px;
+  background-color: #080808; border: 2px solid #00ff66;
+  padding: 20px; box-shadow: 0 0 25px rgba(0, 255, 102, 0.2); z-index: 1;
 }
 
-#screen {
-  background-color: #000;
-  border: 1px solid #1a1a1a;
-  padding: 20px;
-  min-height: 180px;
-  margin: 15px 0;
-}
-
-.btn-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 10px;
-}
-
-button {
-  background-color: #111;
-  color: #00ff66;
-  border: 1px solid #00ff66;
-  padding: 12px;
-  cursor: pointer;
-  text-align: left;
-}
-
-button:hover {
-  background-color: #00ff66;
-  color: #000;
-}
+#screen { background-color: #000; border: 1px solid #1a1a1a; padding: 20px; min-height: 180px; margin: 15px 0; }
+.btn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+button { background-color: #111; color: #00ff66; border: 1px solid #00ff66; padding: 12px; cursor: pointer; text-align: left; }
+button:hover { background-color: #00ff66; color: #000; }
 
 .hidden { display: none !important; }
-
-#three-container {
-  position: absolute;
-  top: 0; left: 0; width: 100vw; height: 100vh;
-  z-index: 2;
-}
-
-#crosshair {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  color: #00ff66;
-  font-size: 24px;
-  pointer-events: none;
-  z-index: 5;
-}
-
-.ui-overlay {
-  position: absolute;
-  top: 20px; left: 20px;
-  z-index: 5;
-}
-
-#instructions {
-  position: absolute;
-  bottom: 30px; left: 50%;
-  transform: translateX(-50%);
-  color: #fff;
-  background: rgba(0,0,0,0.8);
-  padding: 10px 20px;
-  border: 1px solid #00ff66;
-  z-index: 5;
-}
+#three-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 2; }
+#crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #00ff66; font-size: 20px; pointer-events: none; z-index: 5; }
+.ui-overlay { position: absolute; top: 20px; left: 20px; z-index: 5; }
+#battery-hud { position: absolute; top: 20px; right: 20px; color: #00ff66; font-weight: bold; z-index: 5; background: rgba(0,0,0,0.7); padding: 5px 10px; border: 1px solid #00ff66; }
+#instructions { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: #fff; background: rgba(0,0,0,0.8); padding: 10px 20px; border: 1px solid #00ff66; z-index: 5; }
