@@ -1,5 +1,5 @@
 // ==========================================
-// ИГРОВОЕ СОСТОЯНИЕ И НАСТРОЙКИ
+// ИГРОВОЕ СОСТОЯНИЕ
 // ==========================================
 
 let gameState = {
@@ -18,7 +18,7 @@ let blinkMeter = 100;
 let isBlinking = false;
 
 // ==========================================
-// ИНИЦИАЛИЗАЦИЯ И УПРАВЛЕНИЕ ENTER
+// ИНИЦИАЛИЗАЦИЯ
 // ==========================================
 
 function initAudioAndApp() {
@@ -43,7 +43,7 @@ function startAmbientSound() {
     }
 }
 
-// Слушатель клавиши ENTER
+// Запуск по нажатию Enter
 document.addEventListener('keydown', function(event) {
     if (event.code === 'Enter') {
         const overlay = document.getElementById('start-overlay');
@@ -60,7 +60,7 @@ document.addEventListener('keydown', function(event) {
 });
 
 // ==========================================
-// ГЕНЕРАТОРЫ ПРОЦЕДУРНЫХ ТЕКСТУР ДЛЯ СТЕН И ПОЛА
+// ГЕНЕРАЦИЯ ТЕКСТУР ДЛЯ СТЕН И ПОЛА
 // ==========================================
 
 function createTilesTexture() {
@@ -71,7 +71,6 @@ function createTilesTexture() {
 
     ctx.fillStyle = '#1c241c';
     ctx.fillRect(0, 0, 512, 512);
-
     ctx.strokeStyle = '#0a0f0a';
     ctx.lineWidth = 8;
 
@@ -89,11 +88,6 @@ function createTilesTexture() {
         ctx.stroke();
     }
 
-    for (let i = 0; i < 1000; i++) {
-        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.1)';
-        ctx.fillRect(Math.random() * 512, Math.random() * 512, 4, 4);
-    }
-
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
@@ -108,24 +102,9 @@ function createMetalTexture() {
 
     ctx.fillStyle = '#2a332a';
     ctx.fillRect(0, 0, 512, 512);
-
     ctx.strokeStyle = '#151d15';
     ctx.lineWidth = 6;
     ctx.strokeRect(10, 10, 492, 492);
-    ctx.strokeRect(20, 20, 472, 472);
-
-    ctx.fillStyle = '#445544';
-    const rivets = [[30, 30], [482, 30], [30, 482], [482, 482]];
-    rivets.forEach(([rx, ry]) => {
-        ctx.beginPath();
-        ctx.arc(rx, ry, 6, 0, Math.PI * 2);
-        ctx.fill();
-    });
-
-    for (let i = 0; i < 800; i++) {
-        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.15)';
-        ctx.fillRect(Math.random() * 512, Math.random() * 512, Math.random() * 20, 2);
-    }
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
@@ -134,7 +113,7 @@ function createMetalTexture() {
 }
 
 // ==========================================
-// 3D ДВИЖОК, МАТЕРИАЛЫ И КАРТА
+// 3D ДВИЖОК
 // ==========================================
 
 let scene, camera, renderer;
@@ -165,24 +144,21 @@ function init3DWorld() {
 
     setupProceduralMaterials();
 
-    // ОСВЕЩЕНИЕ
     const ambientLight = new THREE.AmbientLight(0x334433, 0.7);
     scene.add(ambientLight);
 
-    // КАРТА
     buildBaseMap();
 
-    // ТЕРМИНАЛ
+    // Терминал
     const termGeo = new THREE.BoxGeometry(0.8, 1.4, 0.4);
     const termMat = new THREE.MeshStandardMaterial({ color: 0x00ff66, emissive: 0x003311 });
     terminalMesh = new THREE.Mesh(termGeo, termMat);
     terminalMesh.position.set(-11, 1, -12);
     scene.add(terminalMesh);
 
-    // SCP-173 (СОЗДАНИЕ С ТЕКСТУРОЙ)
+    // Модель SCP-173
     createSCP173();
 
-    // СОБЫТИЯ УПРАВЛЕНИЯ
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
     canvas.addEventListener('click', () => {
@@ -198,38 +174,26 @@ function init3DWorld() {
 function setupProceduralMaterials() {
     const tilesTexture = createTilesTexture();
     tilesTexture.repeat.set(4, 4);
-    tilesMaterial = new THREE.MeshStandardMaterial({
-        map: tilesTexture,
-        roughness: 0.4,
-        metalness: 0.2
-    });
+    tilesMaterial = new THREE.MeshStandardMaterial({ map: tilesTexture, roughness: 0.4 });
 
     const metalTexture = createMetalTexture();
     metalTexture.repeat.set(2, 1);
-    metalMaterial = new THREE.MeshStandardMaterial({
-        map: metalTexture,
-        roughness: 0.5,
-        metalness: 0.7
-    });
+    metalMaterial = new THREE.MeshStandardMaterial({ map: metalTexture, roughness: 0.5 });
 }
 
 // ==========================================
-// СОЗДАНИЕ МОДЕЛИ SCP-173 С ТЕКСТУРОЙ
+// МОДЕЛЬ SCP-173 И ЗАГРУЗКА ТЕКСТУРЫ
 // ==========================================
 
 function createSCP173() {
     scp173Group = new THREE.Group();
 
     const textureLoader = new THREE.TextureLoader();
-    // Загрузка текстуры развёрстки
-    const scpTexture = textureLoader.load('SCP-173.jpg', 
-        undefined, 
-        undefined, 
-        function() {
-            // Фолбэк, если файл не найден в корне
-            scpTexture.image = textureLoader.load('textures/SCP-173.jpg');
-        }
-    );
+    
+    // Сначала пробуем из папки textures/, если нет — ищем в корне
+    const scpTexture = textureLoader.load('textures/SCP-173.jpg', undefined, undefined, () => {
+        scpTexture.image = textureLoader.load('SCP-173.jpg');
+    });
 
     const scpMaterial = new THREE.MeshStandardMaterial({
         map: scpTexture,
@@ -237,19 +201,19 @@ function createSCP173() {
         metalness: 0.1
     });
 
-    // ТУЛОВИЩЕ И НОГИ
+    // Туловище
     const bodyGeo = new THREE.BoxGeometry(0.8, 1.4, 0.6);
     const body = new THREE.Mesh(bodyGeo, scpMaterial);
     body.position.y = 1.0;
     scp173Group.add(body);
 
-    // ГОЛОВА С ЕСТЕСТВЕННЫМ НАЛОЖЕНИЕМ ЛИЦА
+    // Голова
     const headGeo = new THREE.BoxGeometry(0.7, 0.8, 0.7);
     const head = new THREE.Mesh(headGeo, scpMaterial);
     head.position.y = 2.0;
     scp173Group.add(head);
 
-    // РУКИ
+    // Руки
     const armGeo = new THREE.BoxGeometry(0.2, 0.8, 0.2);
     const leftArm = new THREE.Mesh(armGeo, scpMaterial);
     leftArm.position.set(-0.5, 1.1, 0);
@@ -264,7 +228,7 @@ function createSCP173() {
 }
 
 // ==========================================
-// ПОСТРОЕНИЕ КАРТЫ И КОЛЛИЗИИ
+// КАРТА
 // ==========================================
 
 function createWall(x, z, width, depth, height = 4) {
@@ -294,7 +258,7 @@ function createLight(x, y, z, color = 0xffaa00, intensity = 2.0) {
 function buildBaseMap() {
     colliders = [];
 
-    // ГЛАВНЫЙ КОРИДОР
+    // Коридор
     createFloor(0, 0, 6, 30);
     createWall(-3.2, 0, 0.4, 30);
     createWall(3.2, 5, 0.4, 20);
@@ -302,27 +266,24 @@ function buildBaseMap() {
     createLight(0, 3.5, 8);
     createLight(0, 3.5, -2);
 
-    // КАМЕРА SCP-173
+    // Камера SCP-173
     createFloor(10, -8, 14, 10);
     createWall(10, -13, 14, 0.4);
     createWall(10, -3, 14, 0.4);
     createWall(17, -8, 0.4, 10);
     createLight(10, 3.5, -8, 0xff1111, 2.5);
 
-    // КОМНАТА УПРАВЛЕНИЯ
+    // Комната управления
     createFloor(-10, -10, 14, 14);
     createWall(-10, -17, 14, 0.4);
     createWall(-17, -10, 0.4, 14);
     createWall(-10, -3, 14, 0.4);
     createWall(-3.2, -14, 0.4, 6);
     createLight(-10, 3.5, -10, 0x00ff66, 2.0);
-
-    // ШЛЮЗ
-    createWall(0, -15, 6.8, 0.4);
 }
 
 // ==========================================
-// МЕХАНИКА МОРГАНИЯ И ИИ SCP-173
+// МОРГАНИЕ И ИИ SCP-173
 // ==========================================
 
 function updateBlink(delta) {
@@ -355,8 +316,7 @@ function isPlayerLookingAt173() {
     camera.getWorldDirection(camDir);
 
     const toSCP = new THREE.Vector3().subVectors(scp173Group.position, camera.position).normalize();
-    const dot = camDir.dot(toSCP);
-    return dot > 0.35;
+    return camDir.dot(toSCP) > 0.35;
 }
 
 function moveSCP173() {
@@ -366,7 +326,7 @@ function moveSCP173() {
 
     if (dist < 1.8) {
         triggerHorrorEffect();
-        alert("SCP-173 СЛОМАЛ ВАМ ШЕЙНЫЕ ПОЗВОНКИ.\n\nНельзя разрывать зрительный контакт!");
+        alert("SCP-173 СЛОМАЛ ВАМ ШЕЙНЫЕ ПОЗВОНКИ!");
         location.reload();
         return;
     }
@@ -377,54 +337,7 @@ function moveSCP173() {
 
     const nextPos = scp173Group.position.clone().add(directionToPlayer.multiplyScalar(stepDistance));
 
-    const scpRadius = 0.6;
-    const scpBox = new THREE.Box3(
-        new THREE.Vector3(nextPos.x - scpRadius, 0, nextPos.z - scpRadius),
-        new THREE.Vector3(nextPos.x + scpRadius, 3, nextPos.z + scpRadius)
-    );
-
-    let hitsWall = false;
-    for (let i = 0; i < colliders.length; i++) {
-        if (scpBox.intersectsBox(colliders[i])) {
-            hitsWall = true;
-            break;
-        }
-    }
-
-    if (!hitsWall) {
-        scp173Group.position.copy(nextPos);
-    } else {
-        const slidePosX = scp173Group.position.clone().add(new THREE.Vector3(directionToPlayer.x * stepDistance, 0, 0));
-        const slideBoxX = new THREE.Box3(
-            new THREE.Vector3(slidePosX.x - scpRadius, 0, slidePosX.z - scpRadius),
-            new THREE.Vector3(slidePosX.x + scpRadius, 3, slidePosX.z + scpRadius)
-        );
-
-        let hitX = false;
-        for (let i = 0; i < colliders.length; i++) {
-            if (slideBoxX.intersectsBox(colliders[i])) { hitX = true; break; }
-        }
-
-        if (!hitX) {
-            scp173Group.position.copy(slidePosX);
-        } else {
-            const slidePosZ = scp173Group.position.clone().add(new THREE.Vector3(0, 0, directionToPlayer.z * stepDistance));
-            const slideBoxZ = new THREE.Box3(
-                new THREE.Vector3(slidePosZ.x - scpRadius, 0, slidePosZ.z - scpRadius),
-                new THREE.Vector3(slidePosZ.x + scpRadius, 3, slidePosZ.z + scpRadius)
-            );
-
-            let hitZ = false;
-            for (let i = 0; i < colliders.length; i++) {
-                if (slideBoxZ.intersectsBox(colliders[i])) { hitZ = true; break; }
-            }
-
-            if (!hitZ) {
-                scp173Group.position.copy(slidePosZ);
-            }
-        }
-    }
-
+    scp173Group.position.copy(nextPos);
     scp173Group.lookAt(camera.position.x, scp173Group.position.y, camera.position.z);
 
     const audio = document.getElementById('snd-glitch');
@@ -435,7 +348,7 @@ function moveSCP173() {
 }
 
 // ==========================================
-// ПРОВЕРКА СТОЛКНОВЕНИЙ И ИГРОВОЙ ЦИКЛ
+// ДВИЖЕНИЕ И ИГРОВОЙ ЦИКЛ
 // ==========================================
 
 function checkCollisions(newPosition) {
@@ -446,9 +359,7 @@ function checkCollisions(newPosition) {
     );
 
     for (let i = 0; i < colliders.length; i++) {
-        if (playerBox.intersectsBox(colliders[i])) {
-            return true;
-        }
+        if (playerBox.intersectsBox(colliders[i])) return true;
     }
     return false;
 }
@@ -471,9 +382,7 @@ function onKeyDown(event) {
         case 'KeyA': moveLeft = true; break;
         case 'KeyD': moveRight = true; break;
         case 'Space': triggerBlink(); break;
-        case 'KeyE':
-            if (isNearTerminal) openTerminalTask();
-            break;
+        case 'KeyE': if (isNearTerminal) openTerminalTask(); break;
     }
 }
 
@@ -543,7 +452,7 @@ function onWindowResize() {
 }
 
 // ==========================================
-// ИНТЕРФЕЙС И ТЕРМИНАЛЫ
+// ИНТЕРФЕЙС И МЕНЮ
 // ==========================================
 
 function startGame3D() {
@@ -589,11 +498,10 @@ function verifyCode(blockId) {
     if (input.value.trim() === ANSWERS[blockId]) {
         alert("ГЕРМОДВЕРЬ ОТКРЫТА. SCP-173 ЗАБЛОКИРОВАН В СЕКТОРЕ!");
         addXP(50);
-        unlockArchiveCard('scp173');
         closeTerminal();
     } else {
         triggerHorrorEffect();
-        alert("НЕВЕРНЫЙ КОД! SCP-173 ПРИБЛИЖАЕТСЯ!");
+        alert("НЕВЕРНЫЙ КОД!");
     }
 }
 
@@ -618,13 +526,6 @@ function updateUI() {
     document.getElementById('player-xp').textContent = gameState.xp;
 }
 
-function unlockArchiveCard(scpId) {
-    if (!gameState.unlockedArchive.includes(scpId)) {
-        gameState.unlockedArchive.push(scpId);
-        saveProgress();
-    }
-}
-
 function openArchiveFromMenu() { showBlock('block-encyclopedia'); }
 function toggleArchiveView() { document.getElementById('block-encyclopedia').classList.toggle('hidden'); }
 function saveProgress() { localStorage.setItem('project_keter_state', JSON.stringify(gameState)); }
@@ -632,5 +533,3 @@ function loadProgress() {
     const saved = localStorage.getItem('project_keter_state');
     if (saved) { try { gameState = JSON.parse(saved); } catch (e) {} }
 }
-function resetProgress() { localStorage.removeItem('project_keter_state'); location.reload(); }
-function exitGame() { location.reload(); }
