@@ -1,22 +1,54 @@
-// --- ТЕКСТОВАЯ ЧАСТЬ (ЦИКЛ #1) ---
+// --- АУДИОДВИЖОК (Web Audio API - звуки без файлов) ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  if (type === 'click') {
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+  } else if (type === 'step') {
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+  } else if (type === 'hum') {
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(50, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+    osc.start();
+  }
+}
+
+// Постоянный фоновый гул комплекса
+let ambientSound = null;
+
+// --- ТЕКСТОВАЯ ЧАСТЬ ---
 const map = {
   d_cell: {
     name: "Камера D-Class",
-    desc: "Вы приходите в себя на кушетке. Голова раскалывается, экран перед глазами мерцает и идет помехами.",
+    desc: "Вы пришли в себя. Голова раскалывается. Экран перед глазами мигает, слышен гул трансформаторов.",
     exits: { "Выйти в коридор": "d_hallway" }
   },
   d_hallway: {
     name: "Коридор блока D",
-    desc: "Лампы мигают. На полу видны темные следы. Впереди видна дверь в пункт наблюдения.",
+    desc: "Лампы тускло освещают серые стены. Впереди находится пункт наблюдения.",
     exits: { "Войти в пункт наблюдения": "security_room" }
   },
   security_room: {
     name: "Пункт наблюдения",
-    desc: "Старый монитор шипит. Из динамика раздается искаженный голосом вопрос:\n\n«ТЫ ДУМАЕШЬ, ЧТО ВСЁ ЕЩЕ УПРАВЛЯЕШЬ СВОИМ ТЕЛОМ?»",
+    desc: "Экран терминала шипит. Из динамика раздается голос:\n\n«ГОТОВ ЛИ ТЫ УВИДЕТЬ, ЧТО НАХОДИТСЯ В ТЕМНОТЕ?»",
     exits: {
       "«Да»": "START_3D",
-      "«Нет»": "START_3D",
-      "Молча бежать": "START_3D"
+      "«Включить фонарик и осмотреться»": "START_3D"
     }
   }
 };
@@ -35,6 +67,7 @@ function renderTextGame() {
     const btn = document.createElement("button");
     btn.textContent = text;
     btn.onclick = () => {
+      playSound('click');
       if (target === "START_3D") {
         init3DMode();
       } else {
@@ -48,47 +81,69 @@ function renderTextGame() {
 
 renderTextGame();
 
-// --- 3D РЕЖИМ ОТ 1-ГО ЛИЦА (THREE.JS) ---
-let scene, camera, renderer;
+// --- ГЕНЕРАТОР ТЕКСТУР (Canvas) ---
+function generateTexture(type) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  if (type === 'wall') {
+    ctx.fillStyle = '#2b2b2b'; ctx.fillRect(0, 0, 256, 256);
+    ctx.fillStyle = '#1f1f1f';
+    for (let i = 0; i < 500; i++) ctx.fillRect(Math.random()*256, Math.random()*256, 2, 2);
+    ctx.strokeStyle = '#151515'; ctx.lineWidth = 4;
+    ctx.strokeRect(0, 0, 256, 256); // Плиточные швы
+  } else if (type === 'floor') {
+    ctx.fillStyle = '#111111'; ctx.fillRect(0, 0, 256, 256);
+    ctx.fillStyle = '#222222';
+    for (let i = 0; i < 256; i += 32) {
+      ctx.fillRect(i, 0, 1, 256); ctx.fillRect(0, i, 256, 1);
+    }
+  }
+  return new THREE.CanvasTexture(canvas);
+}
+
+// --- 3D ДВИЖОК И ФОНАРИК ---
+let scene, camera, renderer, flashlight;
+let flashlightOn = true;
+let battery = 100;
 let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
-const direction = new THREE.Vector3();
+let stepTimer = 0;
 
 function init3DMode() {
-  // Скрываем текстовый UI, показываем 3D
   document.getElementById("text-game").classList.add("hidden");
-  const threeContainer = document.getElementById("three-container");
-  threeContainer.classList.remove("hidden");
+  const container = document.getElementById("three-container");
+  container.classList.remove("hidden");
 
-  // Создание сцены и камеры
+  playSound('hum');
+
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x000000, 0.15); // Густой туман для хоррор-атмосферы
+  scene.fog = new THREE.FogExp2(0x020202, 0.12);
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.set(0, 1.6, 0); // Рост человека (1.6м)
+  camera.position.set(0, 1.6, 0);
 
   renderer = new THREE.WebGLRenderer({ antialias: false });
   renderer.setSize(window.innerWidth, window.innerHeight);
-  threeContainer.appendChild(renderer.domElement);
+  container.appendChild(renderer.domElement);
 
-  // Освещение (Фонарик игрока + аварийный свет)
-  const flashlight = new THREE.SpotLight(0x00ff66, 2, 20, Math.PI / 6, 0.5);
+  // Фонарик игрока
+  flashlight = new THREE.SpotLight(0xddffff, 3, 18, Math.PI / 5, 0.4, 1);
+  flashlight.position.set(0.2, -0.2, 0); // Чуть правее и ниже глаз
   camera.add(flashlight);
-  flashlight.position.set(0, 0, 1);
   flashlight.target = camera;
   scene.add(camera);
 
-  const ambientLight = new THREE.AmbientLight(0x111111);
+  // Тусклый свет комплекса
+  const ambientLight = new THREE.AmbientLight(0x050d05);
   scene.add(ambientLight);
 
-  // Постройка коридоров SCP
-  createCorridors();
+  buildFacilityMap();
 
-  // Управление мышью (Pointer Lock)
-  threeContainer.addEventListener('click', () => {
-    document.body.requestPointerLock();
-  });
+  // Управление
+  container.addEventListener('click', () => document.body.requestPointerLock());
 
   document.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement === document.body) {
@@ -98,11 +153,20 @@ function init3DMode() {
     }
   });
 
-  // Управление WASD
-  document.addEventListener('keydown', (e) => onKey(e.code, true));
+  document.addEventListener('keydown', (e) => {
+    onKey(e.code, true);
+    if (e.code === 'KeyF') toggleFlashlight();
+  });
   document.addEventListener('keyup', (e) => onKey(e.code, false));
 
   animate();
+}
+
+function toggleFlashlight() {
+  if (battery <= 0) return;
+  flashlightOn = !flashlightOn;
+  flashlight.intensity = flashlightOn ? 3 : 0;
+  playSound('click');
 }
 
 function onKey(code, state) {
@@ -114,48 +178,92 @@ function onKey(code, state) {
   }
 }
 
-// Постройка простейшей 3D зоны SCP
-function createCorridors() {
-  const wallMat = new THREE.MeshBasicMaterial({ color: 0x222222, wireframe: true });
-  const floorMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+// Генерация разветвленной карты комплекса
+function buildFacilityMap() {
+  const wallTex = generateTexture('wall');
+  wallTex.wrapS = THREE.RepeatWrapping; wallTex.wrapT = THREE.RepeatWrapping;
+  const floorTex = generateTexture('floor');
+  
+  const wallMat = new THREE.MeshLambertMaterial({ map: wallTex });
+  const floorMat = new THREE.MeshLambertMaterial({ map: floorTex });
 
   // Пол
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), floorMat);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), floorMat);
   floor.rotation.x = -Math.PI / 2;
   scene.add(floor);
 
-  // Стеновые блоки (генерация длинного коридора)
-  for (let i = -20; i < 20; i += 4) {
-    const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(1, 4, 4), wallMat);
-    wallLeft.position.set(-3, 2, i);
-    scene.add(wallLeft);
+  // Потолок
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), wallMat);
+  ceiling.position.y = 3.5;
+  ceiling.rotation.x = Math.PI / 2;
+  scene.add(ceiling);
 
-    const wallRight = new THREE.Mesh(new THREE.BoxGeometry(1, 4, 4), wallMat);
-    wallRight.position.set(3, 2, i);
-    scene.add(wallRight);
+  // Карта коридоров (Сетка лабиринта)
+  const grid = [
+    [1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,1,0,0,0,1],
+    [1,0,1,0,1,0,1,0,1],
+    [1,0,1,0,0,0,1,0,1],
+    [1,0,1,1,1,0,1,0,1],
+    [1,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1]
+  ];
+
+  for (let r = 0; r < grid.length; r++) {
+    for (let c = 0; c < grid[r].length; c++) {
+      if (grid[r][c] === 1) {
+        const wall = new THREE.Mesh(new THREE.BoxGeometry(4, 3.5, 4), wallMat);
+        wall.position.set((c - 4) * 4, 1.75, (r - 3) * 4);
+        scene.add(wall);
+      }
+    }
   }
+
+  // Аварийная лампочка вдали
+  const redLight = new THREE.PointLight(0xff0033, 1.5, 8);
+  redLight.position.set(0, 2.5, -12);
+  scene.add(redLight);
 }
 
-// Игровой цикл 3D
+// Игровой цикл
 function animate() {
   requestAnimationFrame(animate);
 
   const time = performance.now();
   const delta = (time - prevTime) / 1000;
 
-  velocity.x -= velocity.x * 10.0 * delta;
-  velocity.z -= velocity.z * 10.0 * delta;
+  // Расход батареи фонарика
+  if (flashlightOn && battery > 0) {
+    battery -= delta * 0.5; // Батарея садится постепенно
+    document.getElementById("battery-level").textContent = `${Math.max(0, Math.round(battery))}%`;
+    if (battery <= 0) {
+      flashlightOn = false;
+      flashlight.intensity = 0;
+    }
+  }
 
-  direction.z = Number(moveForward) - Number(moveBackward);
-  direction.x = Number(moveRight) - Number(moveLeft);
-  direction.normalize();
+  // Движение
+  velocity.x -= velocity.x * 8.0 * delta;
+  velocity.z -= velocity.z * 8.0 * delta;
 
-  if (moveForward || moveBackward) velocity.z -= direction.z * 40.0 * delta;
-  if (moveLeft || moveRight) velocity.x -= direction.x * 40.0 * delta;
+  const moveDirZ = Number(moveForward) - Number(moveBackward);
+  const moveDirX = Number(moveRight) - Number(moveLeft);
+
+  if (moveForward || moveBackward) velocity.z -= moveDirZ * 30.0 * delta;
+  if (moveLeft || moveRight) velocity.x -= moveDirX * 30.0 * delta;
 
   camera.translateX(-velocity.x * delta);
   camera.translateZ(velocity.z * delta);
-  camera.position.y = 1.6; // Фиксация высоты глаз
+  camera.position.y = 1.6;
+
+  // Звук шагов
+  if (moveForward || moveBackward || moveLeft || moveRight) {
+    stepTimer += delta;
+    if (stepTimer > 0.45) {
+      playSound('step');
+      stepTimer = 0;
+    }
+  }
 
   prevTime = time;
   renderer.render(scene, camera);
