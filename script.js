@@ -1,15 +1,15 @@
-// Расширенная карта комплекса
+// Расширенная карта с сюжетным вопросом
 const map = {
   d_cell: {
     name: "Камера D-Class (Спавн)",
-    desc: "Вы находитесь в тесной и сырой камере содержания D-класса. Стальная дверь приоткрыта.",
-    exits: { "В коридор": "d_hallway" }
+    desc: "Вы приходите в себя на холодной кушетке. Голова раскалывается, а в глазах всё плывет. Металлическая дверь камеры полуоткрыта.",
+    exits: { "Выйти в коридор": "d_hallway" }
   },
   d_hallway: {
     name: "Коридор блока D",
-    desc: "Длинный коридор с тусклым мигающим светом. Отсюда можно пройти в другие части блока.",
+    desc: "Мигающие лампы издают мерзкий гул. На стенах видны следы отчаянных попыток выбраться.",
     exits: {
-      "В камеру D-Class": "d_cell",
+      "Вернуться в камеру": "d_cell",
       "В столовую": "d_cafeteria",
       "В душевую": "d_showers",
       "К шлюзу ЛЗС": "lz_airlock"
@@ -17,76 +17,83 @@ const map = {
   },
   d_cafeteria: {
     name: "Столовая D-Class",
-    desc: "Заброшенное помещение. Перевернутые столы и разбросанные подносы.",
+    desc: "Перевернутая мебель и разбросанные подносы. На стене выведена надпись: «ОНО НЕ СПИТ».",
     exits: { "Назад в коридор": "d_hallway" }
   },
   d_showers: {
     name: "Душевая блока D",
-    desc: "Кафель покрыт плесенью. Слышно капанье воды из ржавой трубы.",
+    desc: "Густой туман и капающая вода. В углу лежит разбитый радиоприемник, издающий шипение.",
     exits: { "Назад в коридор": "d_hallway" }
   },
   lz_airlock: {
-    name: "Шлюз Легкой Зоны Сдерживания (ЛЗС)",
-    desc: "Массивная гермодверь отделяет блок D от исследовательских лабораторий.",
+    name: "Шлюз Легкой Зоны Сдерживания",
+    desc: "Гермодверь заблокирована, но рядом горит терминал управления.",
     exits: {
       "Назад в блок D": "d_hallway",
-      "Войти в ЛЗС": "lz_main"
+      "В пункт наблюдения": "security_room"
     }
   },
-  lz_main: {
-    name: "Главный холл ЛЗС",
-    desc: "Просторный коридор с указателями к камерам содержания и офисам.",
+  security_room: {
+    name: "Пункт наблюдения",
+    desc: "На экранах мониторов — сплошной белый шум. Неожиданно динамик на стене издает треск, и чей-то искаженный голос произносит:\n\n«Ты помнишь свое настоящее имя... или только номер, который тебе дали?»",
     exits: {
-      "К шлюзу блока D": "lz_airlock",
-      "Камера SCP-173": "scp_173",
-      "Исследовательский сектор": "labs",
-      "Переход в ТЗС": "hz_entrance"
+      "«Я помню, кто я»": "RESET_EVENT",
+      "«Я всего лишь D-4126»": "RESET_EVENT",
+      "Молча сделать шаг назад": "RESET_EVENT"
     }
-  },
-  scp_173: {
-    name: "Камера содержания SCP-173",
-    desc: "Стеклянная смотровая площадка перед гермозатвором. Внутри видна бетонная статуя.",
-    exits: { "В холл ЛЗС": "lz_main" }
-  },
-  labs: {
-    name: "Лаборатории",
-    desc: "Кабинеты ученых. На столах стоят включенные мониторы с ошибками доступа.",
-    exits: { "В холл ЛЗС": "lz_main" }
-  },
-  hz_entrance: {
-    name: "Вход в Тяжелую Зону Сдерживания (ТЗС)",
-    desc: "Темный сектор с усиленной броней на стенах и тревожной сигнализацией.",
-    exits: { "Вернуться в ЛЗС": "lz_main" }
   }
 };
 
-// Состояние игрока
-let currentRoomKey = "d_cell"; // Точка спавна
+// Состояние игры
+let currentRoomKey = "d_cell";
+let loopCount = 1;
 
-// Элементы DOM
+// DOM Элементы
 const locEl = document.getElementById("current-location");
 const descEl = document.getElementById("description");
 const btnsContainer = document.getElementById("buttons-container");
+const loopEl = document.getElementById("loop-count");
+const screenEl = document.getElementById("screen");
 
-// Функция обновления экрана
+// Перезапуск цикла (Пробуждение)
+function wakeUp() {
+  currentRoomKey = "d_cell";
+  loopCount++;
+  
+  // Добавляем класс анимации VHS-пробуждения
+  screenEl.classList.remove("wake-up");
+  void screenEl.offsetWidth; // Перезапуск анимации CSS
+  screenEl.classList.add("wake-up");
+
+  render();
+}
+
+// Отрисовка состояния
 function render() {
   const room = map[currentRoomKey];
   
   locEl.textContent = room.name;
   descEl.textContent = room.desc;
+  loopEl.textContent = `#${loopCount}`;
   
   btnsContainer.innerHTML = "";
   
   for (const [btnText, targetRoomKey] of Object.entries(room.exits)) {
     const btn = document.createElement("button");
     btn.textContent = btnText;
+    
     btn.onclick = () => {
-      currentRoomKey = targetRoomKey;
-      render();
+      if (targetRoomKey === "RESET_EVENT") {
+        wakeUp(); // Срабатывает пробуждение
+      } else {
+        currentRoomKey = targetRoomKey;
+        render();
+      }
     };
     btnsContainer.appendChild(btn);
   }
 }
 
-// Запуск игры при загрузке
+// Первый запуск
+screenEl.classList.add("wake-up");
 render();
