@@ -3,51 +3,184 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SCP Foundation - Subject D-4126</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <title>SCP Facility</title>
+  <style>
+    /* === СБРОС И ОСНОВНЫЕ СТИЛИ === */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #050508;
+      font-family: 'Courier New', Courier, monospace;
+      color: #00ff66;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* === 1. ТЕКСТОВЫЙ ИНТЕРФЕЙС === */
+    #text-game {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 20px;
+      text-align: center;
+      background: radial-gradient(circle, #10121a 0%, #050508 100%);
+    }
+
+    .card {
+      background: rgba(10, 15, 20, 0.85);
+      border: 1px solid #00ff66;
+      box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
+      padding: 30px;
+      max-width: 650px;
+      width: 100%;
+      border-radius: 4px;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-bottom: 10px;
+      color: #ff3333;
+      text-shadow: 0 0 8px rgba(255, 51, 51, 0.6);
+      letter-spacing: 2px;
+    }
+
+    .location-tag {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    p#description {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #cccccc;
+      margin-bottom: 30px;
+    }
+
+    #buttons-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    button {
+      background: #0d1a12;
+      border: 1px solid #00ff66;
+      color: #00ff66;
+      padding: 12px 20px;
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    button:hover {
+      background: #00ff66;
+      color: #050508;
+      box-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+    }
+
+    .loop-counter {
+      margin-top: 20px;
+      font-size: 11px;
+      color: #555;
+    }
+
+    /* === 2. 3D КОНТЕЙНЕР И HUD === */
+    #three-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #three-container canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      padding: 15px 20px;
+      background: rgba(5, 5, 8, 0.75);
+      border: 1px solid rgba(0, 255, 102, 0.4);
+      color: #00ff66;
+      font-size: 14px;
+      pointer-events: none;
+      border-radius: 4px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.8);
+    }
+
+    .hud-title {
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 5px;
+      letter-spacing: 1px;
+    }
+
+    .crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 6px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      border: 1px solid rgba(0, 0, 0, 0.8);
+    }
+  </style>
 </head>
 <body>
 
-  <!-- VHS Оверлеи -->
-  <div class="vhs-scanlines"></div>
-  <div class="vhs-noise"></div>
-  <div class="vhs-vignette"></div>
-  <div class="vhs-tracking-line"></div>
-
-  <!-- Текстовый UI Игры -->
-  <div id="text-game" class="game-container">
-    <header>
-      <div class="vhs-tag">● REC 00:00:00 [TAPE_SCP_19]</div>
-      <h1 id="chapter-title">ГЛАВА 1: ПРОСЫПАНИЕ</h1>
-      <div id="status-bar">
-        <span>Объект: <strong>D-4126</strong></span>
-        <span>Статус: <strong id="current-location">Камера сдерживания</strong></span>
-        <span>Цикл: <strong id="loop-count">#1</strong></span>
-      </div>
-    </header>
-
-    <main id="screen">
-      <p id="description">Загрузка протокола...</p>
-    </main>
-
-    <section id="controls">
-      <h3>Выберите действие:</h3>
-      <div id="buttons-container" class="btn-grid"></div>
-    </section>
-  </div>
-
-  <!-- 3D UI Игры -->
-  <div id="three-container" class="hidden">
-    <div class="vhs-tag ui-overlay" id="3d-chapter-tag">● REC 00:04:13 | ГЛАВА 2: 3D СЕКТОР</div>
-    <div id="battery-hud">ФОНАРИК [F]: <span id="battery-level">100%</span></div>
-    <div id="crosshair">+</div>
-    <div id="instructions">
-      Кликните по экрану для обзора мышью<br>
-      <strong>[W, A, S, D]</strong> — Ходьба | <strong>[F]</strong> — Фонарик | <strong>[E]</strong> — Выход у зеленой двери
+  <!-- 1. ТЕКСТОВЫЙ ЭКРАН / МЕНЮ -->
+  <div id="text-game">
+    <div class="card">
+      <h1 id="chapter-title">ГЛАВА 1: НАРУШЕНИЕ СОДЕРЖАНИЯ</h1>
+      <div class="location-tag">ЛОКАЦИЯ: <span id="current-location">СЕКТОР D-12</span></div>
+      <p id="description">Загрузка данных...</p>
+      <div id="buttons-container"></div>
+      <div class="loop-counter">ПОПЫТКА: <span id="loop-count">#1</span></div>
     </div>
   </div>
 
+  <!-- 2. 3D ИГРОВОЙ ЭКРАН -->
+  <div id="three-container" class="hidden">
+    <!-- Прицел по центру экрана -->
+    <div class="crosshair"></div>
+    
+    <!-- Игровой HUD-интерфейс -->
+    <div id="hud">
+      <div class="hud-title">СЕКТОР ЛЗС-09 [10 ЛОКАЦИЙ]</div>
+      <div>БАТАРЕЯ ФОНАРЯ: <span id="battery-level" style="color: #fff;">100%</span></div>
+      <div style="font-size: 11px; margin-top: 8px; color: #aaa; line-height: 1.4;">
+        [W, A, S, D] — Перемещение<br>
+        [Shift] — Ускорение<br>
+        [F] — Фонарь | [E] — Действие / Взаимодействие
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. ПОДКЛЮЧЕНИЕ THREE.JS И ИГРОВОГО СКРИПТА -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
