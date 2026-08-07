@@ -1,4 +1,4 @@
-// === 1. АУДИОСИСТЕМА (Звуковые эффекты) ===
+// === 1. АУДИОСИСТЕМА ===
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playSound(type) {
@@ -83,21 +83,23 @@ function renderChapter(chapNum) {
   });
 }
 
-// === 3. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ И ВЫПУКЛОСТИ (BUMP MAPS) ===
+// === 3. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ ===
+
+// Текстура стены
 function generateWallTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 512; canvas.height = 512;
   const ctx = canvas.getContext('2d');
 
-  ctx.fillStyle = '#222'; ctx.fillRect(0, 0, 512, 512);
-  ctx.strokeStyle = '#111'; ctx.lineWidth = 8; ctx.strokeRect(0, 0, 512, 512);
+  ctx.fillStyle = '#2b3038'; ctx.fillRect(0, 0, 512, 512);
+  ctx.strokeStyle = '#1a1d22'; ctx.lineWidth = 6; ctx.strokeRect(0, 0, 512, 512);
 
   // Желто-черная опасная разметка
-  ctx.fillStyle = '#b38f00'; ctx.fillRect(0, 440, 512, 72);
+  ctx.fillStyle = '#d4a017'; ctx.fillRect(0, 420, 512, 92);
   ctx.fillStyle = '#111';
   for (let i = -100; i < 600; i += 50) {
     ctx.beginPath(); ctx.moveTo(i, 512); ctx.lineTo(i + 25, 512);
-    ctx.lineTo(i + 50, 440); ctx.lineTo(i + 25, 440); ctx.fill();
+    ctx.lineTo(i + 50, 420); ctx.lineTo(i + 25, 420); ctx.fill();
   }
 
   const tex = new THREE.CanvasTexture(canvas);
@@ -106,23 +108,64 @@ function generateWallTexture() {
   return tex;
 }
 
+// Текстура пола
 function generateFloorTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 256; canvas.height = 256;
   const ctx = canvas.getContext('2d');
 
-  ctx.fillStyle = '#141414'; ctx.fillRect(0, 0, 256, 256);
-  ctx.strokeStyle = '#080808'; ctx.lineWidth = 4; ctx.strokeRect(0, 0, 256, 256);
-
-  for (let i = 0; i < 400; i++) {
-    ctx.fillStyle = 'rgba(255,255,255,0.02)';
-    ctx.fillRect(Math.random()*256, Math.random()*256, 2, 2);
-  }
+  ctx.fillStyle = '#22252a'; ctx.fillRect(0, 0, 256, 256);
+  ctx.strokeStyle = '#111317'; ctx.lineWidth = 4; ctx.strokeRect(0, 0, 256, 256);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(12, 16);
   return tex;
+}
+
+// Текстура гермодвери SCP
+function generateDoorTexture(label) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#3a3f47'; ctx.fillRect(0, 0, 256, 512);
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 10; ctx.strokeRect(0, 0, 256, 512);
+  
+  // Металлические панели
+  ctx.fillStyle = '#2d3138';
+  ctx.fillRect(20, 30, 216, 200);
+  ctx.fillRect(20, 260, 216, 220);
+
+  // Окошко / Индикатор
+  ctx.fillStyle = '#00ff66';
+  ctx.fillRect(98, 50, 60, 20);
+
+  // Текст на двери
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 20px Courier New';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, 128, 140);
+
+  return new THREE.CanvasTexture(canvas);
+}
+
+// Текстура карт доступа
+function generateKeycardTexture(levelStr, colorHex) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 160;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = colorHex; ctx.fillRect(0, 0, 256, 160);
+  ctx.fillStyle = '#111'; ctx.fillRect(0, 20, 256, 30); // Магнитная полоса
+  
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 22px Courier New';
+  ctx.fillText("SCP SECURITY", 20, 85);
+  ctx.font = 'bold 18px Courier New';
+  ctx.fillText(`LEVEL ${levelStr}`, 20, 125);
+
+  return new THREE.CanvasTexture(canvas);
 }
 
 // === 4. 3D ДВИЖОК ===
@@ -143,7 +186,8 @@ function init3DMode() {
   container.classList.remove("hidden");
 
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x050508, 0.04);
+  // 🔥 Исправлен туман: сделан намного дальше и светлее, чтобы всё было видно
+  scene.fog = new THREE.FogExp2(0x0f1218, 0.015);
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
   camera.position.set(0, 1.6, -8);
@@ -152,11 +196,16 @@ function init3DMode() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   container.appendChild(renderer.domElement);
 
-  flashlight = new THREE.SpotLight(0xddeeff, 4.0, 25, Math.PI / 4, 0.4, 1);
+  // 🔥 Мощный яркий фонарь
+  flashlight = new THREE.SpotLight(0xffffff, 8.0, 40, Math.PI / 3.5, 0.5, 1);
   flashlight.position.set(0.2, -0.2, 0);
   camera.add(flashlight);
   flashlight.target = camera;
   scene.add(camera);
+
+  // 🔥 Усиленное фоновое освещение всей станции
+  const ambientLight = new THREE.AmbientLight(0x556677, 1.2);
+  scene.add(ambientLight);
 
   build10ZonesMap();
   updateInventoryHUD();
@@ -192,16 +241,16 @@ function onKey(code, state) {
 function toggleFlashlight() {
   if (battery <= 0) return;
   flashlightOn = !flashlightOn;
-  flashlight.intensity = flashlightOn ? 4.0 : 0;
+  flashlight.intensity = flashlightOn ? 8.0 : 0;
   playSound('click');
 }
 
-// === 5. ПОСТРОЕНИЕ 10 ЗОН ===
+// === 5. ПОСТРОЕНИЕ 10 ЗОН И МЕБЕЛИ ===
 function build10ZonesMap() {
   walls = []; interactiveItems = [];
-  const wallMat = new THREE.MeshStandardMaterial({ map: generateWallTexture(), roughness: 0.6 });
-  const floorMat = new THREE.MeshStandardMaterial({ map: generateFloorTexture(), roughness: 0.4 });
-  const ceilingMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a });
+  const wallMat = new THREE.MeshStandardMaterial({ map: generateWallTexture(), roughness: 0.5 });
+  const floorMat = new THREE.MeshStandardMaterial({ map: generateFloorTexture(), roughness: 0.3 });
+  const ceilingMat = new THREE.MeshStandardMaterial({ color: 0x181a20 });
 
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 160), floorMat);
   floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 30);
@@ -211,62 +260,108 @@ function build10ZonesMap() {
   ceiling.rotation.x = Math.PI / 2; ceiling.position.set(0, 3.2, 30);
   scene.add(ceiling);
 
-  scene.add(new THREE.AmbientLight(0x111122, 0.6));
-
   function addW(w, h, d, x, y, z) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
     m.position.set(x, y, z); scene.add(m); walls.push(m);
   }
 
-  // Зона 1: Спавн D-12
-  addW(8, 3.2, 0.5, 0, 1.6, -10); addW(0.5, 3.2, 12, -4, 1.6, -4); addW(0.5, 3.2, 12, 4, 1.6, -4);
-  // Зона 2: Главный Коридор
-  addW(0.5, 3.2, 20, -4, 1.6, 12); addW(0.5, 3.2, 20, 4, 1.6, 12);
-  // Зона 3: Офис (Слева)
-  addW(12, 3.2, 0.5, -10, 1.6, 6); addW(12, 3.2, 0.5, -10, 1.6, 18); addW(0.5, 3.2, 12, -16, 1.6, 12);
-  // Зона 4: Склад (Справа)
-  addW(12, 3.2, 0.5, 10, 1.6, 6); addW(12, 3.2, 0.5, 10, 1.6, 18); addW(0.5, 3.2, 12, 16, 1.6, 12);
-  // Зона 5: Шлюз L1
-  addW(3, 3.2, 0.5, -2.5, 1.6, 22); addW(3, 3.2, 0.5, 2.5, 1.6, 22);
-  // Зона 6: Серверная
-  addW(0.5, 3.2, 20, -6, 1.6, 32); addW(0.5, 3.2, 20, 6, 1.6, 32);
-  // Зона 7: Лаборатории
-  addW(16, 3.2, 0.5, -8, 1.6, 42); addW(16, 3.2, 0.5, 8, 1.6, 42); addW(0.5, 3.2, 16, -16, 1.6, 50); addW(0.5, 3.2, 16, 16, 1.6, 50);
-  // Зона 8: Шлюз L2
-  addW(14, 3.2, 0.5, -9, 1.6, 58); addW(14, 3.2, 0.5, 9, 1.6, 58);
-  // Зона 9: Пост Охраны
-  addW(0.5, 3.2, 20, -4, 1.6, 68); addW(0.5, 3.2, 20, 4, 1.6, 68);
-  // Зона 10: Выход
-  addW(3.2, 3.2, 0.5, -2.4, 1.6, 78); addW(3.2, 3.2, 0.5, 2.4, 1.6, 78);
+  // Лампы под потолком для дополнительного света
+  function addPointLight(x, z, color = 0xffe0a0) {
+    const light = new THREE.PointLight(color, 2.5, 18);
+    light.position.set(x, 2.8, z);
+    scene.add(light);
+    
+    const lampMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.3), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    lampMesh.position.set(x, 3.1, z);
+    scene.add(lampMesh);
+  }
 
-  // Двери
-  doors.doorL1 = createDoor(0, 1.4, 22, 0xff9900);
-  doors.doorL2 = createDoor(0, 1.4, 58, 0xff9900);
-  doors.doorExit = createDoor(0, 1.4, 78, 0xff0000);
+  // 10 Зон
+  addW(8, 3.2, 0.5, 0, 1.6, -10); addW(0.5, 3.2, 12, -4, 1.6, -4); addW(0.5, 3.2, 12, 4, 1.6, -4); // Зона 1
+  addW(0.5, 3.2, 20, -4, 1.6, 12); addW(0.5, 3.2, 20, 4, 1.6, 12); // Зона 2
+  addW(12, 3.2, 0.5, -10, 1.6, 6); addW(12, 3.2, 0.5, -10, 1.6, 18); addW(0.5, 3.2, 12, -16, 1.6, 12); // Зона 3 (Офис)
+  addW(12, 3.2, 0.5, 10, 1.6, 6); addW(12, 3.2, 0.5, 10, 1.6, 18); addW(0.5, 3.2, 16, 16, 1.6, 12); // Зона 4 (Склад)
+  addW(3, 3.2, 0.5, -2.5, 1.6, 22); addW(3, 3.2, 0.5, 2.5, 1.6, 22); // Зона 5
+  addW(0.5, 3.2, 20, -6, 1.6, 32); addW(0.5, 3.2, 20, 6, 1.6, 32); // Зона 6
+  addW(16, 3.2, 0.5, -8, 1.6, 42); addW(16, 3.2, 0.5, 8, 1.6, 42); addW(0.5, 3.2, 16, -16, 1.6, 50); addW(0.5, 3.2, 16, 16, 1.6, 50); // Зона 7
+  addW(14, 3.2, 0.5, -9, 1.6, 58); addW(14, 3.2, 0.5, 9, 1.6, 58); // Зона 8
+  addW(0.5, 3.2, 20, -4, 1.6, 68); addW(0.5, 3.2, 20, 4, 1.6, 68); // Зона 9
+  addW(3.2, 3.2, 0.5, -2.4, 1.6, 78); addW(3.2, 3.2, 0.5, 2.4, 1.6, 78); // Зона 10
 
-  // Предметы
-  spawnItem(-12, 0.9, 12, 0x00ffff, 'keycardL1');
-  spawnItem(12, 0.8, 12, 0x00ff00, 'battery');
-  spawnItem(-4, 0.9, 34, 0xbf00ff, 'keycardL2');
+  // Расстановка потолочных источников света
+  addPointLight(0, -4);
+  addPointLight(0, 12);
+  addPointLight(-10, 12, 0x90e0ff); // Синеватый свет в офисе
+  addPointLight(0, 32);
+  addPointLight(0, 50);
+  addPointLight(0, 68);
+
+  // Двери с текстурой
+  doors.doorL1 = createDoor(0, 1.4, 22, "ZONE-05");
+  doors.doorL2 = createDoor(0, 1.4, 58, "ZONE-08");
+  doors.doorExit = createDoor(0, 1.4, 78, "EXIT");
+
+  // Мебель: Офисный стол
+  createTable(-10, 0, 12);
+  // Мебель: Серверные стойки
+  createServerRack(-4, 0, 32);
+  createServerRack(-4, 0, 35);
+
+  // Предметы (Карты и Батарейки)
+  spawnKeycard(-10, 0.82, 12, '1', '#00aaff', 'keycardL1');
+  spawnKeycard(-4, 0.82, 35, '2', '#aa00ff', 'keycardL2');
+  spawnBattery(12, 0.3, 12);
 }
 
-function createDoor(x, y, z, colorHex) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.8, 0.2), new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.3 }));
+function createDoor(x, y, z, label) {
+  const doorMat = new THREE.MeshStandardMaterial({ map: generateDoorTexture(label), roughness: 0.4 });
+  const m = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.8, 0.2), doorMat);
   m.position.set(x, y, z); scene.add(m); walls.push(m);
   return m;
 }
 
-function spawnItem(x, y, z, colorHex, type) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.4), new THREE.MeshBasicMaterial({ color: colorHex }));
+function createTable(x, y, z) {
+  const mat = new THREE.MeshStandardMaterial({ color: 0x333a42, roughness: 0.6 });
+  const top = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 1.2), mat);
+  top.position.set(x, y + 0.75, z); scene.add(top); walls.push(top);
+  
+  const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.75, 0.1), mat);
+  leg1.position.set(x - 1.1, y + 0.375, z - 0.5); scene.add(leg1);
+  const leg2 = leg1.clone(); leg2.position.set(x + 1.1, y + 0.375, z - 0.5); scene.add(leg2);
+  const leg3 = leg1.clone(); leg3.position.set(x - 1.1, y + 0.375, z + 0.5); scene.add(leg3);
+  const leg4 = leg1.clone(); leg4.position.set(x + 1.1, y + 0.375, z + 0.5); scene.add(leg4);
+}
+
+function createServerRack(x, y, z) {
+  const mat = new THREE.MeshStandardMaterial({ color: 0x111318, roughness: 0.3 });
+  const rack = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.4, 0.8), mat);
+  rack.position.set(x, y + 1.2, z); scene.add(rack); walls.push(rack);
+
+  // Светодиоды на сервере
+  const ledMat = new THREE.MeshBasicMaterial({ color: 0x00ff66 });
+  const led = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), ledMat);
+  led.position.set(x + 0.61, y + 1.8, z); scene.add(led);
+}
+
+function spawnKeycard(x, y, z, level, colorHex, type) {
+  const cardMat = new THREE.MeshBasicMaterial({ map: generateKeycardTexture(level, colorHex) });
+  const m = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.02, 0.22), cardMat);
   m.position.set(x, y, z); m.userData = { type: type };
+  scene.add(m); interactiveItems.push(m);
+}
+
+function spawnBattery(x, y, z) {
+  const batMat = new THREE.MeshStandardMaterial({ color: 0x00ff66, roughness: 0.3 });
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.3, 12), batMat);
+  m.position.set(x, y, z); m.userData = { type: 'battery' };
   scene.add(m); interactiveItems.push(m);
 }
 
 // === 6. ИНВЕНТАРЬ И ВЗАИМОДЕЙСТВИЕ ===
 function updateInventoryHUD() {
   const items = [];
-  if (window.playerState.keycardL1) items.push("<span style='color:#00ffff;'>[Карта L-1]</span>");
-  if (window.playerState.keycardL2) items.push("<span style='color:#bf00ff;'>[Карта L-2]</span>");
+  if (window.playerState.keycardL1) items.push("<span style='color:#00aaff;'>[Карта L-1]</span>");
+  if (window.playerState.keycardL2) items.push("<span style='color:#aa00ff;'>[Карта L-2]</span>");
   document.getElementById("inv-items").innerHTML = items.length ? items.join(" ") : "Пусто";
 }
 
@@ -275,14 +370,12 @@ function interact3D() {
 
   for (let i = interactiveItems.length - 1; i >= 0; i--) {
     const item = interactiveItems[i];
-    if (p.distanceTo(item.position) < 2.2) {
+    if (p.distanceTo(item.position) < 2.5) {
       playSound('pickup');
       if (item.userData.type === 'keycardL1') {
         window.playerState.keycardL1 = true;
-        doors.doorL1.material.color.setHex(0x00ff66);
       } else if (item.userData.type === 'keycardL2') {
         window.playerState.keycardL2 = true;
-        doors.doorL2.material.color.setHex(0x00ff66);
       } else if (item.userData.type === 'battery') {
         battery = Math.min(100, battery + 50);
       }
@@ -294,7 +387,7 @@ function interact3D() {
 
   if (p.distanceTo(doors.doorL1.position) < 2.5) {
     if (window.playerState.keycardL1) openDoor(doors.doorL1);
-    else alert("Нужна Ключ-карта L-1 из Офиса!");
+    else alert("Нужна Ключ-карта L-1 со стола в Офисе!");
   } else if (p.distanceTo(doors.doorL2.position) < 2.5) {
     if (window.playerState.keycardL2) openDoor(doors.doorL2);
     else alert("Нужна Ключ-карта L-2 из Серверной!");
@@ -315,28 +408,25 @@ function openDoor(m) {
   if (idx > -1) walls.splice(idx, 1);
 }
 
-// === 7. ОТРИСОВКА МИНИ-КАРТЫ (РАДАР) ===
+// === 7. МИНИ-КАРТА ===
 function drawMinimap() {
   const canvas = document.getElementById("minimap-canvas");
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, 120, 120);
 
-  // Масштабирование координат под холст
   const scale = 1.2;
   const cx = 60, cy = 20;
 
   ctx.fillStyle = '#00ff66';
-  // Игрок
   const px = cx + camera.position.x * scale;
   const pz = cy + camera.position.z * scale;
   ctx.beginPath();
   ctx.arc(px, pz, 3, 0, Math.PI * 2);
   ctx.fill();
 
-  // Двери на радаре
   ctx.fillStyle = '#ffaa00';
   Object.values(doors).forEach(d => {
-    if (d.position.y < 2.0) { // если не открыта
+    if (d.position.y < 2.0) {
       ctx.fillRect(cx + d.position.x * scale - 4, cy + d.position.z * scale, 8, 2);
     }
   });
@@ -364,7 +454,7 @@ function animate3D() {
   const delta = (time - prevTime) / 1000;
 
   if (flashlightOn && battery > 0) {
-    battery -= delta * (isSprinting ? 0.4 : 0.15);
+    battery -= delta * (isSprinting ? 0.3 : 0.1);
     document.getElementById("battery-level").textContent = `${Math.max(0, Math.round(battery))}%`;
     if (battery <= 0) { flashlightOn = false; flashlight.intensity = 0; }
   }
