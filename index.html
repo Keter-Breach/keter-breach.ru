@@ -3,25 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SCP: Фикали Геймс</title>
+  <title>SCP Facility Game</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- VHS Эффекты -->
+  <div class="vhs-overlay"></div>
+  <div class="vhs-scanlines"></div>
+
   <div class="game-container">
     <header>
+      <div class="vhs-tag">PLAY ▶ 00:04:12</div>
       <h1>SCP FACILITY SIMULATOR</h1>
       <div id="status-bar">
         <span>Локация: <strong id="current-location">Загрузка...</strong></span>
-        <span>Здоровье: <strong id="health">100 HP</strong></span>
+        <span>Цикл: <strong id="loop-count">#1</strong></span>
       </div>
     </header>
 
     <main id="screen">
-      <p id="description">Вы приходите в себя на жесткой кушетке...</p>
+      <p id="description">Вы приходите в себя...</p>
     </main>
 
     <section id="controls">
-      <h3>Доступные переходы:</h3>
+      <h3 id="controls-title">Доступные действия:</h3>
       <div id="buttons-container" class="btn-grid"></div>
     </section>
   </div>
