@@ -1,4 +1,5 @@
-// --- АУДИОДВИЖОК (Web Audio API - звуки без файлов) ---
+
+// === АУДИОДВИЖОК (Web Audio API) ===
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playSound(type) {
@@ -10,100 +11,180 @@ function playSound(type) {
   gain.connect(audioCtx.destination);
 
   if (type === 'click') {
-    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+    osc.frequency.setValueAtTime(850, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.04);
   } else if (type === 'step') {
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    osc.frequency.setValueAtTime(100 + Math.random() * 20, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.08);
   } else if (type === 'hum') {
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(50, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(45, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.012, audioCtx.currentTime);
     osc.start();
+  } else if (type === 'glitch') {
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(150 + Math.random() * 400, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.15);
   }
 }
 
-// Постоянный фоновый гул комплекса
-let ambientSound = null;
-
-// --- ТЕКСТОВАЯ ЧАСТЬ ---
-const map = {
-  d_cell: {
-    name: "Камера D-Class",
-    desc: "Вы пришли в себя. Голова раскалывается. Экран перед глазами мигает, слышен гул трансформаторов.",
-    exits: { "Выйти в коридор": "d_hallway" }
+// === ДАННЫЕ 10 СЮЖЕТНЫХ ГЛАВ ===
+const storyData = {
+  1: {
+    title: "ГЛАВА 1: ПРОСЫПАНИЕ",
+    location: "Блок D (Защитный сектор)",
+    desc: "Вы приходите в себя на металлической кушетке. Сирена молчит, но красный свет аварийных ламп заливает кабину.\n\nДверь камеры приоткрыта. На полу лежат обрывки документов: «Объект: SCP-173 / SCP-096. Нарушение условий сдерживания...»\n\nВы проходите в коридор наблюдения к интеркому. Динамик закипает треском, и хриплый голос спрашивает:\n\n«Ты помнишь, кем был до того, как Фонд присвоил тебе номер D-4126?»",
+    choices: [
+      { text: "«Я помню свое имя...»", nextChapter: 2 },
+      { text: "«Я всего лишь подопытный...»", nextChapter: 2 },
+      { text: "Молча выключить терминал", nextChapter: 2 }
+    ]
   },
-  d_hallway: {
-    name: "Коридор блока D",
-    desc: "Лампы тускло освещают серые стены. Впереди находится пункт наблюдения.",
-    exits: { "Войти в пункт наблюдения": "security_room" }
+  2: {
+    title: "ГЛАВА 2: ТЕМНЫЕ КОРИДОРЫ (3D)",
+    is3D: true,
+    desc: "В глазах темнеет. Вы снова просыпаетесь, но мир вокруг изменился...",
+    nextChapter: 3
   },
-  security_room: {
-    name: "Пункт наблюдения",
-    desc: "Экран терминала шипит. Из динамика раздается голос:\n\n«ГОТОВ ЛИ ТЫ УВИДЕТЬ, ЧТО НАХОДИТСЯ В ТЕМНОТЕ?»",
-    exits: {
-      "«Да»": "START_3D",
-      "«Включить фонарик и осмотреться»": "START_3D"
-    }
+  3: {
+    title: "ГЛАВА 3: СЕКТОР SCP-939",
+    location: "Нижние горизонты ЛЗС",
+    desc: "Вы выходите из 3D-сектора в задымленный шлюз. Из вентиляции доносится человеческий плач:\n\n«Помогите! Пожалуйста, кто-нибудь!»\n\nОднако вы знаете лор Фонда: SCP-939 имитирует голоса своих жертв, чтобы заманить добычу в темноту.",
+    choices: [
+      { text: "Затаить дыхание и обойти зону по стеночке", nextChapter: 4 },
+      { text: "Бросить металлическую трубу в противоположный угол", nextChapter: 4 }
+    ]
+  },
+  4: {
+    title: "ГЛАВА 4: ЛАБОРАТОРИИ СЛЕДОВАТЕЛЕЙ",
+    location: "Исследовательский блок Б-4",
+    desc: "Вы находите кабинет доктора Клефа. На рабочем столе горит монитор с видеозаписью SCP-079 (Старый ИИ).\n\nЭкран мигает текстом: «Я могу открыть гермодверь в Тяжелую Зону Сдерживания, если ты отключишь подачу питания на блоке 3».",
+    choices: [
+      { text: "Довериться ИИ и отключить питание", nextChapter: 5 },
+      { text: "Взломать терминал вручную через карту доступа", nextChapter: 5 }
+    ]
+  },
+  5: {
+    title: "ГЛАВА 5: ТЯЖЕЛАЯ ЗОНА СДЕРЖИВАНИЯ",
+    location: "ТЗС (High Containment)",
+    desc: "Тяжелые бронированные двери расходятся. Вокруг царит ледяной холод. Вдруг гаснет свет. Слышен характерный бетонный скрежет...\n\nSCP-173 находится прямо в конце коридора. Вы смотрите на него. Появляется непреодолимое желание моргнуть.",
+    choices: [
+      { text: "Моргать поочередно каждым глазом, отступая назад", nextChapter: 6 },
+      { text: "Забыть обо всем и рвануть к ближайшему шлюзу", nextChapter: 6 }
+    ]
+  },
+  6: {
+    title: "ГЛАВА 6: ВСТРЕЧА С ЧУМНЫМ ДОКТОРОМ",
+    location: "Медицинский блок / Камера SCP-049",
+    desc: "В тумане перед вами появляется высокая фигура в черном балахоне и маске чумного доктора.\n\n«Ах, еще одна жертва Поветрия... Не бойся, мое лекарство абсолютно эффективно», — SCP-049 медленно протягивает к вам руку в кожаной перчатке.",
+    choices: [
+      { text: "Применить найденный светошумовой заряд", nextChapter: 7 },
+      { text: "Уклониться и запереть 049 в операционной", nextChapter: 7 }
+    ]
+  },
+  7: {
+    title: "ГЛАВА 7: ШАХТА ЛИФТА И SCP-096",
+    location: "Переход между блоками",
+    desc: "Вы подбегаете к шахте лифта. В углу сидит тощая бледная гуманоидная фигура и громко рыдает, закрыв лицо руками.\n\nЭто SCP-096 (Скромник). На полу валяется разбитое зеркало.",
+    choices: [
+      { text: "Зажмуриться, уткнуться взглядом в пол и зайти в лифт", nextChapter: 8 },
+      { text: "Побежать назад, закрыв лицо руками", nextChapter: 8 }
+    ]
+  },
+  8: {
+    title: "ГЛАВА 8: ЗОНА ОПАСНОСТИ SCP-106",
+    location: "Карманное измерение / Затопленный сектор",
+    desc: "Пол под ногами превращается в черную разъедающую слизь. Из стены выплывает SCP-106 (Старик).\n\nПространство вокруг вас начинает искривляться, утягивая вас в Карманное Измерение.",
+    choices: [
+      { text: "Прыгнуть в левый коррозийный туннель", nextChapter: 9 },
+      { text: "Прыгнуть в правый туннель со звуками всплесков", nextChapter: 9 }
+    ]
+  },
+  9: {
+    title: "ГЛАВА 9: ВОЕННЫЙ БЛОК И МОТФ",
+    location: "Охраняемый периметр ВЗС",
+    desc: "Чудом выбравшись из слизи, вы слышите топот тяжелых берцев и лазерные прицелы на вашей груди. Отряд Мобильной Оперативной Таблицы (МОТ «Девятихвостая Лиса») зачищает комплекс.\n\n«Вижу подопытного D-Class! Приказ: ликвидация!»",
+    choices: [
+      { text: "Бросить дымовую шашку и уйти в технологический люк", nextChapter: 10 },
+      { text: "Поднять руки и активировать тревожную кнопку сектора", nextChapter: 10 }
+    ]
+  },
+  10: {
+    title: "ГЛАВА 10: ПОВЕРХНОСТЬ И КИСЛОРОД",
+    location: "Ворота А (Gate A) / Поверхность",
+    desc: "Гермоворота Gate A со скрежетом поднимаются. Впервые за долгое время вы видите свежий воздух и ночное небо.\n\nК вам приближается бронированный джип без опознавательных знаков Фонда. Из него выходят вооруженные люди в масках:\n\n«Приветствуем, D-4126. Мы из Повстанцев Хаоса. Ты уносишь из этого ада ценные знания. Пора покинуть Зону 19».",
+    choices: [
+      { text: "Сесть в джип Повстанцев Хаоса (ФИНАЛ: ПОБЕГ)", nextChapter: 'END' },
+      { text: "Сложить оружие перед прибывающим вертолетом Фонда (ФИНАЛ: ПЕТЛЯ)", nextChapter: 'RESET' }
+    ]
   }
 };
 
-let currentRoomKey = "d_cell";
+// === СОСТОЯНИЕ ИГРЫ ===
+let currentChapter = 1;
+let loopCount = 1;
 
-function renderTextGame() {
-  const room = map[currentRoomKey];
-  document.getElementById("current-location").textContent = room.name;
-  document.getElementById("description").textContent = room.desc;
-  
-  const container = document.getElementById("buttons-container");
-  container.innerHTML = "";
-  
-  for (const [text, target] of Object.entries(room.exits)) {
+// UI Элементы
+const chapterTitleEl = document.getElementById("chapter-title");
+const locEl = document.getElementById("current-location");
+const descEl = document.getElementById("description");
+const btnsContainer = document.getElementById("buttons-container");
+const loopEl = document.getElementById("loop-count");
+const screenEl = document.getElementById("screen");
+
+function renderChapter(chapNum) {
+  if (chapNum === 'RESET') {
+    loopCount++;
+    currentChapter = 1;
+    chapNum = 1;
+  } else if (chapNum === 'END') {
+    document.getElementById("text-game").innerHTML = `
+      <div class="vhs-tag">● REC FINISHED</div>
+      <h1>ИГРА ПРОЙДЕНА: СБЕЖАВШИЙ ЭКСПЕРИМЕНТ</h1>
+      <p style="margin: 20px 0; line-height: 1.6;">Вы успешно прошли все 10 глав Зоны 19, выжили при нарушении условий сдерживания и сбежали вместе с Повстанцами Хаоса.<br><br>Спасибо за игру!</p>
+      <button onclick="location.reload()">Начать заново</button>
+    `;
+    return;
+  }
+
+  currentChapter = chapNum;
+  const data = storyData[chapNum];
+
+  if (data.is3D) {
+    init3DMode();
+    return;
+  }
+
+  chapterTitleEl.textContent = data.title;
+  locEl.textContent = data.location || "SCP Facility";
+  descEl.textContent = data.desc;
+  loopEl.textContent = `#${loopCount}`;
+
+  // Анимация просыпания
+  screenEl.classList.remove("wake-up");
+  void screenEl.offsetWidth;
+  screenEl.classList.add("wake-up");
+
+  btnsContainer.innerHTML = "";
+  data.choices.forEach(choice => {
     const btn = document.createElement("button");
-    btn.textContent = text;
+    btn.textContent = choice.text;
     btn.onclick = () => {
       playSound('click');
-      if (target === "START_3D") {
-        init3DMode();
-      } else {
-        currentRoomKey = target;
-        renderTextGame();
-      }
+      renderChapter(choice.nextChapter);
     };
-    container.appendChild(btn);
-  }
+    btnsContainer.appendChild(btn);
+  });
 }
 
-renderTextGame();
-
-// --- ГЕНЕРАТОР ТЕКСТУР (Canvas) ---
-function generateTexture(type) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 256; canvas.height = 256;
-  const ctx = canvas.getContext('2d');
-
-  if (type === 'wall') {
-    ctx.fillStyle = '#2b2b2b'; ctx.fillRect(0, 0, 256, 256);
-    ctx.fillStyle = '#1f1f1f';
-    for (let i = 0; i < 500; i++) ctx.fillRect(Math.random()*256, Math.random()*256, 2, 2);
-    ctx.strokeStyle = '#151515'; ctx.lineWidth = 4;
-    ctx.strokeRect(0, 0, 256, 256); // Плиточные швы
-  } else if (type === 'floor') {
-    ctx.fillStyle = '#111111'; ctx.fillRect(0, 0, 256, 256);
-    ctx.fillStyle = '#222222';
-    for (let i = 0; i < 256; i += 32) {
-      ctx.fillRect(i, 0, 1, 256); ctx.fillRect(0, i, 256, 1);
-    }
-  }
-  return new THREE.CanvasTexture(canvas);
-}
-
-// --- 3D ДВИЖОК И ФОНАРИК ---
+// === 3D THREE.JS ДВИЖОК (ГЛАВА 2) ===
 let scene, camera, renderer, flashlight;
 let flashlightOn = true;
 let battery = 100;
@@ -111,6 +192,27 @@ let moveForward = false, moveBackward = false, moveLeft = false, moveRight = fal
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
 let stepTimer = 0;
+
+function generateTexture(type) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  if (type === 'wall') {
+    ctx.fillStyle = '#222222'; ctx.fillRect(0, 0, 256, 256);
+    ctx.fillStyle = '#181818';
+    for (let i = 0; i < 400; i++) ctx.fillRect(Math.random()*256, Math.random()*256, 3, 3);
+    ctx.strokeStyle = '#0f0f0f'; ctx.lineWidth = 6;
+    ctx.strokeRect(0, 0, 256, 256);
+  } else if (type === 'floor') {
+    ctx.fillStyle = '#111111'; ctx.fillRect(0, 0, 256, 256);
+    ctx.fillStyle = '#252525';
+    for (let i = 0; i < 256; i += 32) {
+      ctx.fillRect(i, 0, 2, 256); ctx.fillRect(0, i, 256, 2);
+    }
+  }
+  return new THREE.CanvasTexture(canvas);
+}
 
 function init3DMode() {
   document.getElementById("text-game").classList.add("hidden");
@@ -120,7 +222,7 @@ function init3DMode() {
   playSound('hum');
 
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x020202, 0.12);
+  scene.fog = new THREE.FogExp2(0x020202, 0.14);
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
   camera.position.set(0, 1.6, 0);
@@ -129,26 +231,23 @@ function init3DMode() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   container.appendChild(renderer.domElement);
 
-  // Фонарик игрока
-  flashlight = new THREE.SpotLight(0xddffff, 3, 18, Math.PI / 5, 0.4, 1);
-  flashlight.position.set(0.2, -0.2, 0); // Чуть правее и ниже глаз
+  flashlight = new THREE.SpotLight(0xccffff, 3.5, 20, Math.PI / 4.5, 0.4, 1);
+  flashlight.position.set(0.2, -0.2, 0);
   camera.add(flashlight);
   flashlight.target = camera;
   scene.add(camera);
 
-  // Тусклый свет комплекса
-  const ambientLight = new THREE.AmbientLight(0x050d05);
+  const ambientLight = new THREE.AmbientLight(0x050f05);
   scene.add(ambientLight);
 
-  buildFacilityMap();
+  build3DMap();
 
-  // Управление
   container.addEventListener('click', () => document.body.requestPointerLock());
 
   document.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement === document.body) {
-      camera.rotation.y -= e.movementX * 0.002;
-      camera.rotation.x -= e.movementY * 0.002;
+      camera.rotation.y -= e.movementX * 0.0022;
+      camera.rotation.x -= e.movementY * 0.0022;
       camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
     }
   });
@@ -156,16 +255,17 @@ function init3DMode() {
   document.addEventListener('keydown', (e) => {
     onKey(e.code, true);
     if (e.code === 'KeyF') toggleFlashlight();
+    if (e.code === 'KeyE') check3DExit();
   });
   document.addEventListener('keyup', (e) => onKey(e.code, false));
 
-  animate();
+  animate3D();
 }
 
 function toggleFlashlight() {
   if (battery <= 0) return;
   flashlightOn = !flashlightOn;
-  flashlight.intensity = flashlightOn ? 3 : 0;
+  flashlight.intensity = flashlightOn ? 3.5 : 0;
   playSound('click');
 }
 
@@ -178,93 +278,99 @@ function onKey(code, state) {
   }
 }
 
-// Генерация разветвленной карты комплекса
-function buildFacilityMap() {
+let exitDoorMesh;
+
+function build3DMap() {
   const wallTex = generateTexture('wall');
   wallTex.wrapS = THREE.RepeatWrapping; wallTex.wrapT = THREE.RepeatWrapping;
   const floorTex = generateTexture('floor');
-  
+
   const wallMat = new THREE.MeshLambertMaterial({ map: wallTex });
   const floorMat = new THREE.MeshLambertMaterial({ map: floorTex });
 
-  // Пол
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), floorMat);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), floorMat);
   floor.rotation.x = -Math.PI / 2;
   scene.add(floor);
 
-  // Потолок
-  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), wallMat);
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), wallMat);
   ceiling.position.y = 3.5;
   ceiling.rotation.x = Math.PI / 2;
   scene.add(ceiling);
 
-  // Карта коридоров (Сетка лабиринта)
+  // Сетка коридоров
   const grid = [
-    [1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,1,0,0,0,1],
-    [1,0,1,0,1,0,1,0,1],
-    [1,0,1,0,0,0,1,0,1],
-    [1,0,1,1,1,0,1,0,1],
-    [1,0,0,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1]
+    [1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,1],
+    [1,0,1,1,1,0,1],
+    [1,0,0,0,1,0,1],
+    [1,1,1,0,0,0,1],
+    [1,1,1,1,1,1,1]
   ];
 
   for (let r = 0; r < grid.length; r++) {
     for (let c = 0; c < grid[r].length; c++) {
       if (grid[r][c] === 1) {
         const wall = new THREE.Mesh(new THREE.BoxGeometry(4, 3.5, 4), wallMat);
-        wall.position.set((c - 4) * 4, 1.75, (r - 3) * 4);
+        wall.position.set((c - 3) * 4, 1.75, (r - 2) * 4);
         scene.add(wall);
       }
     }
   }
 
-  // Аварийная лампочка вдали
-  const redLight = new THREE.PointLight(0xff0033, 1.5, 8);
-  redLight.position.set(0, 2.5, -12);
-  scene.add(redLight);
+  // Выходная дверь (Переход к Главе 3)
+  const doorMat = new THREE.MeshLambertMaterial({ color: 0x00ff66, wireframe: true });
+  exitDoorMesh = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.2), doorMat);
+  exitDoorMesh.position.set(4, 1.5, 8);
+  scene.add(exitDoorMesh);
 }
 
-// Игровой цикл
-function animate() {
-  requestAnimationFrame(animate);
+function check3DExit() {
+  const dist = camera.position.distanceTo(exitDoorMesh.position);
+  if (dist < 3) {
+    // Выходим из 3D режима
+    document.exitPointerLock();
+    document.getElementById("three-container").classList.add("hidden");
+    document.getElementById("text-game").classList.remove("hidden");
+    playSound('glitch');
+    renderChapter(3);
+  }
+}
+
+function animate3D() {
+  if (document.getElementById("three-container").classList.contains("hidden")) return;
+
+  requestAnimationFrame(animate3D);
 
   const time = performance.now();
   const delta = (time - prevTime) / 1000;
 
-  // Расход батареи фонарика
   if (flashlightOn && battery > 0) {
-    battery -= delta * 0.5; // Батарея садится постепенно
+    battery -= delta * 0.3;
     document.getElementById("battery-level").textContent = `${Math.max(0, Math.round(battery))}%`;
-    if (battery <= 0) {
-      flashlightOn = false;
-      flashlight.intensity = 0;
-    }
+    if (battery <= 0) { flashlightOn = false; flashlight.intensity = 0; }
   }
 
-  // Движение
   velocity.x -= velocity.x * 8.0 * delta;
   velocity.z -= velocity.z * 8.0 * delta;
 
   const moveDirZ = Number(moveForward) - Number(moveBackward);
   const moveDirX = Number(moveRight) - Number(moveLeft);
 
-  if (moveForward || moveBackward) velocity.z -= moveDirZ * 30.0 * delta;
-  if (moveLeft || moveRight) velocity.x -= moveDirX * 30.0 * delta;
+  if (moveForward || moveBackward) velocity.z -= moveDirZ * 28.0 * delta;
+  if (moveLeft || moveRight) velocity.x -= moveDirX * 28.0 * delta;
 
   camera.translateX(-velocity.x * delta);
   camera.translateZ(velocity.z * delta);
   camera.position.y = 1.6;
 
-  // Звук шагов
   if (moveForward || moveBackward || moveLeft || moveRight) {
     stepTimer += delta;
-    if (stepTimer > 0.45) {
-      playSound('step');
-      stepTimer = 0;
-    }
+    if (stepTimer > 0.45) { playSound('step'); stepTimer = 0; }
   }
 
   prevTime = time;
   renderer.render(scene, camera);
 }
+
+// Запуск игры с Главы 1
+renderChapter(1);
