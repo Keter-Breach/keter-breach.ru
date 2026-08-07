@@ -624,3 +624,70 @@ function gameLoop(time) {
 
     renderer.render(scene, camera);
 }
+const gameMap = {
+  // Новая точка спавна игрока
+  spawnPoint: "class_d_cells",
+
+  locations: {
+    // Зона спавна
+    class_d_cells: {
+      id: "class_d_cells",
+      title: "Камеры содержания персонала класса D",
+      description: "Минималистичный блок с несколькими нарами и тяжелой гермодверью.",
+      exits: { north: "heavy_hallway_1" },
+      items: ["карта_доступа_1"]
+    },
+
+    // Новые локации
+    heavy_hallway_1: {
+      id: "heavy_hallway_1",
+      title: "Главный коридор сектора D",
+      description: "Длинный коридор с мигающим люминесцентным освещением.",
+      exits: { south: "class_d_cells", east: "security_checkpoint", west: "cafeteria" }
+    },
+
+    security_checkpoint: {
+      id: "security_checkpoint",
+      title: "КПП охраны",
+      description: "Заблокированный пост с бронированным стеклом и пультами управления.",
+      exits: { west: "heavy_hallway_1", north: "research_sector_a" },
+      items: ["аптечка", "рация"]
+    },
+
+    cafeteria: {
+      id: "cafeteria",
+      title: "Столовая персонала",
+      description: "Перевернутые столы и разбросанная подносы. Похоже, здесь была спешная эвакуация.",
+      exits: { east: "heavy_hallway_1", south: "storage_room" },
+      items: ["фонарик"]
+    },
+
+    storage_room: {
+      id: "storage_room",
+      title: "Склад снабжения",
+      description: "Тесное помещение со стеллажами и ящиками.",
+      exits: { north: "cafeteria" },
+      items: ["батарейка"]
+    },
+
+    research_sector_a: {
+      id: "research_sector_a",
+      title: "Исследовательский блок A",
+      description: "Лаборатории с терминалами и разбитыми пробирками.",
+      exits: { south: "security_checkpoint", north: "scp_containment_173" }
+    },
+
+    scp_containment_173: {
+      id: "scp_containment_173",
+      title: "Камера содержания SCP",
+      description: "Массивная герметичная камера с системой наблюдения.",
+      exits: { south: "research_sector_a" }
+    }
+  }
+};
+
+// Инициализация игрока на новом спавне
+let player = {
+  currentLocation: gameMap.spawnPoint,
+  inventory: []
+};
