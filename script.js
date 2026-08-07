@@ -82,7 +82,7 @@ const storyData = {
   6: {
     title: "ГЛАВА 6: ВСТРЕЧА С ЧУМНЫМ ДОКТОРОМ",
     location: "Медицинский блок / Камера SCP-049",
-    desc: "В тумане перед вами появляется высокая фигура в черном балахоне и маске чумного доктора.\n\n«Ах, еще одна жертва Поветрия... Не бойся, мое лекарство абсолютно эффективно», — SCP-049 медленно протягивает к вам руку в кожаной перчатке.",
+    desc: "В тумане перед вами появляется высокая фигура в черном балахоне и маске чумного доктора.\n\n«Ах, еще одна жертва Поветрия... Не бойся, мое лекарство абсолютно эффективно», — SCP-049 медленно протягивает к вам рукав.",
     choices: [
       { text: "Применить найденный светошумовой заряд", nextChapter: 7 },
       { text: "Уклониться и запереть 049 в операционной", nextChapter: 7 }
@@ -91,7 +91,7 @@ const storyData = {
   7: {
     title: "ГЛАВА 7: ШАХТА ЛИФТА И SCP-096",
     location: "Переход между блоками",
-    desc: "Вы подбегаете к шахте лифта. В углу сидит тощая бледная гуманоидная фигура и громко рыдает, закрыв лицо руками.\n\nЭто SCP-096 (Скромник). На полу валяется разбитое зеркало.",
+    desc: "Вы подбегаете к шахте лифта. В углу сидит тощая бледная фигура и громко рыдает, закрыв лицо руками.\n\nЭто SCP-096 (Скромник). На полу валяется разбитое зеркало.",
     choices: [
       { text: "Зажмуриться, уткнуться взглядом в пол и зайти в лифт", nextChapter: 8 },
       { text: "Побежать назад, закрыв лицо руками", nextChapter: 8 }
@@ -100,7 +100,7 @@ const storyData = {
   8: {
     title: "ГЛАВА 8: ЗОНА ОПАСНОСТИ SCP-106",
     location: "Карманное измерение / Затопленный сектор",
-    desc: "Пол под ногами превращается в черную разъедающую слизь. Из стены выплывает SCP-106 (Старик).\n\nПространство вокруг вас начинает искривляться, утягивая вас в Карманное Измерение.",
+    desc: "Пол под ногами превращается в черную разъедающую слизь. Из стены выплывает SCP-106 (Старик).\n\nПространство вокруг вас начинает искривляться.",
     choices: [
       { text: "Прыгнуть в левый коррозийный туннель", nextChapter: 9 },
       { text: "Прыгнуть в правый туннель со звуками всплесков", nextChapter: 9 }
@@ -109,7 +109,7 @@ const storyData = {
   9: {
     title: "ГЛАВА 9: ВОЕННЫЙ БЛОК И МОТФ",
     location: "Охраняемый периметр ВЗС",
-    desc: "Чудом выбравшись из слизи, вы слышите топот тяжелых берцев и лазерные прицелы на вашей груди. Отряд Мобильной Оперативной Таблицы (МОТ «Девятихвостая Лиса») зачищает комплекс.\n\n«Вижу подопытного D-Class! Приказ: ликвидация!»",
+    desc: "Чудом выбравшись из слизи, вы слышите топот тяжелых берцев. Отряд Мобильной Оперативной Группы зачищает комплекс.\n\n«Вижу подопытного D-Class! Приказ: ликвидация!»",
     choices: [
       { text: "Бросить дымовую шашку и уйти в технологический люк", nextChapter: 10 },
       { text: "Поднять руки и активировать тревожную кнопку сектора", nextChapter: 10 }
@@ -118,10 +118,10 @@ const storyData = {
   10: {
     title: "ГЛАВА 10: ПОВЕРХНОСТЬ И КИСЛОРОД",
     location: "Ворота А (Gate A) / Поверхность",
-    desc: "Гермоворота Gate A со скрежетом поднимаются. Впервые за долгое время вы видите свежий воздух и ночное небо.\n\nК вам приближается бронированный джип без опознавательных знаков Фонда. Из него выходят вооруженные люди в масках:\n\n«Приветствуем, D-4126. Мы из Повстанцев Хаоса. Ты уносишь из этого ада ценные знания. Пора покинуть Зону 19».",
+    desc: "Гермоворота Gate A со скрежетом поднимаются. Впервые за долгое время вы видите свежий воздух.\n\nК вам приближается бронированный джип без опознавательных знаков Фонда:\n\n«Приветствуем, D-4126. Мы из Повстанцев Хаоса. Пора покинуть Зону 19».",
     choices: [
       { text: "Сесть в джип Повстанцев Хаоса (ФИНАЛ: ПОБЕГ)", nextChapter: 'END' },
-      { text: "Сложить оружие перед прибывающим вертолетом Фонда (ФИНАЛ: ПЕТЛЯ)", nextChapter: 'RESET' }
+      { text: "Сложить оружие перед прибывающим вертолетом (ФИНАЛ: ПЕТЛЯ)", nextChapter: 'RESET' }
     ]
   }
 };
@@ -130,7 +130,6 @@ const storyData = {
 let currentChapter = 1;
 let loopCount = 1;
 
-// UI Элементы
 const chapterTitleEl = document.getElementById("chapter-title");
 const locEl = document.getElementById("current-location");
 const descEl = document.getElementById("description");
@@ -166,7 +165,6 @@ function renderChapter(chapNum) {
   descEl.textContent = data.desc;
   loopEl.textContent = `#${loopCount}`;
 
-  // Анимация просыпания
   screenEl.classList.remove("wake-up");
   void screenEl.offsetWidth;
   screenEl.classList.add("wake-up");
@@ -183,7 +181,7 @@ function renderChapter(chapNum) {
   });
 }
 
-// === 3D THREE.JS ДВИЖОК С ТЕКСТУРАМИ И КОЛЛИЗИЕЙ ===
+// === 3D THREE.JS ДВИЖОК ===
 let scene, camera, renderer, flashlight;
 let flashlightOn = true;
 let battery = 100;
@@ -192,11 +190,11 @@ let prevTime = performance.now();
 const velocity = new THREE.Vector3();
 let stepTimer = 0;
 
-// Текстуры и коллизии
 const textureLoader = new THREE.TextureLoader();
 let walls = [];
 let exitDoorMesh;
 
+// Текстуры
 const wallTexture = textureLoader.load('textures/concrete_wall.jpg');
 const floorTexture = textureLoader.load('textures/floor_tiles.jpg');
 
@@ -211,7 +209,6 @@ function checkWallCollision(newPosition) {
 
   for (let i = 0; i < walls.length; i++) {
     const wallBox = new THREE.Box3().setFromObject(walls[i]);
-    
     const playerBox = new THREE.Box3(
       new THREE.Vector3(newPosition.x - playerRadius, 0, newPosition.z - playerRadius),
       new THREE.Vector3(newPosition.x + playerRadius, 3.5, newPosition.z + playerRadius)
@@ -241,6 +238,7 @@ function init3DMode() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   container.appendChild(renderer.domElement);
 
+  // Фонарик игрока
   flashlight = new THREE.SpotLight(0xccffff, 3.5, 20, Math.PI / 4.5, 0.4, 1);
   flashlight.position.set(0.2, -0.2, 0);
   camera.add(flashlight);
@@ -289,22 +287,22 @@ function build3DMap() {
   walls = [];
 
   const wallMat = new THREE.MeshStandardMaterial({ 
-    map: wallTexture,
-    roughness: 0.8,
-    metalness: 0.1
+    map: wallTexture, 
+    roughness: 0.8, 
+    metalness: 0.1 
   });
   
   const floorMat = new THREE.MeshStandardMaterial({ 
-    map: floorTexture,
-    roughness: 0.4
+    map: floorTexture, 
+    roughness: 0.4 
   });
 
-  // Пол
+  // ПОЛ
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), floorMat);
   floor.rotation.x = -Math.PI / 2;
   scene.add(floor);
 
-  // Потолок
+  // ПОТОЛОК
   const ceilingMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
   const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), ceilingMat);
   ceiling.position.y = 3.5;
@@ -319,7 +317,7 @@ function build3DMap() {
   redAlertLight.position.set(0, 2.8, 0);
   scene.add(redAlertLight);
 
-  // Сетка коридоров
+  // СТЕНЫ (Сетка коридоров)
   const grid = [
     [1,1,1,1,1,1,1],
     [1,0,0,0,0,0,1],
@@ -340,7 +338,7 @@ function build3DMap() {
     }
   }
 
-  // Выходная дверь
+  // ВЫХОДНАЯ ДВЕРЬ
   const doorMat = new THREE.MeshStandardMaterial({ color: 0x00ff66, roughness: 0.3, metalness: 0.8 });
   exitDoorMesh = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.2), doorMat);
   exitDoorMesh.position.set(4, 1.5, 8);
@@ -381,7 +379,7 @@ function animate3D() {
   if (moveForward || moveBackward) velocity.z -= moveDirZ * 28.0 * delta;
   if (moveLeft || moveRight) velocity.x -= moveDirX * 28.0 * delta;
 
-  // Движение с проверкой коллизии
+  // ПЕРЕМЕЩЕНИЕ С КОЛЛИЗИЕЙ
   const oldPos = camera.position.clone();
 
   camera.translateX(-velocity.x * delta);
@@ -405,5 +403,5 @@ function animate3D() {
   renderer.render(scene, camera);
 }
 
-// Запуск игры с Главы 1
+// Запуск игры
 renderChapter(1);
