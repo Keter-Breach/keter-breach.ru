@@ -3,19 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SCP Facility - Loop & 3D Encounter</title>
+  <title>SCP: VHS EDITION</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Подключаем Three.js для 3D графики -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-  <!-- Максимальные VHS-эффекты -->
+  <!-- VHS Помехи и Оверлеи -->
   <div class="vhs-scanlines"></div>
   <div class="vhs-noise"></div>
   <div class="vhs-vignette"></div>
   <div class="vhs-tracking-line"></div>
 
-  <!-- Контейнер для Текстового Режима -->
+  <!-- Текстовая Часть -->
   <div id="text-game" class="game-container">
     <header>
       <div class="vhs-tag">● REC 00:04:12 [TAPE_01]</div>
@@ -36,11 +35,12 @@
     </section>
   </div>
 
-  <!-- Контейнер для 3D Режима от 1-го лица (изначально скрыт) -->
+  <!-- 3D Часть -->
   <div id="three-container" class="hidden">
-    <div class="vhs-tag ui-overlay">● REC 00:04:13 [TAPE_02] | РЕЖИМ 1-ГО ЛИЦА</div>
+    <div class="vhs-tag ui-overlay">● REC 00:04:13 [TAPE_02] | D-CLASS ESCAPE</div>
+    <div id="battery-hud">ФОНАРИК [F]: <span id="battery-level">100%</span></div>
     <div id="crosshair">+</div>
-    <div id="instructions">Кликните по экрану, чтобы включить обзор мышью (WASD — ходьба)</div>
+    <div id="instructions">Кликните по экрану, чтобы начать (WASD — Ходьба, F — Фонарик)</div>
   </div>
 
   <script src="script.js"></script>
