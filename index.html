@@ -3,17 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SCP Facility Game</title>
+  <title>SCP Facility - Loop & 3D Encounter</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Подключаем Three.js для 3D графики -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-  <!-- VHS Эффекты -->
-  <div class="vhs-overlay"></div>
+  <!-- Максимальные VHS-эффекты -->
   <div class="vhs-scanlines"></div>
+  <div class="vhs-noise"></div>
+  <div class="vhs-vignette"></div>
+  <div class="vhs-tracking-line"></div>
 
-  <div class="game-container">
+  <!-- Контейнер для Текстового Режима -->
+  <div id="text-game" class="game-container">
     <header>
-      <div class="vhs-tag">PLAY ▶ 00:04:12</div>
+      <div class="vhs-tag">● REC 00:04:12 [TAPE_01]</div>
       <h1>SCP FACILITY SIMULATOR</h1>
       <div id="status-bar">
         <span>Локация: <strong id="current-location">Загрузка...</strong></span>
@@ -26,9 +31,16 @@
     </main>
 
     <section id="controls">
-      <h3 id="controls-title">Доступные действия:</h3>
+      <h3>Доступные действия:</h3>
       <div id="buttons-container" class="btn-grid"></div>
     </section>
+  </div>
+
+  <!-- Контейнер для 3D Режима от 1-го лица (изначально скрыт) -->
+  <div id="three-container" class="hidden">
+    <div class="vhs-tag ui-overlay">● REC 00:04:13 [TAPE_02] | РЕЖИМ 1-ГО ЛИЦА</div>
+    <div id="crosshair">+</div>
+    <div id="instructions">Кликните по экрану, чтобы включить обзор мышью (WASD — ходьба)</div>
   </div>
 
   <script src="script.js"></script>
