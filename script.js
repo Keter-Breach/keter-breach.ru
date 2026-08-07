@@ -1,631 +1,626 @@
-// ==========================================
-// ИГРОВОЕ СОСТОЯНИЕ
-// ==========================================
+// ====================================================================
+// SCP: ZONE 19 - MODERN GRAPHICS & GAMEPLAY ENGINE
+// ====================================================================
 
-let gameState = {
-    currentBlock: 'block-menu',
-    xp: 0,
-    rank: 'Агент C-492',
-    unlockedArchive: []
+// --- Синтезатор звука (Web Audio API) ---
+class SoundManager {
+    constructor() {
+        this.ctx = null;
+    }
+
+    init() {
+        if (this.ctx) return;
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioCtx();
+    }
+
+    playFootstep() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(80, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.08);
+
+        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.08);
+    }
+
+    playFlashlightClick() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(200, this.ctx.currentTime + 0.03);
+
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.03);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.03);
+    }
+
+    playSCPConcreteMove() {
+        if (!this.ctx) return;
+        const bufferSize = this.ctx.sampleRate * 0.25;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 350;
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        noise.start();
+    }
+}
+
+const sounds = new SoundManager();
+
+// --- Состояние игры ---
+let scene, camera, renderer;
+let flashlight, flashlightTarget;
+let isFlashlightOn = true;
+
+// Физика игрока
+const player = {
+    position: new THREE.Vector3(0, 1.6, 12),
+    stamina: 100,
+    isSprinting: false,
+    headBobTimer: 0,
+    height: 1.6
 };
 
-const ANSWERS = {
-    'block-d': '3'
-};
+// Управление
+let keys = {};
+let yaw = 0, pitch = 0;
+let isPointerLocked = false;
 
-// МОРГАНИЕ
+// Моргание
 let blinkMeter = 100;
 let isBlinking = false;
 
-// ==========================================
-// ИНИЦИАЛИЗАЦИЯ
-// ==========================================
-
-function initAudioAndApp() {
-    const overlay = document.getElementById('start-overlay');
-    if (overlay) overlay.classList.add('hidden');
-
-    startAmbientSound();
-    document.getElementById('block-menu').classList.remove('hidden');
-    loadProgress();
-    updateUI();
-}
-
-function startAmbientSound() {
-    const staticSnd = document.getElementById('snd-static');
-    const vhsSnd = document.getElementById('snd-vhs');
-
-    if (staticSnd && vhsSnd) {
-        staticSnd.volume = 0.15;
-        vhsSnd.volume = 0.20;
-        staticSnd.play().catch(() => {});
-        vhsSnd.play().catch(() => {});
-    }
-}
-
-document.addEventListener('keydown', function(event) {
-    if (event.code === 'Enter') {
-        const overlay = document.getElementById('start-overlay');
-        if (overlay && !overlay.classList.contains('hidden')) {
-            initAudioAndApp();
-            return;
-        }
-
-        const menuBlock = document.getElementById('block-menu');
-        if (menuBlock && !menuBlock.classList.contains('hidden') && !isGame3DActive) {
-            startGame3D();
-        }
-    }
-});
-
-// ==========================================
-// ГЕНЕРАЦИЯ ТЕКСТУР ДЛЯ СТЕН И ПОЛА
-// ==========================================
-
-function createTilesTexture() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    ctx.fillStyle = '#1c241c';
-    ctx.fillRect(0, 0, 512, 512);
-    ctx.strokeStyle = '#0a0f0a';
-    ctx.lineWidth = 8;
-
-    const tileSize = 64;
-    for (let x = 0; x <= 512; x += tileSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, 512);
-        ctx.stroke();
-    }
-    for (let y = 0; y <= 512; y += tileSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(512, y);
-        ctx.stroke();
-    }
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    return texture;
-}
-
-function createMetalTexture() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-
-    ctx.fillStyle = '#2a332a';
-    ctx.fillRect(0, 0, 512, 512);
-    ctx.strokeStyle = '#151d15';
-    ctx.lineWidth = 6;
-    ctx.strokeRect(10, 10, 492, 492);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    return texture;
-}
-
-// ==========================================
-// 3D ДВИЖОК
-// ==========================================
-
-let scene, camera, renderer;
-let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
-let prevTime = performance.now();
-let velocity = new THREE.Vector3();
-let direction = new THREE.Vector3();
-
-let isGame3DActive = false;
-let terminalMesh, scp173Group;
+// Объект терминала и коллизии
+const colliders = [];
+let terminalMesh;
 let isNearTerminal = false;
 
-let tilesMaterial, metalMaterial;
-let colliders = [];
+// SCP-173
+let scp173Group;
+let raycaster;
 
-function init3DWorld() {
+// PBR Материалы
+function createPBRMaterials() {
+    // Текстура бетона (Стены)
+    const wallCanvas = document.createElement('canvas');
+    wallCanvas.width = 512; wallCanvas.height = 512;
+    const wCtx = wallCanvas.getContext('2d');
+    wCtx.fillStyle = '#222522';
+    wCtx.fillRect(0,0,512,512);
+
+    for(let i=0; i<8000; i++) {
+        const val = Math.floor(Math.random() * 40);
+        wCtx.fillStyle = `rgb(${25+val},${30+val},${25+val})`;
+        wCtx.fillRect(Math.random()*512, Math.random()*512, 2, 2);
+    }
+    wCtx.strokeStyle = '#111511';
+    wCtx.lineWidth = 4;
+    wCtx.strokeRect(0,0,512,512);
+
+    const wallTex = new THREE.CanvasTexture(wallCanvas);
+    wallTex.wrapS = THREE.RepeatWrapping;
+    wallTex.wrapT = THREE.RepeatWrapping;
+
+    // Плитка пола
+    const floorCanvas = document.createElement('canvas');
+    floorCanvas.width = 512; floorCanvas.height = 512;
+    const fCtx = floorCanvas.getContext('2d');
+    fCtx.fillStyle = '#111611';
+    fCtx.fillRect(0,0,512,512);
+
+    fCtx.strokeStyle = '#050a05';
+    fCtx.lineWidth = 6;
+    for(let i=0; i<=512; i+=64) {
+        fCtx.beginPath(); fCtx.moveTo(i,0); fCtx.lineTo(i,512); fCtx.stroke();
+        fCtx.beginPath(); fCtx.moveTo(0,i); fCtx.lineTo(512,i); fCtx.stroke();
+    }
+
+    const floorTex = new THREE.CanvasTexture(floorCanvas);
+    floorTex.wrapS = THREE.RepeatWrapping;
+    floorTex.wrapT = THREE.RepeatWrapping;
+
+    return {
+        wall: new THREE.MeshStandardMaterial({
+            map: wallTex,
+            roughness: 0.85,
+            metalness: 0.1
+        }),
+        floor: new THREE.MeshStandardMaterial({
+            map: floorTex,
+            roughness: 0.4,
+            metalness: 0.5
+        }),
+        ceiling: new THREE.MeshStandardMaterial({
+            color: 0x182018,
+            roughness: 0.9
+        })
+    };
+}
+
+let materials;
+
+// --- Инициализация 3D-мира ---
+function initGame() {
+    document.getElementById('start-overlay').classList.add('hidden');
+    sounds.init();
+
     const canvas = document.getElementById('game-canvas');
-    
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x020502);
-    scene.fog = new THREE.FogExp2(0x020502, 0.04);
-
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 1.6, 12);
-
-    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    
+    // Мягкие тени и HDR Тонемаппинг
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.9;
 
-    setupProceduralMaterials();
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x010401);
+    scene.fog = new THREE.FogExp2(0x010401, 0.05);
 
-    const ambientLight = new THREE.AmbientLight(0x223322, 0.5);
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.rotation.order = 'YXZ';
+
+    materials = createPBRMaterials();
+    raycaster = new THREE.Raycaster();
+
+    // Фоновый рассеянный свет
+    const ambientLight = new THREE.AmbientLight(0x081208, 0.4);
     scene.add(ambientLight);
 
-    buildBaseMap();
+    setupFlashlight();
+    buildComplexMap();
+    createSCP173Model();
 
-    // Терминал управления шлюзом
-    const termGeo = new THREE.BoxGeometry(0.8, 1.4, 0.4);
-    const termMat = new THREE.MeshStandardMaterial({ color: 0x00ff66, emissive: 0x003311 });
+    // Слушатели событий
+    canvas.addEventListener('click', () => {
+        if (!isPointerLocked) canvas.requestPointerLock();
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+        isPointerLocked = (document.pointerLockElement === canvas);
+    });
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('keydown', (e) => handleKey(e, true));
+    document.addEventListener('keyup', (e) => handleKey(e, false));
+    window.addEventListener('resize', onWindowResize);
+
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+}
+
+// --- Ручной Динамический Фонарик ---
+function setupFlashlight() {
+    flashlight = new THREE.SpotLight(0xffffff, 4.0, 22, Math.PI / 6, 0.4, 1.5);
+    flashlight.castShadow = true;
+    flashlight.shadow.mapSize.width = 1024;
+    flashlight.shadow.mapSize.height = 1024;
+
+    flashlightTarget = new THREE.Object3D();
+    scene.add(flashlightTarget);
+    flashlight.target = flashlightTarget;
+
+    scene.add(flashlight);
+}
+
+// --- Построение карты ---
+function buildComplexMap() {
+    // 1. Центральный Коридор
+    createRoom(0, 0, 6, 40, 4);
+    
+    // Источники света с динамическими тенями
+    addLightFixture(0, 12, 0xffaa44, 2.0);
+    addLightFixture(0, 0, 0xffaa44, 2.0);
+    addLightFixture(0, -12, 0xffaa44, 2.0);
+
+    // 2. Операторская
+    createRoom(-10, -10, 14, 14, 4);
+    addLightFixture(-10, -10, 0x00ff66, 2.5);
+
+    // Интерактивный Терминал
+    const termGeo = new THREE.BoxGeometry(0.8, 1.4, 0.5);
+    const termMat = new THREE.MeshStandardMaterial({
+        color: 0x00ff66,
+        emissive: 0x004411,
+        emissiveIntensity: 0.8
+    });
     terminalMesh = new THREE.Mesh(termGeo, termMat);
-    terminalMesh.position.set(-11, 1, -12);
+    terminalMesh.position.set(-11, 0.7, -12);
+    terminalMesh.castShadow = true;
     scene.add(terminalMesh);
 
-    // Модель SCP-173
-    createSCP173();
+    // 3. Камера SCP-173
+    createRoom(10, -8, 14, 10, 4);
+    addLightFixture(10, -8, 0xff2222, 3.0);
 
-    document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('keyup', onKeyUp);
-    canvas.addEventListener('click', () => {
-        if (isGame3DActive && !document.pointerLockElement) {
-            canvas.requestPointerLock();
-        }
-    });
-
-    document.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('resize', onWindowResize);
+    // Декоративные ящики
+    createCrate(2, 8, 1.2);
+    createCrate(-13, -12, 1.4);
 }
 
-function setupProceduralMaterials() {
-    const tilesTexture = createTilesTexture();
-    tilesTexture.repeat.set(4, 4);
-    tilesMaterial = new THREE.MeshStandardMaterial({ map: tilesTexture, roughness: 0.4 });
+function createRoom(x, z, width, depth, height) {
+    materials.floor.map.repeat.set(width / 4, depth / 4);
+    materials.wall.map.repeat.set(width / 4, height / 4);
 
-    const metalTexture = createMetalTexture();
-    metalTexture.repeat.set(2, 1);
-    metalMaterial = new THREE.MeshStandardMaterial({ map: metalTexture, roughness: 0.5 });
-}
-
-// ==========================================
-// МОДЕЛЬ SCP-173
-// ==========================================
-
-function createSCP173() {
-    scp173Group = new THREE.Group();
-
-    const textureLoader = new THREE.TextureLoader();
-    
-    const scpTexture = textureLoader.load('textures/SCP-173.jpg', undefined, undefined, () => {
-        scpTexture.image = textureLoader.load('SCP-173.jpg');
-    });
-
-    const scpMaterial = new THREE.MeshStandardMaterial({
-        map: scpTexture,
-        roughness: 0.7,
-        metalness: 0.1
-    });
-
-    // Туловище
-    const bodyGeo = new THREE.BoxGeometry(0.8, 1.4, 0.6);
-    const body = new THREE.Mesh(bodyGeo, scpMaterial);
-    body.position.y = 1.0;
-    scp173Group.add(body);
-
-    // Голова
-    const headGeo = new THREE.BoxGeometry(0.7, 0.8, 0.7);
-    const head = new THREE.Mesh(headGeo, scpMaterial);
-    head.position.y = 2.0;
-    scp173Group.add(head);
-
-    // Руки
-    const armGeo = new THREE.BoxGeometry(0.2, 0.8, 0.2);
-    const leftArm = new THREE.Mesh(armGeo, scpMaterial);
-    leftArm.position.set(-0.5, 1.1, 0);
-    scp173Group.add(leftArm);
-
-    const rightArm = new THREE.Mesh(armGeo, scpMaterial);
-    rightArm.position.set(0.5, 1.1, 0);
-    scp173Group.add(rightArm);
-
-    scp173Group.position.set(12, 0, -8);
-    scene.add(scp173Group);
-}
-
-// ==========================================
-// ИНТЕРЬЕР И ПОТОЛКИ (ВЫЗОВЫ И КОНСТРУКТОРЫ)
-// ==========================================
-
-function createWall(x, z, width, depth, height = 4) {
-    const wallGeo = new THREE.BoxGeometry(width, height, depth);
-    const wall = new THREE.Mesh(wallGeo, metalMaterial);
-    wall.position.set(x, height / 2, z);
-    scene.add(wall);
-
-    const box = new THREE.Box3().setFromObject(wall);
-    colliders.push(box);
-}
-
-function createFloor(x, z, width, depth) {
-    const floorGeo = new THREE.PlaneGeometry(width, depth);
-    const floor = new THREE.Mesh(floorGeo, tilesMaterial);
+    // Пол
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), materials.floor);
     floor.rotation.x = -Math.PI / 2;
     floor.position.set(x, 0, z);
+    floor.receiveShadow = true;
     scene.add(floor);
-}
 
-function createCeiling(x, z, width, depth) {
-    const ceilingGeo = new THREE.PlaneGeometry(width, depth);
-    const ceiling = new THREE.Mesh(ceilingGeo, metalMaterial);
+    // Потолок
+    const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), materials.ceiling);
     ceiling.rotation.x = Math.PI / 2;
-    ceiling.position.set(x, 4, z);
+    ceiling.position.set(x, height, z);
     scene.add(ceiling);
+
+    // Стены
+    const hw = width / 2;
+    const hd = depth / 2;
+
+    addWall(x - hw, z, 0.3, depth, height);
+    addWall(x + hw, z, 0.3, depth, height);
+    addWall(x, z - hd, width, 0.3, height);
+    addWall(x, z + hd, width, 0.3, height);
 }
 
-function createCeilingLight(x, z, color = 0xffaa00, intensity = 2.0) {
-    const light = new THREE.PointLight(color, intensity, 15);
-    light.position.set(x, 3.8, z);
+function addWall(x, z, w, d, h) {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), materials.wall);
+    wall.position.set(x, h / 2, z);
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    scene.add(wall);
+
+    colliders.push(new THREE.Box3().setFromObject(wall));
+}
+
+function addLightFixture(x, z, color, intensity) {
+    const light = new THREE.PointLight(color, intensity, 12);
+    light.position.set(x, 3.7, z);
+    light.castShadow = true;
     scene.add(light);
 
-    const lampGeo = new THREE.BoxGeometry(1.2, 0.1, 0.4);
     const lampMat = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         emissive: color,
-        emissiveIntensity: 0.8
+        emissiveIntensity: 1.0
     });
-    const lampMesh = new THREE.Mesh(lampGeo, lampMat);
-    lampMesh.position.set(x, 3.95, z);
-    scene.add(lampMesh);
+    const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.4), lampMat);
+    lamp.position.set(x, 3.9, z);
+    scene.add(lamp);
 }
 
-function createDoor(x, z, rotateY = 0) {
-    const doorGroup = new THREE.Group();
+function createCrate(x, z, size) {
+    const crateMat = new THREE.MeshStandardMaterial({ color: 0x3d2b1f, roughness: 0.9 });
+    const crate = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), crateMat);
+    crate.position.set(x, size / 2, z);
+    crate.castShadow = true;
+    crate.receiveShadow = true;
+    scene.add(crate);
 
-    const doorMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.3 });
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-
-    const frameGeo = new THREE.BoxGeometry(2.4, 3.2, 0.2);
-    const frame = new THREE.Mesh(frameGeo, frameMat);
-    frame.position.y = 1.6;
-    doorGroup.add(frame);
-
-    const panelGeo = new THREE.BoxGeometry(2.0, 3.0, 0.1);
-    const panel = new THREE.Mesh(panelGeo, doorMat);
-    panel.position.set(0, 1.5, 0);
-    doorGroup.add(panel);
-
-    doorGroup.position.set(x, 0, z);
-    doorGroup.rotation.y = rotateY;
-    scene.add(doorGroup);
-
-    const box = new THREE.Box3().setFromObject(panel);
-    colliders.push(box);
+    colliders.push(new THREE.Box3().setFromObject(crate));
 }
 
-function createPropBox(x, z, size = 1) {
-    const boxGeo = new THREE.BoxGeometry(size, size, size);
-    const boxMat = new THREE.MeshStandardMaterial({ color: 0x4a3b32, roughness: 0.8 });
-    const boxMesh = new THREE.Mesh(boxGeo, boxMat);
-    boxMesh.position.set(x, size / 2, z);
-    scene.add(boxMesh);
+// --- Трехмерная модель SCP-173 ---
+function createSCP173Model() {
+    scp173Group = new THREE.Group();
 
-    colliders.push(new THREE.Box3().setFromObject(boxMesh));
+    const concreteMat = new THREE.MeshStandardMaterial({
+        color: 0xaaaa99,
+        roughness: 0.9
+    });
+
+    const faceMat = new THREE.MeshStandardMaterial({
+        color: 0x883322,
+        roughness: 0.7
+    });
+
+    // Тело
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 1.5, 12), concreteMat);
+    body.position.y = 0.9;
+    body.castShadow = true;
+    scp173Group.add(body);
+
+    // Голова
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), concreteMat);
+    head.position.y = 1.8;
+    head.scale.set(1, 1.2, 0.9);
+    head.castShadow = true;
+    scp173Group.add(head);
+
+    // Лицо
+    const face = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.1), faceMat);
+    face.position.set(0, 1.85, 0.35);
+    scp173Group.add(face);
+
+    // Руки
+    const armGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.9);
+    const leftArm = new THREE.Mesh(armGeo, concreteMat);
+    leftArm.position.set(-0.45, 1.1, 0.1);
+    leftArm.rotation.z = Math.PI / 6;
+    scp173Group.add(leftArm);
+
+    const rightArm = new THREE.Mesh(armGeo, concreteMat);
+    rightArm.position.set(0.45, 1.1, 0.1);
+    rightArm.rotation.z = -Math.PI / 6;
+    scp173Group.add(rightArm);
+
+    scp173Group.position.set(10, 0, -8);
+    scene.add(scp173Group);
 }
 
-// ==========================================
-// ПОЛНАЯ КАРТА ЗОНЫ 19
-// ==========================================
+// --- Управление ---
+function handleMouseMove(e) {
+    if (!isPointerLocked) return;
 
-function buildBaseMap() {
-    colliders = [];
+    yaw -= e.movementX * 0.002;
+    pitch -= e.movementY * 0.002;
 
-    // 1. ЦЕНТРАЛЬНЫЙ КОРИДОР
-    createFloor(0, 0, 6, 40);
-    createCeiling(0, 0, 6, 40);
-    createWall(-3.2, 5, 0.4, 30);
-    createWall(3.2, 10, 0.4, 20);
-    createWall(0, 20, 6.8, 0.4);
-
-    createCeilingLight(0, 10, 0xffaa00, 2.0);
-    createCeilingLight(0, 0, 0xffaa00, 2.0);
-    createCeilingLight(0, -10, 0xffaa00, 2.0);
-
-    createDoor(0, 5, 0);
-    createPropBox(2, 8, 1.2);
-    createPropBox(2, 9.5, 1.0);
-
-    // 2. ВОСТОЧНОЕ КРЫЛО (Камера SCP-173)
-    createFloor(10, -8, 14, 10);
-    createCeiling(10, -8, 14, 10);
-    createWall(10, -13, 14, 0.4);
-    createWall(10, -3, 14, 0.4);
-    createWall(17, -8, 0.4, 10);
-    createCeilingLight(10, -8, 0xff1111, 2.5);
-    createDoor(3.2, -8, Math.PI / 2);
-
-    // 3. ЗАПАДНОЕ КРЫЛО (Комната Управления)
-    createFloor(-10, -10, 14, 14);
-    createCeiling(-10, -10, 14, 14);
-    createWall(-10, -17, 14, 0.4);
-    createWall(-17, -10, 0.4, 14);
-    createWall(-10, -3, 14, 0.4);
-    createWall(-3.2, -14, 0.4, 6);
-    createCeilingLight(-10, -10, 0x00ff66, 2.0);
-    createPropBox(-14, -14, 1.4);
-
-    // 4. СЕВЕРНЫЙ ПЕРЕКРЕСТОК
-    createFloor(0, -28, 6, 16);
-    createCeiling(0, -28, 6, 16);
-    createWall(3.2, -28, 0.4, 16);
-    createWall(-3.2, -28, 0.4, 16);
-    createCeilingLight(0, -24, 0xaaaaaa, 1.8);
-
-    // 5. СЕКТОР B (Камера SCP-096)
-    createFloor(-14, -28, 22, 10);
-    createCeiling(-14, -28, 22, 10);
-    createWall(-14, -33, 22, 0.4);
-    createWall(-14, -23, 14, 0.4);
-    createWall(-25, -28, 0.4, 10);
-    createCeilingLight(-18, -28, 0x3366ff, 2.0);
-
-    const containerGeo = new THREE.BoxGeometry(4, 3, 4);
-    const containerMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 });
-    const cell096 = new THREE.Mesh(containerGeo, containerMat);
-    cell096.position.set(-20, 1.5, -28);
-    scene.add(cell096);
-    colliders.push(new THREE.Box3().setFromObject(cell096));
-
-    // 6. ШЛЮЗ ЭВАКУАЦИИ
-    createFloor(0, -42, 12, 12);
-    createCeiling(0, -42, 12, 12);
-    createWall(-6, -42, 0.4, 12);
-    createWall(6, -42, 0.4, 12);
-    createWall(0, -48, 12, 0.4);
-    createCeilingLight(0, -42, 0xffff00, 2.2);
-    createDoor(0, -36, 0);
+    pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitch));
 }
 
-// ==========================================
-// МОРГАНИЕ И ИИ SCP-173
-// ==========================================
+function handleKey(e, isDown) {
+    keys[e.code] = isDown;
 
-function updateBlink(delta) {
-    if (!isGame3DActive) return;
-
-    if (isBlinking) {
-        blinkMeter += delta * 300;
-        if (blinkMeter >= 100) {
-            blinkMeter = 100;
-            isBlinking = false;
-        }
-    } else {
-        blinkMeter -= delta * 18;
-        if (blinkMeter <= 0) triggerBlink();
+    if (isDown) {
+        if (e.code === 'KeyF') toggleFlashlight();
+        if (e.code === 'Space') triggerBlink();
+        if (e.code === 'KeyE' && isNearTerminal) openTerminal();
     }
-
-    const innerBar = document.getElementById('blink-bar-inner');
-    if (innerBar) innerBar.style.width = `${Math.max(0, blinkMeter)}%`;
 }
 
-function triggerBlink() {
-    isBlinking = true;
-    moveSCP173();
+function toggleFlashlight() {
+    isFlashlightOn = !isFlashlightOn;
+    flashlight.visible = isFlashlightOn;
+    sounds.playFlashlightClick();
+    document.getElementById('flashlight-state').textContent = isFlashlightOn ? '[ВКЛ]' : '[ВЫКЛ]';
+    document.getElementById('flashlight-state').style.color = isFlashlightOn ? '#00ff66' : '#ff4444';
 }
 
-function isPlayerLookingAt173() {
-    if (!scp173Group || isBlinking) return false;
+// --- Рейкастинг прямой видимости SCP-173 ---
+function canPlayerSee173() {
+    if (isBlinking || !scp173Group) return false;
 
+    // 1. Проверка конуса обзора
     const camDir = new THREE.Vector3();
     camera.getWorldDirection(camDir);
 
     const toSCP = new THREE.Vector3().subVectors(scp173Group.position, camera.position).normalize();
-    return camDir.dot(toSCP) > 0.35;
-}
+    const dot = camDir.dot(toSCP);
 
-function moveSCP173() {
-    if (!scp173Group) return;
+    if (dot < 0.4) return false; // За пределами поля зрения
 
-    const dist = camera.position.distanceTo(scp173Group.position);
+    // 2. Проверка препятствий лучом (Raycast)
+    raycaster.set(camera.position, toSCP);
+    const intersects = raycaster.intersectObjects(scene.children, true);
 
-    if (dist < 1.8) {
-        triggerHorrorEffect();
-        alert("SCP-173 СЛОМАЛ ВАМ ШЕЙНЫЕ ПОЗВОНКИ!");
-        location.reload();
-        return;
+    for (let i = 0; i < intersects.length; i++) {
+        const obj = intersects[i].object;
+        if (obj.parent === scp173Group || obj === scp173Group) {
+            return true; // В прямой видимости
+        }
+        if (obj.type === "Mesh" && obj !== scp173Group) {
+            return false; // Препятствие (стена/ящик)
+        }
     }
 
-    const stepDistance = 2.4;
-    const directionToPlayer = new THREE.Vector3();
-    directionToPlayer.subVectors(camera.position, scp173Group.position).normalize();
-
-    const nextPos = scp173Group.position.clone().add(directionToPlayer.multiplyScalar(stepDistance));
-
-    scp173Group.position.copy(nextPos);
-    scp173Group.lookAt(camera.position.x, scp173Group.position.y, camera.position.z);
-
-    const audio = document.getElementById('snd-glitch');
-    if (audio) {
-        audio.currentTime = 0;
-        audio.play().catch(() => {});
-    }
-}
-
-// ==========================================
-// ДВИЖЕНИЕ И ИГРОВОЙ ЦИКЛ
-// ==========================================
-
-function checkCollisions(newPosition) {
-    const playerRadius = 0.5;
-    const playerBox = new THREE.Box3(
-        new THREE.Vector3(newPosition.x - playerRadius, 0, newPosition.z - playerRadius),
-        new THREE.Vector3(newPosition.x + playerRadius, 3, newPosition.z + playerRadius)
-    );
-
-    for (let i = 0; i < colliders.length; i++) {
-        if (playerBox.intersectsBox(colliders[i])) return true;
-    }
     return false;
 }
 
-let yaw = 0, pitch = 0;
-function onMouseMove(event) {
-    if (document.pointerLockElement !== document.getElementById('game-canvas')) return;
+// --- ИИ SCP-173 ---
+function updateSCP173() {
+    if (!scp173Group) return;
 
-    yaw -= event.movementX * 0.002;
-    pitch -= event.movementY * 0.002;
-    pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
+    const isSeen = canPlayerSee173();
 
-    camera.rotation.set(pitch, yaw, 0, 'YXZ');
-}
+    if (!isSeen) {
+        const dist = camera.position.distanceTo(scp173Group.position);
 
-function onKeyDown(event) {
-    switch (event.code) {
-        case 'KeyW': moveForward = true; break;
-        case 'KeyS': moveBackward = true; break;
-        case 'KeyA': moveLeft = true; break;
-        case 'KeyD': moveRight = true; break;
-        case 'Space': triggerBlink(); break;
-        case 'KeyE': if (isNearTerminal) openTerminalTask(); break;
+        if (dist < 1.8) {
+            alert("SCP-173 СЛОМАЛ ВАМ ШЕЙНЫЕ ПОЗВОНКИ!");
+            location.reload();
+            return;
+        }
+
+        const dir = new THREE.Vector3().subVectors(camera.position, scp173Group.position);
+        dir.y = 0;
+        dir.normalize();
+
+        scp173Group.position.add(dir.multiplyScalar(0.18));
+        scp173Group.lookAt(camera.position.x, scp173Group.position.y, camera.position.z);
+
+        if (Math.random() < 0.1) sounds.playSCPConcreteMove();
     }
 }
 
-function onKeyUp(event) {
-    switch (event.code) {
-        case 'KeyW': moveForward = false; break;
-        case 'KeyS': moveBackward = false; break;
-        case 'KeyA': moveLeft = false; break;
-        case 'KeyD': moveRight = false; break;
-    }
-}
+// --- Физика игрока ---
+let lastTime = 0;
+let footstepTimer = 0;
 
-function animate3D() {
-    if (!isGame3DActive) return;
+function updatePlayer(delta) {
+    if (!isPointerLocked) return;
 
-    requestAnimationFrame(animate3D);
+    const moveDir = new THREE.Vector3();
+    if (keys['KeyW']) moveDir.z -= 1;
+    if (keys['KeyS']) moveDir.z += 1;
+    if (keys['KeyA']) moveDir.x -= 1;
+    if (keys['KeyD']) moveDir.x += 1;
+    moveDir.normalize();
 
-    const time = performance.now();
-    const delta = (time - prevTime) / 1000;
+    // Спринт и выносливость
+    player.isSprinting = keys['ShiftLeft'] && moveDir.length() > 0 && player.stamina > 0;
+    const speed = player.isSprinting ? 6.5 : 3.2;
 
-    updateBlink(delta);
-
-    if (!isPlayerLookingAt173() && Math.random() < 0.02) {
-        moveSCP173();
-    }
-
-    velocity.x -= velocity.x * 10.0 * delta;
-    velocity.z -= velocity.z * 10.0 * delta;
-
-    direction.z = Number(moveForward) - Number(moveBackward);
-    direction.x = Number(moveRight) - Number(moveLeft);
-    direction.normalize();
-
-    if (moveForward || moveBackward) velocity.z -= direction.z * 22.0 * delta;
-    if (moveLeft || moveRight) velocity.x -= direction.x * 22.0 * delta;
-
-    const oldPosition = camera.position.clone();
-    
-    camera.translateX(-velocity.x * delta);
-    camera.translateZ(velocity.z * delta);
-    camera.position.y = 1.6;
-
-    if (checkCollisions(camera.position)) {
-        camera.position.copy(oldPosition);
-    }
-
-    const dist = camera.position.distanceTo(terminalMesh.position);
-    const prompt = document.getElementById('interaction-prompt');
-
-    if (dist < 2.2) {
-        isNearTerminal = true;
-        prompt.classList.remove('hidden');
+    if (player.isSprinting) {
+        player.stamina = Math.max(0, player.stamina - delta * 25);
     } else {
-        isNearTerminal = false;
-        prompt.classList.add('hidden');
+        player.stamina = Math.min(100, player.stamina + delta * 15);
+    }
+    document.getElementById('stamina-fill').style.width = `${player.stamina}%`;
+    document.getElementById('stamina-val').textContent = `${Math.round(player.stamina)}%`;
+
+    // Вращение и перемещение
+    const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+    euler.x = pitch;
+    euler.y = yaw;
+    camera.quaternion.setFromEuler(euler);
+
+    const moveVector = moveDir.clone().applyQuaternion(camera.quaternion);
+    moveVector.y = 0;
+    moveVector.normalize().multiplyScalar(speed * delta);
+
+    // Коллизии
+    const newPos = player.position.clone().add(moveVector);
+    const playerBox = new THREE.Box3().setFromCenterAndSize(newPos, new THREE.Vector3(0.6, 1.6, 0.6));
+
+    let collided = false;
+    for (let c of colliders) {
+        if (playerBox.intersectsBox(c)) {
+            collided = true;
+            break;
+        }
     }
 
-    prevTime = time;
-    renderer.render(scene, camera);
+    if (!collided) {
+        player.position.copy(newPos);
+    }
+
+    // Покачивание головы при ходьбе (Head Bobbing)
+    if (moveDir.length() > 0 && !collided) {
+        player.headBobTimer += delta * (player.isSprinting ? 14 : 9);
+        const bobOffset = Math.sin(player.headBobTimer) * 0.05;
+        camera.position.set(player.position.x, player.height + bobOffset, player.position.z);
+
+        footstepTimer += delta;
+        if (footstepTimer > (player.isSprinting ? 0.28 : 0.45)) {
+            sounds.playFootstep();
+            footstepTimer = 0;
+        }
+    } else {
+        camera.position.set(player.position.x, player.height, player.position.z);
+    }
+
+    // Привязка фонарика
+    flashlight.position.copy(camera.position);
+    const targetPos = camera.position.clone().add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(10));
+    flashlightTarget.position.copy(targetPos);
+
+    // Дистанция взаимодействия с терминалом
+    if (terminalMesh) {
+        const dist = camera.position.distanceTo(terminalMesh.position);
+        isNearTerminal = (dist < 2.2);
+        
+        const prompt = document.getElementById('interaction-prompt');
+        const crosshair = document.getElementById('crosshair');
+        
+        if (isNearTerminal) {
+            prompt.classList.add('visible');
+            crosshair.classList.add('interactable');
+        } else {
+            prompt.classList.remove('visible');
+            crosshair.classList.remove('interactable');
+        }
+    }
 }
 
+// --- Система моргания ---
+function triggerBlink() {
+    isBlinking = true;
+    document.getElementById('blink-overlay').style.opacity = '1';
+    
+    setTimeout(() => {
+        document.getElementById('blink-overlay').style.opacity = '0';
+        isBlinking = false;
+        blinkMeter = 100;
+    }, 150);
+}
+
+function updateBlink(delta) {
+    if (!isBlinking) {
+        blinkMeter -= delta * 12;
+        if (blinkMeter <= 0) triggerBlink();
+    }
+    document.getElementById('blink-fill').style.width = `${Math.max(0, blinkMeter)}%`;
+    document.getElementById('blink-val').textContent = `${Math.round(Math.max(0, blinkMeter))}%`;
+}
+
+// --- Терминал ---
+function openTerminal() {
+    document.exitPointerLock();
+    document.getElementById('terminal-modal').classList.remove('hidden');
+}
+
+function closeTerminal() {
+    document.getElementById('terminal-modal').classList.add('hidden');
+    document.getElementById('game-canvas').requestPointerLock();
+}
+
+function verifyTerminalCode() {
+    const val = document.getElementById('terminal-input').value.trim();
+    if (val === '3') {
+        alert("АВТОРИЗАЦИЯ УСПЕШНА. ШЛЮЗ РАЗБЛОКИРОВАН!");
+        closeTerminal();
+    } else {
+        alert("ОШИБКА ДОСТУПА! ОТКАЗАНО.");
+    }
+}
+
+// --- Изменение размера окна ---
 function onWindowResize() {
-    if (!camera || !renderer) return;
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// ==========================================
-// ИНТЕРФЕЙС И МЕНЮ
-// ==========================================
+// --- Игровой цикл ---
+function gameLoop(time) {
+    requestAnimationFrame(gameLoop);
 
-function startGame3D() {
-    document.getElementById('block-menu').classList.add('hidden');
-    document.getElementById('game-canvas').classList.remove('hidden');
-    document.getElementById('crosshair').classList.remove('hidden');
-    document.getElementById('player-panel').classList.remove('hidden');
-    document.getElementById('blink-container').classList.remove('hidden');
+    const delta = Math.min((time - lastTime) / 1000, 0.1);
+    lastTime = time;
 
-    if (!scene) init3DWorld();
+    updatePlayer(delta);
+    updateBlink(delta);
+    updateSCP173();
 
-    isGame3DActive = true;
-    prevTime = performance.now();
-    document.getElementById('game-canvas').requestPointerLock();
-    animate3D();
-}
-
-function openTerminalTask() {
-    document.exitPointerLock();
-    document.getElementById('interaction-prompt').classList.add('hidden');
-    showBlock('block-d');
-}
-
-function closeTerminal() {
-    showBlock('');
-    document.getElementById('game-canvas').requestPointerLock();
-}
-
-function showBlock(blockId) {
-    const allBlocks = document.querySelectorAll('.terminal');
-    allBlocks.forEach(b => b.classList.add('hidden'));
-
-    if (blockId) {
-        const targetBlock = document.getElementById(blockId);
-        if (targetBlock) targetBlock.classList.remove('hidden');
-    }
-}
-
-function verifyCode(blockId) {
-    const input = document.getElementById(`input-${blockId}`);
-    if (!input) return;
-
-    if (input.value.trim() === ANSWERS[blockId]) {
-        alert("ГЕРМОДВЕРЬ ОТКРЫТА. SCP-173 ЗАБЛОКИРОВАН В СЕКТОРЕ!");
-        addXP(50);
-        closeTerminal();
-    } else {
-        triggerHorrorEffect();
-        alert("НЕВЕРНЫЙ КОД!");
-    }
-}
-
-function triggerHorrorEffect() {
-    const audio = document.getElementById('snd-glitch');
-    if (audio) {
-        audio.currentTime = 0;
-        audio.play().catch(() => {});
-    }
-    document.body.style.backgroundColor = '#500';
-    setTimeout(() => { document.body.style.backgroundColor = ''; }, 200);
-}
-
-function addXP(amount) {
-    gameState.xp += amount;
-    saveProgress();
-    updateUI();
-}
-
-function updateUI() {
-    document.getElementById('player-rank').textContent = gameState.rank;
-    document.getElementById('player-xp').textContent = gameState.xp;
-}
-
-function openArchiveFromMenu() { showBlock('block-encyclopedia'); }
-function toggleArchiveView() { document.getElementById('block-encyclopedia').classList.toggle('hidden'); }
-function saveProgress() { localStorage.setItem('project_keter_state', JSON.stringify(gameState)); }
-function loadProgress() {
-    const saved = localStorage.getItem('project_keter_state');
-    if (saved) { try { gameState = JSON.parse(saved); } catch (e) {} }
+    renderer.render(scene, camera);
 }
