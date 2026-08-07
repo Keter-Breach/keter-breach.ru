@@ -1,14 +1,12 @@
-// === 1. АУДИОДВИЖОК (Web Audio API) ===
+// === 1. АУДИОДВИЖОК ===
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playSound(type) {
   if (audioCtx.state === 'suspended') audioCtx.resume();
-  
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.connect(gain);
   gain.connect(audioCtx.destination);
-
   const t = audioCtx.currentTime;
 
   if (type === 'click') {
@@ -19,119 +17,65 @@ function playSound(type) {
   } else if (type === 'step') {
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(80 + Math.random() * 30, t);
-    gain.gain.setValueAtTime(0.06, t);
+    gain.gain.setValueAtTime(0.05, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
     osc.start(); osc.stop(t + 0.1);
-  } else if (type === 'hum') {
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(40, t);
-    gain.gain.setValueAtTime(0.015, t);
-    osc.start();
+  } else if (type === 'pickup') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, t);
+    osc.frequency.exponentialRampToValueAtTime(1200, t + 0.15);
+    gain.gain.setValueAtTime(0.1, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+    osc.start(); osc.stop(t + 0.15);
   } else if (type === 'glitch') {
     osc.type = 'square';
-    osc.frequency.setValueAtTime(100 + Math.random() * 500, t);
-    gain.gain.setValueAtTime(0.12, t);
+    osc.frequency.setValueAtTime(120, t);
+    gain.gain.setValueAtTime(0.1, t);
     gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
     osc.start(); osc.stop(t + 0.2);
   }
 }
 
-// === 2. РАСШИРЕННЫЙ СЮЖЕТ ===
+// === 2. СОСТОЯНИЕ ИГРОКА И ИНВЕНТАРЬ ===
+window.playerState = {
+  keycardL1: false,
+  keycardL2: false,
+  batteryCount: 0
+};
+
+let currentChapter = 1;
+let loopCount = 1;
+
+// === 3. ТЕКСТОВЫЕ ГЛАВЫ ===
 const storyData = {
   1: {
-    title: "ГЛАВА 1: ПРОСЫПАНИЕ В ТЕМНОТЕ",
-    location: "Сектор D-12 | Камера сдерживания",
-    desc: "Глухой удар заставляет вас очнуться. Во рту металлический вкус, в ушах гудит вой аварийной сирены. Вы находитесь в изолированной боксе D-Class.\n\nНа полу лежит окровавленный планшет сотрудника Фонда. Экран треснут, но текст читаем:\n«Объект SCP-173 нарушил периметр. Всем сотрудникам класса D оставаться в боксах...»\n\nДверь выбита снаружи. В коридоре горит единственный аварийный терминал.",
+    title: "ГЛАВА 1: НАРУШЕНИЕ СОДЕРЖАНИЯ",
+    location: "Сектор D-12",
+    desc: "Сирены глушат слух. Вы очнулись в камере сдерживания. Дверь выбита снаружи. Впереди 10 отсеков комплекса.",
     choices: [
-      { text: "Осмотреть планшет и забрать ключ-карту (Уровень 1)", nextChapter: 2, action: () => { window.hasKeycard = true; } },
-      { text: "Игнорировать всё и немедленно выйти в коридор", nextChapter: 2 }
+      { text: "Войти в 3D-комплекс (10 Локаций)", nextChapter: 2 }
     ]
   },
   2: {
-    title: "ГЛАВА 2: ПРОБЕГ ПО СЕКТОРУ (3D)",
+    title: "ГЛАВА 2: 3D ЛАБИРИНТ",
     is3D: true,
-    desc: "Переход в 3D режим...",
     nextChapter: 3
   },
   3: {
-    title: "ГЛАВА 3: РАЗВЕЛКА У ТЕРМИНАЛА",
-    location: "ШЛЮЗ ЛЗС-04",
-    desc: "Вы выскакиваете из закрывающегося коридора. Перед вами массивная гермодверь с кодовым замком. Рядом на стене мигает терминал безопасности.\n\nСзади из вентиляции доносятся тяжелые шаги и характерный бетонный скрежет...",
+    title: "ФИНАЛ: ПОБЕГ ИЗ ЗОНЫ",
+    location: "Поверхность",
+    desc: "Вы преодолели все 10 локаций комплекса и вышли на поверхность! Повстанцы Хаоса эвакуируют вас.",
     choices: [
-      { 
-        text: "Использовать найденную карту доступа", 
-        nextChapter: 4,
-        condition: () => window.hasKeycard,
-        failText: "У вас нет ключ-карты!"
-      },
-      { text: "Попытаться взломать терминал вручную", nextChapter: 4 },
-      { text: "Спрятаться в шкафу для инвентаря", nextChapter: 5 }
-    ]
-  },
-  4: {
-    title: "ГЛАВА 4: ЛАБОРАТОРНЫЙ БЛОК Б-4",
-    location: "Исследовательский сектор",
-    desc: "Дверь со скрежетом открывается. Вы попадаете в залитый синим светом зал. На мониторах горит изображение SCP-079 (Старый ИИ).\n\nКолонки над вашей головой оживают:\n«Я знаю, кто ты, D-4126. Фонд зачистит этот сектор через 10 минут. Выпусти меня из локальной сети, и я открою тебе путь к Gate A».",
-    choices: [
-      { text: "Загрузить протокол ИИ на флеш-накопитель", nextChapter: 6, action: () => { window.aiAlly = true; } },
-      { text: "Обесточить серверный блок (Отказать ИИ)", nextChapter: 6 }
-    ]
-  },
-  5: {
-    title: "ГЛАВА 5: ТЕНЬ В ТЕМНОТЕ",
-    location: "Затопленный технический туннель",
-    desc: "Вы забираетесь в узкий лаз. Мимо шкафа медленно проходит нечто высокое и истощенное, издавая тихий плач. Это SCP-096.\n\nВы затаили дыхание, пока существо не скрылось за поворотом. Путь дальше ведет в технические уровни.",
-    choices: [
-      { text: "Тихо проползти вслед за существом", nextChapter: 6 },
-      { text: "Вернуться к гермодвери", nextChapter: 4 }
-    ]
-  },
-  6: {
-    title: "ГЛАВА 6: ТЯЖЕЛАЯ ЗОНА СДЕРЖИВАНИЯ",
-    location: "ТЗС (High Containment)",
-    desc: "Воздух стал ледяным. По стенам стекает черная слизь — след SCP-106. Впереди видна развилка к лифтам на поверхность.",
-    choices: [
-      { text: "Подняться на лифте в блок МОТФ", nextChapter: 7 },
-      { text: "Спуститься в вентиляционные шахты", nextChapter: 7 }
-    ]
-  },
-  7: {
-    title: "ГЛАВА 7: ПОВЕРХНОСТЬ (GATE A)",
-    location: "Поверхность Комплекса",
-    desc: "Свежий ночной воздух ударяет в лицо. Вы на поверхности. Сверху гудят прожекторы вертолетов МОГ, а на горизонте видны джипы Повстанцев Хаоса.",
-    choices: [
-      { text: "Бежать к транспорту Повстанцев Хаоса", nextChapter: 'END' },
-      { text: "Сдаться МОГ", nextChapter: 'RESET' }
+      { text: "Начать заново", nextChapter: 'RESET' }
     ]
   }
 };
 
-// === 3. УПРАВЛЕНИЕ UI И СОСТОЯНИЕМ ===
-let currentChapter = 1;
-let loopCount = 1;
-
-const chapterTitleEl = document.getElementById("chapter-title");
-const locEl = document.getElementById("current-location");
-const descEl = document.getElementById("description");
-const btnsContainer = document.getElementById("buttons-container");
-const loopEl = document.getElementById("loop-count");
-const screenEl = document.getElementById("screen");
-
 function renderChapter(chapNum) {
   if (chapNum === 'RESET') {
     loopCount++;
-    currentChapter = 1;
-    window.hasKeycard = false;
-    window.aiAlly = false;
+    window.playerState = { keycardL1: false, keycardL2: false, batteryCount: 0 };
     chapNum = 1;
-  } else if (chapNum === 'END') {
-    document.getElementById("text-game").innerHTML = `
-      <div class="vhs-tag">● RECORDING COMPLETED</div>
-      <h1>ФИНАЛ: ПОБЕГ ИЗ ЗОНЫ 19</h1>
-      <p style="margin: 20px 0; line-height: 1.6;">Вы выжили в адском нарушении условий сдерживания и сбежали. Повстанцы Хаоса приняли вас в свои ряды.<br><br><b>Циклов задействовано:</b> ${loopCount}</p>
-      <button onclick="location.reload()">Начать заново</button>
-    `;
-    return;
   }
 
   currentChapter = chapNum;
@@ -142,26 +86,17 @@ function renderChapter(chapNum) {
     return;
   }
 
-  chapterTitleEl.textContent = data.title;
-  locEl.textContent = data.location || "SCP Facility";
-  descEl.textContent = data.desc;
-  loopEl.textContent = `#${loopCount}`;
+  document.getElementById("chapter-title").textContent = data.title;
+  document.getElementById("current-location").textContent = data.location || "SCP Facility";
+  document.getElementById("description").textContent = data.desc;
+  document.getElementById("loop-count").textContent = `#${loopCount}`;
 
-  screenEl.classList.remove("wake-up");
-  void screenEl.offsetWidth;
-  screenEl.classList.add("wake-up");
-
+  const btnsContainer = document.getElementById("buttons-container");
   btnsContainer.innerHTML = "";
   data.choices.forEach(choice => {
     const btn = document.createElement("button");
     btn.textContent = choice.text;
-
     btn.onclick = () => {
-      if (choice.condition && !choice.condition()) {
-        alert(choice.failText || "Действие недоступно!");
-        return;
-      }
-      if (choice.action) choice.action();
       playSound('click');
       renderChapter(choice.nextChapter);
     };
@@ -169,143 +104,96 @@ function renderChapter(chapNum) {
   });
 }
 
-// === 4. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ С ВЫСОКОЙ ДЕТАЛИЗАЦИЕЙ ===
-function createFloorTexture() {
+// === 4. ГЕНЕРАЦИЯ ТЕКСТУР ===
+function createTexture(color, strokeColor, isStripes = false) {
   const canvas = document.createElement('canvas');
-  canvas.width = 512; canvas.height = 512;
+  canvas.width = 256; canvas.height = 256;
   const ctx = canvas.getContext('2d');
   
-  // Базовая плитка
-  ctx.fillStyle = '#181818';
-  ctx.fillRect(0, 0, 512, 512);
-  ctx.strokeStyle = '#0d0d0d';
-  ctx.lineWidth = 8;
-  ctx.strokeRect(0, 0, 512, 512);
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(0, 0, 256, 256);
 
-  // Детали и грязь
-  for (let i = 0; i < 2000; i++) {
-    ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.15)';
-    ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+  if (isStripes) {
+    ctx.fillStyle = '#b38f00';
+    ctx.fillRect(0, 220, 256, 36);
+    ctx.fillStyle = '#111';
+    for(let i = -50; i < 300; i += 30) {
+      ctx.beginPath();
+      ctx.moveTo(i, 256); ctx.lineTo(i + 15, 256);
+      ctx.lineTo(i + 30, 220); ctx.lineTo(i + 15, 220);
+      ctx.fill();
+    }
   }
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(8, 16);
-  return texture;
+  for (let i = 0; i < 500; i++) {
+    ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.1)';
+    ctx.fillRect(Math.random() * 256, Math.random() * 256, 2, 2);
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  return tex;
 }
 
-function createWallTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512; canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-  
-  // Бетонная стена
-  ctx.fillStyle = '#262626';
-  ctx.fillRect(0, 0, 512, 512);
+const wallTex = createTexture('#222222', '#111111', true);
+const floorTex = createTexture('#181818', '#0d0d0d');
+wallTex.repeat.set(1, 2);
+floorTex.repeat.set(8, 8);
 
-  // Шум
-  for (let i = 0; i < 3000; i++) {
-    ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.2)';
-    ctx.fillRect(Math.random() * 512, Math.random() * 512, 3, 3);
-  }
-
-  // Желто-черная полоса безопасности внизу
-  ctx.fillStyle = '#b38f00';
-  ctx.fillRect(0, 450, 512, 62);
-  ctx.fillStyle = '#111';
-  for(let i = -100; i < 600; i += 40) {
-    ctx.beginPath();
-    ctx.moveTo(i, 512);
-    ctx.lineTo(i + 20, 512);
-    ctx.lineTo(i + 40, 450);
-    ctx.lineTo(i + 20, 450);
-    ctx.fill();
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(1, 4);
-  return texture;
-}
-
-const floorTexture = createFloorTexture();
-const wallTexture = createWallTexture();
-
-// === 5. Продвинутый 3D ДВИЖОК ===
-let scene, camera, renderer, flashlight, redAlertLight;
-let flashlightOn = true;
-let battery = 100;
-
-// Физика и Управление
+// === 5. 3D ДВИЖОК С 10 ЛОКАЦИЯМИ ===
+let scene, camera, renderer, flashlight;
+let flashlightOn = true, battery = 100;
 let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, isSprinting = false;
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
-let headBobTimer = 0;
-let stepTimer = 0;
+let headBobTimer = 0, stepTimer = 0;
 
 let walls = [];
-let exitDoorMesh;
-
-function checkWallCollision(newPosition) {
-  const playerRadius = 0.4;
-
-  for (let i = 0; i < walls.length; i++) {
-    const wallBox = new THREE.Box3().setFromObject(walls[i]);
-    const playerBox = new THREE.Box3(
-      new THREE.Vector3(newPosition.x - playerRadius, 0, newPosition.z - playerRadius),
-      new THREE.Vector3(newPosition.x + playerRadius, 3.0, newPosition.z + playerRadius)
-    );
-
-    if (wallBox.intersectsBox(playerBox)) {
-      return true;
-    }
-  }
-  return false;
-}
+let interactiveItems = [];
+let doors = {};
 
 function init3DMode() {
   document.getElementById("text-game").classList.add("hidden");
   const container = document.getElementById("three-container");
   container.classList.remove("hidden");
 
-  playSound('hum');
-
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x050505, 0.05);
+  scene.fog = new THREE.FogExp2(0x05050d, 0.04);
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.set(0, 1.6, -8);
+  camera.position.set(0, 1.6, -8); // Спавн в Локации 1
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   container.appendChild(renderer.domElement);
 
-  // Динамический фонарик
-  flashlight = new THREE.SpotLight(0xddeeff, 4.0, 22, Math.PI / 4.5, 0.4, 1);
+  flashlight = new THREE.SpotLight(0xddffff, 4.0, 25, Math.PI / 4, 0.5, 1);
   flashlight.position.set(0.2, -0.2, 0);
   camera.add(flashlight);
   flashlight.target = camera;
   scene.add(camera);
 
-  buildAdvanced3DMap();
+  build10ZonesMap();
 
   container.addEventListener('click', () => document.body.requestPointerLock());
-
-  document.addEventListener('mousemove', (e) => {
-    if (document.pointerLockElement === document.body) {
-      camera.rotation.y -= e.movementX * 0.002;
-      camera.rotation.x -= e.movementY * 0.002;
-      camera.rotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, camera.rotation.x));
-    }
-  });
-
+  document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('keydown', (e) => onKey(e.code, true));
   document.addEventListener('keyup', (e) => onKey(e.code, false));
 
   animate3D();
+}
+
+function onMouseMove(e) {
+  if (document.pointerLockElement === document.body) {
+    camera.rotation.y -= e.movementX * 0.002;
+    camera.rotation.x -= e.movementY * 0.002;
+    camera.rotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, camera.rotation.x));
+  }
 }
 
 function onKey(code, state) {
@@ -315,8 +203,8 @@ function onKey(code, state) {
     case 'KeyA': moveLeft = state; break;
     case 'KeyD': moveRight = state; break;
     case 'ShiftLeft': isSprinting = state; break;
-    case 'KeyF': if(state) toggleFlashlight(); break;
-    case 'KeyE': if(state) check3DExit(); break;
+    case 'KeyF': if (state) toggleFlashlight(); break;
+    case 'KeyE': if (state) interact3D(); break;
   }
 }
 
@@ -327,155 +215,230 @@ function toggleFlashlight() {
   playSound('click');
 }
 
-// Построение детальной локации
-function buildAdvanced3DMap() {
+// ПОСТРОЕНИЕ 10 ПОЛНОЦЕННЫХ ЛОКАЦИЙ
+function build10ZonesMap() {
   walls = [];
+  interactiveItems = [];
 
-  const wallMat = new THREE.MeshStandardMaterial({ map: wallTexture, roughness: 0.7, metalness: 0.2 });
-  const floorMat = new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.4 });
-  const ceilingMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+  const wallMat = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.7 });
+  const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.5 });
+  const ceilingMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
 
-  // 1. Пол и Потолок
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(16, 50), floorMat);
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.set(0, 0, 10);
+  // Поверхности
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 160), floorMat);
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 30);
   scene.add(floor);
 
-  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(16, 50), ceilingMat);
-  ceiling.rotation.x = Math.PI / 2;
-  ceiling.position.set(0, 3.2, 10);
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(120, 160), ceilingMat);
+  ceiling.rotation.x = Math.PI / 2; ceiling.position.set(0, 3.2, 30);
   scene.add(ceiling);
 
-  // 2. Атмосферный фоновый свет + Аварийная мигающая лампа
-  const ambientLight = new THREE.AmbientLight(0x222233, 0.8);
-  scene.add(ambientLight);
+  // Свет
+  scene.add(new THREE.AmbientLight(0x111122, 0.5));
 
-  redAlertLight = new THREE.PointLight(0xff0000, 2.0, 15);
-  redAlertLight.position.set(0, 2.8, 5);
-  scene.add(redAlertLight);
+  // Вспомогательная функция стен
+  function addWall(w, h, d, x, y, z) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+    mesh.position.set(x, y, z);
+    scene.add(mesh);
+    walls.push(mesh);
+  }
 
-  // Офисные лампы
-  [ -5, 15 ].forEach(zPos => {
-    const lamp = new THREE.PointLight(0xddeeff, 1.2, 12);
-    lamp.position.set(0, 3.0, zPos);
-    scene.add(lamp);
+  // --- 10 ЛОКАЦИЙ (ГЕОМЕТРИЯ) ---
+  // Локация 1: Спавн (Бокс D-12)
+  addWall(8, 3.2, 0.5, 0, 1.6, -10);
+  addWall(0.5, 3.2, 12, -4, 1.6, -4);
+  addWall(0.5, 3.2, 12, 4, 1.6, -4);
 
-    const lampMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(1.5, 0.1, 0.6),
-      new THREE.MeshBasicMaterial({ color: 0xffffff })
-    );
-    lampMesh.position.set(0, 3.15, zPos);
-    scene.add(lampMesh);
-  });
+  // Локация 2: Центральный Коридор
+  addWall(0.5, 3.2, 20, -4, 1.6, 12);
+  addWall(0.5, 3.2, 20, 4, 1.6, 12);
 
-  // 3. Архитектура стен (Коридор с поворотом и нишей)
-  const wallBoxes = [
-    // Левая стена
-    { w: 0.5, h: 3.2, d: 40, x: -3.5, y: 1.6, z: 10 },
-    // Правая стена
-    { w: 0.5, h: 3.2, d: 40, x: 3.5, y: 1.6, z: 10 },
-    // Задняя стена
-    { w: 7.5, h: 3.2, d: 0.5, x: 0, y: 1.6, z: -10 },
-    // Перегородка в конце
-    { w: 2.8, h: 3.2, d: 0.5, x: -2.3, y: 1.6, z: 29.5 },
-    { w: 2.8, h: 3.2, d: 0.5, x: 2.3, y: 1.6, z: 29.5 }
-  ];
+  // Локация 3: Офис (Слева, z: 12)
+  addWall(12, 3.2, 0.5, -10, 1.6, 6);
+  addWall(12, 3.2, 0.5, -10, 1.6, 18);
+  addWall(0.5, 3.2, 12, -16, 1.6, 12);
 
-  wallBoxes.forEach(b => {
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, b.d), wallMat);
-    wall.position.set(b.x, b.y, b.z);
-    scene.add(wall);
-    walls.push(wall);
-  });
+  // Локация 4: Склад (Справа, z: 12)
+  addWall(12, 3.2, 0.5, 10, 1.6, 6);
+  addWall(12, 3.2, 0.5, 10, 1.6, 18);
+  addWall(0.5, 3.2, 12, 16, 1.6, 12);
 
-  // 4. Интерактивные объекты и Детали
-  // Выходная дверь
-  const doorMat = new THREE.MeshStandardMaterial({ color: 0x00cc44, roughness: 0.3, metalness: 0.5 });
-  exitDoorMesh = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.6, 0.1), doorMat);
-  exitDoorMesh.position.set(0, 1.3, 29.4);
-  scene.add(exitDoorMesh);
+  // Локация 5: Шлюз L1 (z: 22)
+  addWall(3, 3.2, 0.5, -2.5, 1.6, 22);
+  addWall(3, 3.2, 0.5, 2.5, 1.6, 22);
 
-  // Колонны/Ящики для атмосферы
-  const boxMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
-  const crate = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), boxMat);
-  crate.position.set(-2.5, 0.6, 8);
-  scene.add(crate);
-  walls.push(crate);
+  // Локация 6: Серверная (z: 32)
+  addWall(0.5, 3.2, 20, -6, 1.6, 32);
+  addWall(0.5, 3.2, 20, 6, 1.6, 32);
+
+  // Локация 7: Лаборатория (z: 48)
+  addWall(16, 3.2, 0.5, -8, 1.6, 42);
+  addWall(16, 3.2, 0.5, 8, 1.6, 42);
+  addWall(0.5, 3.2, 16, -16, 1.6, 50);
+  addWall(0.5, 3.2, 16, 16, 1.6, 50);
+
+  // Локация 8: Шлюз L2 (z: 58)
+  addWall(14, 3.2, 0.5, -9, 1.6, 58);
+  addWall(14, 3.2, 0.5, 9, 1.6, 58);
+
+  // Локация 9: Пост Охраны (z: 68)
+  addWall(0.5, 3.2, 20, -4, 1.6, 68);
+  addWall(0.5, 3.2, 20, 4, 1.6, 68);
+
+  // Локация 10: Главная Гермодверь Выхода (z: 78)
+  addWall(3.2, 3.2, 0.5, -2.4, 1.6, 78);
+  addWall(3.2, 3.2, 0.5, 2.4, 1.6, 78);
+
+  // --- ДВЕРИ ---
+  doors.doorL1 = createDoor(0, 1.4, 22, 0xffaa00, "Дверь L1");
+  doors.doorL2 = createDoor(0, 1.4, 58, 0xffaa00, "Дверь L2");
+  doors.doorExit = createDoor(0, 1.4, 78, 0xff0000, "Финальный Выход");
+
+  // --- ИНТЕРАКТИВНЫЕ ПРЕДМЕТЫ ---
+  // Карта L1 в Офисе (Локация 3)
+  spawnItem(-12, 0.9, 12, 0x00ffff, 'keycardL1', "Ключ-карта L1");
+  // Батарейка на Складе (Локация 4)
+  spawnItem(12, 0.8, 12, 0x00ff00, 'battery', "Запасная батарея");
+  // Карта L2 в Серверной (Локация 6)
+  spawnItem(-4, 0.9, 34, 0xbf00ff, 'keycardL2', "Ключ-карта L2");
 }
 
-function check3DExit() {
-  const dist = camera.position.distanceTo(exitDoorMesh.position);
-  if (dist < 3) {
-    document.exitPointerLock();
-    document.getElementById("three-container").classList.add("hidden");
-    document.getElementById("text-game").classList.remove("hidden");
-    playSound('glitch');
-    renderChapter(3);
+function createDoor(x, y, z, colorHex, name) {
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(2.0, 2.8, 0.2),
+    new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.3 })
+  );
+  mesh.position.set(x, y, z);
+  mesh.userData = { name: name };
+  scene.add(mesh);
+  walls.push(mesh);
+  return mesh;
+}
+
+function spawnItem(x, y, z, colorHex, type, name) {
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, 0.2, 0.4),
+    new THREE.MeshBasicMaterial({ color: colorHex })
+  );
+  mesh.position.set(x, y, z);
+  mesh.userData = { type: type, name: name };
+  scene.add(mesh);
+  interactiveItems.push(mesh);
+}
+
+// === 6. ВЗАИМОДЕЙСТВИЕ (КЛАВИША E) ===
+function interact3D() {
+  const pPos = camera.position;
+
+  // 1. Подбор предметов
+  for (let i = interactiveItems.length - 1; i >= 0; i--) {
+    const item = interactiveItems[i];
+    if (pPos.distanceTo(item.position) < 2.2) {
+      playSound('pickup');
+      if (item.userData.type === 'keycardL1') {
+        window.playerState.keycardL1 = true;
+        doors.doorL1.material.color.setHex(0x00ff66);
+        alert("Подобрана Ключ-карта Уровня 1!");
+      } else if (item.userData.type === 'keycardL2') {
+        window.playerState.keycardL2 = true;
+        doors.doorL2.material.color.setHex(0x00ff66);
+        alert("Подобрана Ключ-карта Уровня 2!");
+      } else if (item.userData.type === 'battery') {
+        battery = Math.min(100, battery + 50);
+        alert("Заряд батареи восполнен (+50%)!");
+      }
+      scene.remove(item);
+      interactiveItems.splice(i, 1);
+      return;
+    }
+  }
+
+  // 2. Открытие дверей
+  if (pPos.distanceTo(doors.doorL1.position) < 2.5) {
+    if (window.playerState.keycardL1) {
+      openDoor(doors.doorL1);
+    } else {
+      alert("Требуется Ключ-карта Уровня 1 (Ищите в Офисе)!");
+    }
+  } else if (pPos.distanceTo(doors.doorL2.position) < 2.5) {
+    if (window.playerState.keycardL2) {
+      openDoor(doors.doorL2);
+    } else {
+      alert("Требуется Ключ-карта Уровня 2 (Ищите в Серверной)!");
+    }
+  } else if (pPos.distanceTo(doors.doorExit.position) < 2.5) {
+    if (window.playerState.keycardL2) {
+      document.exitPointerLock();
+      document.getElementById("three-container").classList.add("hidden");
+      document.getElementById("text-game").classList.remove("hidden");
+      playSound('glitch');
+      renderChapter(3);
+    } else {
+      alert("Выход заблокирован!");
+    }
   }
 }
 
-// === 6. АНИМАЦИЯ И ФИЗИКА ИГРОКА ===
+function openDoor(doorMesh) {
+  playSound('click');
+  doorMesh.position.y += 3.0; // Дверь уезжает вверх
+  const index = walls.indexOf(doorMesh);
+  if (index > -1) walls.splice(index, 1); // Удаляем коллизию
+}
+
+// === 7. ФИЗИКА И АНИМАЦИЯ ===
+function checkCollision(newPos) {
+  const r = 0.4;
+  for (let i = 0; i < walls.length; i++) {
+    const box = new THREE.Box3().setFromObject(walls[i]);
+    const pBox = new THREE.Box3(
+      new THREE.Vector3(newPos.x - r, 0, newPos.z - r),
+      new THREE.Vector3(newPos.x + r, 3.0, newPos.z + r)
+    );
+    if (box.intersectsBox(pBox)) return true;
+  }
+  return false;
+}
+
 function animate3D() {
   if (document.getElementById("three-container").classList.contains("hidden")) return;
-
   requestAnimationFrame(animate3D);
 
   const time = performance.now();
   const delta = (time - prevTime) / 1000;
 
-  // Пульсация аварийного света
-  if (redAlertLight) {
-    redAlertLight.intensity = 1.5 + Math.sin(time * 0.005) * 1.2;
-  }
-
-  // Разрядка и мигание фонарика
+  // Батарея
   if (flashlightOn && battery > 0) {
-    battery -= delta * (isSprinting ? 0.6 : 0.25);
+    battery -= delta * (isSprinting ? 0.5 : 0.2);
     document.getElementById("battery-level").textContent = `${Math.max(0, Math.round(battery))}%`;
-
-    if (battery < 20 && Math.random() < 0.05) {
-      flashlight.intensity = 0.5; // Эффект плохой батареи
-    } else {
-      flashlight.intensity = 4.0;
-    }
-
-    if (battery <= 0) { 
-      flashlightOn = false; 
-      flashlight.intensity = 0; 
-    }
+    if (battery <= 0) { flashlightOn = false; flashlight.intensity = 0; }
   }
 
-  // Расчет скорости
-  const speedMultiplier = isSprinting ? 42.0 : 22.0;
+  // Движение
+  const speed = isSprinting ? 40.0 : 20.0;
   velocity.x -= velocity.x * 10.0 * delta;
   velocity.z -= velocity.z * 10.0 * delta;
 
-  const moveDirZ = Number(moveForward) - Number(moveBackward);
-  const moveDirX = Number(moveRight) - Number(moveLeft);
+  const dirZ = Number(moveForward) - Number(moveBackward);
+  const dirX = Number(moveRight) - Number(moveLeft);
 
-  if (moveForward || moveBackward) velocity.z -= moveDirZ * speedMultiplier * delta;
-  if (moveLeft || moveRight) velocity.x -= moveDirX * speedMultiplier * delta;
+  if (moveForward || moveBackward) velocity.z -= dirZ * speed * delta;
+  if (moveLeft || moveRight) velocity.x -= dirX * speed * delta;
 
   const oldPos = camera.position.clone();
-
-  // Движение с коллизиями
   camera.translateX(-velocity.x * delta);
-  if (checkWallCollision(camera.position)) camera.position.x = oldPos.x;
+  if (checkCollision(camera.position)) camera.position.x = oldPos.x;
 
   camera.translateZ(velocity.z * delta);
-  if (checkWallCollision(camera.position)) camera.position.z = oldPos.z;
+  if (checkCollision(camera.position)) camera.position.z = oldPos.z;
 
-  // Покачивание головы (Head Bobbing)
-  const isMoving = moveForward || moveBackward || moveLeft || moveRight;
-  if (isMoving) {
+  // Покачивание камеры
+  if (moveForward || moveBackward || moveLeft || moveRight) {
     headBobTimer += delta * (isSprinting ? 14 : 9);
-    camera.position.y = 1.6 + Math.sin(headBobTimer) * 0.06;
-
+    camera.position.y = 1.6 + Math.sin(headBobTimer) * 0.05;
     stepTimer += delta;
-    if (stepTimer > (isSprinting ? 0.3 : 0.48)) {
-      playSound('step');
-      stepTimer = 0;
-    }
+    if (stepTimer > (isSprinting ? 0.3 : 0.48)) { playSound('step'); stepTimer = 0; }
   } else {
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, 1.6, 0.1);
   }
@@ -484,5 +447,5 @@ function animate3D() {
   renderer.render(scene, camera);
 }
 
-// Старт игры
+// Запуск
 renderChapter(1);
