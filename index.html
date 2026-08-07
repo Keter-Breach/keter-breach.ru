@@ -3,99 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project: Keter — SCP Foundation Access</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Three.js для 3D графики -->
+    <title>Project: Keter</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020502;
+            font-family: 'Courier New', Courier, monospace;
+            color: #00ff66;
+        }
+
+        /* 3D Canvas */
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Прицел */
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 8px;
+            height: 8px;
+            background-color: rgba(0, 255, 102, 0.7);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Экран старта */
+        #start-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 5, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .btn {
+            background-color: #002200;
+            color: #00ff66;
+            border: 2px solid #00ff66;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-family: inherit;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.3);
+            transition: all 0.2s;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background-color: #00ff66;
+            color: #000;
+            box-shadow: 0 0 25px rgba(0, 255, 102, 0.8);
+        }
+
+        /* Оверлей / Терминалы */
+        .terminal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 600px;
+            background-color: rgba(2, 10, 2, 0.9);
+            border: 2px solid #00ff66;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
+            z-index: 20;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Индикатор моргания */
+        #blink-container {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 16px;
+            border: 2px solid #00ff66;
+            background-color: rgba(0, 20, 0, 0.6);
+            z-index: 10;
+        }
+
+        #blink-bar-inner {
+            width: 100%;
+            height: 100%;
+            background-color: #00ff66;
+            transition: width 0.05s linear;
+        }
+
+        /* Панель игрока */
+        #player-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            font-size: 16px;
+            background: rgba(0, 10, 0, 0.7);
+            padding: 10px;
+            border: 1px solid #00ff66;
+        }
+
+        #interaction-prompt {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ff66;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 0 0 8px #00ff66;
+            z-index: 10;
+        }
+
+        input[type="text"] {
+            background: #001100;
+            border: 1px solid #00ff66;
+            color: #00ff66;
+            padding: 8px;
+            font-family: inherit;
+            width: 100%;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- ОВЕРЛЕЙ ДЛЯ ВКЛЮЧЕНИЯ ПИТАНИЯ И ЗВУКА -->
-    <div id="start-overlay" onclick="initAudioAndApp()">
-        <div class="overlay-content">
-            <h1 class="glitch-text">PROJECT: KETER</h1>
-            <p>НАЖМИТЕ ДЛЯ ВКЛЮЧЕНИЯ ТЕРМИНАЛА И ПИТАНИЯ ЗОНЫ 19</p>
-        </div>
+    <!-- Стартовый оверлей -->
+    <div id="start-overlay">
+        <h1 style="text-shadow: 0 0 10px #00ff66; margin-bottom: 10px;">ЗОНА 19: СОДЕРЖАНИЕ</h1>
+        <p style="margin-bottom: 20px; color: #888;">ФОНД SCP - СЕКТОР БЕЗОПАСНОСТИ</p>
+        <button class="btn" onclick="initAudioAndApp()">НАЖМИТЕ ENTER ДЛЯ СТАРТА</button>
     </div>
 
-    <!-- 3D CANVAS ДЛЯ ИГРЫ -->
+    <!-- 3D Холст -->
     <canvas id="game-canvas" class="hidden"></canvas>
+    <div id="crosshair" class="hidden"></div>
 
-    <!-- ПРИЦЕЛ -->
-    <div id="crosshair" class="hidden">+</div>
-    
-    <!-- ИНДИКАТОР ВЗАИМОДЕЙСТВИЯ -->
-    <div id="interaction-prompt" class="hidden">Нажмите [E] для консоли доступа</div>
-
-    <!-- МЕХАНИКА МОРГАНИЯ (ИНТЕРФЕЙС ИГРОКА) -->
-    <div id="blink-container" class="hidden">
-        <div class="blink-label">ЗРИТЕЛЬНЫЙ КОНТАКТ</div>
-        <div id="blink-bar-outer">
-            <div id="blink-bar-inner"></div>
-        </div>
-        <div class="blink-hint">[ПРОБЕЛ] — моргнуть заранее</div>
-    </div>
-
-    <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+    <!-- Панель статуса игрока -->
     <div id="player-panel" class="hidden">
-        <div class="panel-item">ПРОТОКОЛ: <span id="player-rank">Агент C-492</span></div>
-        <div class="panel-item">XP: <span id="player-xp">0</span></div>
-        <button class="btn-small" onclick="toggleArchiveView()">БАЗА KETER</button>
-        <button class="btn-small btn-danger" onclick="exitGame()">ВЫХОД</button>
+        <div>РАНГ: <span id="player-rank">Агент C-492</span></div>
+        <div>ОПЫТ: <span id="player-xp">0</span> XP</div>
     </div>
 
-    <div class="container">
-
-        <!-- ГЛАВНОЕ МЕНЮ -->
-        <div id="block-menu" class="terminal hidden">
-            <h1 class="glitch-text">PROJECT: KETER</h1>
-            <h2>ФОНД SCP — ЗОНА 19 [АВАРИЙНЫЙ РЕЖИМ]</h2>
-            <p class="warning-text">ВНИМАНИЕ: Скульптура SCP-173 покинула камеру сдержания.</p>
-            <p class="lore-text">Задание: Не спускайте глаз с объекта. Доберитесь до терминала шлюза и введите код блокировки.</p>
-            
-            <div class="menu-buttons">
-                <button class="btn-main" onclick="startGame3D()">ПРИСТУПИТЬ К ЗАДАЧЕ</button>
-                <button class="btn-main" onclick="openArchiveFromMenu()">АРХИВ ОБЪЕКТОВ</button>
-                <button class="btn-main btn-danger" onclick="resetProgress()">СБРОСИТЬ ПРОГРЕСС</button>
-            </div>
-        </div>
-
-        <!-- ТЕРМИНАЛ ЗАДАЧИ 1 -->
-        <div id="block-d" class="terminal hidden">
-            <h3>[ТЕРМИНАЛ D-1] БЛОКИРОВКА ШЛЮЗА</h3>
-            <p>Экран консоли мигает аварийным жёлтым цветом.</p>
-            <p class="question">«Сколько сотрудников Class-D требуется для поддержания зрительного контакта и очистки камеры SCP-173?»</p>
-            
-            <div class="input-group">
-                <input type="text" id="input-block-d" placeholder="Введите ответ..." autocomplete="off">
-                <button onclick="verifyCode('block-d')">ОТПРАВИТЬ</button>
-            </div>
-            <button class="btn-small" style="margin-top: 15px;" onclick="closeTerminal()">ВЫЙТИ ИЗ КОНСОЛИ</button>
-        </div>
-
-        <!-- АРХИВ -->
-        <div id="block-encyclopedia" class="terminal hidden">
-            <h2>АРХИВ ОБЪЕКТОВ</h2>
-            <div class="archive-grid">
-                <div id="card-scp173" class="archive-card hidden">
-                    <h4>SCP-173 — Скульптура</h4>
-                    <p><b>Класс:</b> Евклид</p>
-                    <p>Состоит из бетона и арматуры. Крайне враждебен. Перемещается при разрыве зрительного контакта.</p>
-                </div>
-                <div id="card-scp173-locked" class="archive-card locked">
-                    <h4>SCP-173 — [ЗАСЕКРЕЧЕНО]</h4>
-                    <p>Завершите задачу в блоке D.</p>
-                </div>
-            </div>
-            <button class="btn-main" onclick="toggleArchiveView()" style="margin-top: 20px;">ЗАКРЫТЬ</button>
-        </div>
-
+    <!-- Индикатор моргания -->
+    <div id="blink-container" class="hidden">
+        <div id="blink-bar-inner"></div>
     </div>
 
-    <!-- АУДИО -->
-    <audio id="snd-glitch" src="audio/glitch.mp3" preload="auto"></audio>
-    <audio id="snd-static" src="audio/static.mp3" loop preload="auto"></audio>
-    <audio id="snd-vhs" src="audio/vhs.mp3" loop preload="auto"></audio>
+    <!-- Подсказка взаимодействия -->
+    <div id="interaction-prompt" class="hidden">[E] ПОДКЛЮЧИТЬСЯ К ТЕРМИНАЛУ</div>
+
+    <!-- Главное Меню -->
+    <div id="block-menu" class="terminal hidden">
+        <h2>ТЕРМИНАЛ ЗОНЫ 19</h2>
+        <p style="margin-top: 10px;">Статус комплекса: <span style="color: #ff3333;">НАРУШЕНИЕ УСЛОВИЙ СОДЕРЖАНИЯ</span></p>
+        <hr style="border-color: #00ff66; margin: 15px 0;">
+        <p>Нажмите <b>[ENTER]</b> или кнопку ниже для входа в 3D-зону.</p>
+        <button class="btn" onclick="startGame3D()">ВОЙТИ В КОМПЛЕКС [ENTER]</button>
+        <button class="btn" onclick="openArchiveFromMenu()">АРХИВ SCP</button>
+    </div>
+
+    <!-- Терминал Задачи -->
+    <div id="block-d" class="terminal hidden">
+        <h3>ТЕРМИНАЛ БЛОКИРОВКИ ШЛЮЗА</h3>
+        <p style="margin-top: 10px;">Решите задачу авторизации:</p>
+        <p style="margin-top: 10px; color: #ffff00;">Сколько сотрудников класса D требуется для обслуживания SCP-173 во время протокола очистки?</p>
+        <input type="text" id="input-block-d" placeholder="Введите ответ...">
+        <div style="margin-top: 15px;">
+            <button class="btn" onclick="verifyCode('block-d')">ПОДТВЕРДИТЬ</button>
+            <button class="btn" onclick="closeTerminal()">ОТМЕНА</button>
+        </div>
+    </div>
+
+    <!-- Архив SCP -->
+    <div id="block-encyclopedia" class="terminal hidden">
+        <h3>АРХИВ ДАННЫХ</h3>
+        <hr style="border-color: #00ff66; margin: 10px 0;">
+        <p><b>SCP-173 — Скульптура</b></p>
+        <p style="font-size: 13px; color: #aaa; margin-top: 5px;">
+            Класс: Евклид. Объекту требуется непрерывный зрительный контакт. При разрыве контакта перемещается с высокой скоростью и ломает шейные позвонки.
+        </p>
+        <button class="btn" onclick="toggleArchiveView()" style="margin-top: 15px;">ZAKRYT'</button>
+    </div>
+
+    <!-- Аудио элементы -->
+    <audio id="snd-static" loop src="https://assets.mixkit.co/active_storage/sfx/2658/2658-preview.mp3"></audio>
+    <audio id="snd-vhs" loop src="https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3"></audio>
+    <audio id="snd-glitch" src="https://assets.mixkit.co/active_storage/sfx/2673/2673-preview.mp3"></audio>
 
     <script src="script.js"></script>
 </body>
