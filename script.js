@@ -1,4 +1,3 @@
-
 // === АУДИОДВИЖОК (Web Audio API) ===
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -184,7 +183,7 @@ function renderChapter(chapNum) {
   });
 }
 
-// === 3D THREE.JS ДВИЖОК (ГЛАВА 2) ===
+// === 3D THREE.JS ДВИЖОК С ТЕКСТУРАМИ И КОЛЛИЗИЕЙ ===
 let scene, camera, renderer, flashlight;
 let flashlightOn = true;
 let battery = 100;
@@ -193,25 +192,36 @@ let prevTime = performance.now();
 const velocity = new THREE.Vector3();
 let stepTimer = 0;
 
-function generateTexture(type) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 256; canvas.height = 256;
-  const ctx = canvas.getContext('2d');
+// Текстуры и коллизии
+const textureLoader = new THREE.TextureLoader();
+let walls = [];
+let exitDoorMesh;
 
-  if (type === 'wall') {
-    ctx.fillStyle = '#222222'; ctx.fillRect(0, 0, 256, 256);
-    ctx.fillStyle = '#181818';
-    for (let i = 0; i < 400; i++) ctx.fillRect(Math.random()*256, Math.random()*256, 3, 3);
-    ctx.strokeStyle = '#0f0f0f'; ctx.lineWidth = 6;
-    ctx.strokeRect(0, 0, 256, 256);
-  } else if (type === 'floor') {
-    ctx.fillStyle = '#111111'; ctx.fillRect(0, 0, 256, 256);
-    ctx.fillStyle = '#252525';
-    for (let i = 0; i < 256; i += 32) {
-      ctx.fillRect(i, 0, 2, 256); ctx.fillRect(0, i, 256, 2);
+const wallTexture = textureLoader.load('textures/concrete_wall.jpg');
+const floorTexture = textureLoader.load('textures/floor_tiles.jpg');
+
+wallTexture.wrapS = THREE.RepeatWrapping;
+wallTexture.wrapT = THREE.RepeatWrapping;
+floorTexture.wrapS = THREE.RepeatWrapping;
+floorTexture.wrapT = THREE.RepeatWrapping;
+floorTexture.repeat.set(10, 10);
+
+function checkWallCollision(newPosition) {
+  const playerRadius = 0.5;
+
+  for (let i = 0; i < walls.length; i++) {
+    const wallBox = new THREE.Box3().setFromObject(walls[i]);
+    
+    const playerBox = new THREE.Box3(
+      new THREE.Vector3(newPosition.x - playerRadius, 0, newPosition.z - playerRadius),
+      new THREE.Vector3(newPosition.x + playerRadius, 3.5, newPosition.z + playerRadius)
+    );
+
+    if (wallBox.intersectsBox(playerBox)) {
+      return true;
     }
   }
-  return new THREE.CanvasTexture(canvas);
+  return false;
 }
 
 function init3DMode() {
@@ -222,7 +232,7 @@ function init3DMode() {
   playSound('hum');
 
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x020202, 0.14);
+  scene.fog = new THREE.FogExp2(0x020202, 0.12);
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
   camera.position.set(0, 1.6, 0);
@@ -236,9 +246,6 @@ function init3DMode() {
   camera.add(flashlight);
   flashlight.target = camera;
   scene.add(camera);
-
-  const ambientLight = new THREE.AmbientLight(0x050f05);
-  scene.add(ambientLight);
 
   build3DMap();
 
@@ -278,24 +285,39 @@ function onKey(code, state) {
   }
 }
 
-let exitDoorMesh;
-
 function build3DMap() {
-  const wallTex = generateTexture('wall');
-  wallTex.wrapS = THREE.RepeatWrapping; wallTex.wrapT = THREE.RepeatWrapping;
-  const floorTex = generateTexture('floor');
+  walls = [];
 
-  const wallMat = new THREE.MeshLambertMaterial({ map: wallTex });
-  const floorMat = new THREE.MeshLambertMaterial({ map: floorTex });
+  const wallMat = new THREE.MeshStandardMaterial({ 
+    map: wallTexture,
+    roughness: 0.8,
+    metalness: 0.1
+  });
+  
+  const floorMat = new THREE.MeshStandardMaterial({ 
+    map: floorTexture,
+    roughness: 0.4
+  });
 
+  // Пол
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), floorMat);
   floor.rotation.x = -Math.PI / 2;
   scene.add(floor);
 
-  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), wallMat);
+  // Потолок
+  const ceilingMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), ceilingMat);
   ceiling.position.y = 3.5;
   ceiling.rotation.x = Math.PI / 2;
   scene.add(ceiling);
+
+  // ОСВЕЩЕНИЕ
+  const ambientLight = new THREE.AmbientLight(0x051505, 0.8);
+  scene.add(ambientLight);
+
+  const redAlertLight = new THREE.PointLight(0xff0022, 2, 12);
+  redAlertLight.position.set(0, 2.8, 0);
+  scene.add(redAlertLight);
 
   // Сетка коридоров
   const grid = [
@@ -313,12 +335,13 @@ function build3DMap() {
         const wall = new THREE.Mesh(new THREE.BoxGeometry(4, 3.5, 4), wallMat);
         wall.position.set((c - 3) * 4, 1.75, (r - 2) * 4);
         scene.add(wall);
+        walls.push(wall);
       }
     }
   }
 
-  // Выходная дверь (Переход к Главе 3)
-  const doorMat = new THREE.MeshLambertMaterial({ color: 0x00ff66, wireframe: true });
+  // Выходная дверь
+  const doorMat = new THREE.MeshStandardMaterial({ color: 0x00ff66, roughness: 0.3, metalness: 0.8 });
   exitDoorMesh = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.2), doorMat);
   exitDoorMesh.position.set(4, 1.5, 8);
   scene.add(exitDoorMesh);
@@ -327,7 +350,6 @@ function build3DMap() {
 function check3DExit() {
   const dist = camera.position.distanceTo(exitDoorMesh.position);
   if (dist < 3) {
-    // Выходим из 3D режима
     document.exitPointerLock();
     document.getElementById("three-container").classList.add("hidden");
     document.getElementById("text-game").classList.remove("hidden");
@@ -359,8 +381,19 @@ function animate3D() {
   if (moveForward || moveBackward) velocity.z -= moveDirZ * 28.0 * delta;
   if (moveLeft || moveRight) velocity.x -= moveDirX * 28.0 * delta;
 
+  // Движение с проверкой коллизии
+  const oldPos = camera.position.clone();
+
   camera.translateX(-velocity.x * delta);
+  if (checkWallCollision(camera.position)) {
+    camera.position.x = oldPos.x;
+  }
+
   camera.translateZ(velocity.z * delta);
+  if (checkWallCollision(camera.position)) {
+    camera.position.z = oldPos.z;
+  }
+
   camera.position.y = 1.6;
 
   if (moveForward || moveBackward || moveLeft || moveRight) {
