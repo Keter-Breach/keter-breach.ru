@@ -1,12 +1,14 @@
 // === 0. ПРЕДЗАГРУЗКА И НАСТРОЙКА ТЕКСТУР ===
 const textureLoader = new THREE.TextureLoader();
 
-function loadSimpleMaterial(url, repeatX = 1, repeatY = 1, roughness = 0.7) {
+function loadCustomMaterial(url, repeatX = 1, repeatY = 1, roughness = 0.7) {
   const mat = new THREE.MeshStandardMaterial({ roughness: roughness });
   if (url) {
-    mat.map = textureLoader.load(url);
-    mat.map.wrapS = mat.map.wrapT = THREE.RepeatWrapping;
-    mat.map.repeat.set(repeatX, repeatY);
+    mat.map = textureLoader.load(url, (tex) => {
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(repeatX, repeatY);
+    });
   }
   return mat;
 }
@@ -142,21 +144,19 @@ function init3DMode() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   container.appendChild(renderer.domElement);
 
-  // Назначаем твои текстуры на материалы
-  wallMaterial = loadSimpleMaterial('textures/damaged_concrete.jpg', 1, 1, 0.8);
-  floorMaterial = loadSimpleMaterial('textures/MetalPlates006.png', 12, 16, 0.4);
-  doorMaterial = loadSimpleMaterial('textures/Paint002.png', 1, 1, 0.5);
-  tableMaterial = loadSimpleMaterial('textures/dark_wood_diff_1k.jpg', 1, 1, 0.7);
-  serverMaterial = loadSimpleMaterial('textures/Metal041B.png', 1, 1, 0.3);
+  // Исправленный масштаб (тайлинг) текстур, чтобы они не растягивались гигантскими пятнами
+  wallMaterial = loadCustomMaterial('textures/damaged_concrete.jpg', 4, 2, 0.8);
+  floorMaterial = loadCustomMaterial('textures/MetalPlates006.png', 20, 25, 0.4);
+  doorMaterial = loadCustomMaterial('textures/Paint002.png', 1, 1, 0.5);
+  tableMaterial = loadCustomMaterial('textures/dark_wood_diff_1k.jpg', 1, 1, 0.7);
+  serverMaterial = loadCustomMaterial('textures/Metal041B.png', 1, 1, 0.3);
 
-  // Фонарь игрока
   flashlight = new THREE.SpotLight(0xffffff, 8.0, 40, Math.PI / 3.5, 0.5, 1);
   flashlight.position.set(0.2, -0.2, 0);
   camera.add(flashlight);
   flashlight.target = camera;
   scene.add(camera);
 
-  // Фоновый свет
   const ambientLight = new THREE.AmbientLight(0x556677, 1.2);
   scene.add(ambientLight);
 
@@ -226,7 +226,6 @@ function build10ZonesMap() {
     scene.add(lampMesh);
   }
 
-  // Зоны
   addW(8, 3.2, 0.5, 0, 1.6, -10); addW(0.5, 3.2, 12, -4, 1.6, -4); addW(0.5, 3.2, 12, 4, 1.6, -4);
   addW(0.5, 3.2, 20, -4, 1.6, 12); addW(0.5, 3.2, 20, 4, 1.6, 12);
   addW(12, 3.2, 0.5, -10, 1.6, 6); addW(12, 3.2, 0.5, -10, 1.6, 18); addW(0.5, 3.2, 12, -16, 1.6, 12);
