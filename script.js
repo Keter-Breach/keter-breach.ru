@@ -134,7 +134,7 @@ function init3DWorld() {
     
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020502);
-    scene.fog = new THREE.FogExp2(0x020502, 0.05);
+    scene.fog = new THREE.FogExp2(0x020502, 0.04);
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 1.6, 12);
@@ -144,12 +144,12 @@ function init3DWorld() {
 
     setupProceduralMaterials();
 
-    const ambientLight = new THREE.AmbientLight(0x334433, 0.7);
+    const ambientLight = new THREE.AmbientLight(0x223322, 0.6);
     scene.add(ambientLight);
 
     buildBaseMap();
 
-    // Терминал
+    // Терминал управления шлюзом
     const termGeo = new THREE.BoxGeometry(0.8, 1.4, 0.4);
     const termMat = new THREE.MeshStandardMaterial({ color: 0x00ff66, emissive: 0x003311 });
     terminalMesh = new THREE.Mesh(termGeo, termMat);
@@ -182,7 +182,7 @@ function setupProceduralMaterials() {
 }
 
 // ==========================================
-// МОДЕЛЬ SCP-173 И ЗАГРУЗКА ТЕКСТУРЫ
+// МОДЕЛЬ SCP-173
 // ==========================================
 
 function createSCP173() {
@@ -190,7 +190,6 @@ function createSCP173() {
 
     const textureLoader = new THREE.TextureLoader();
     
-    // Сначала пробуем из папки textures/, если нет — ищем в корне
     const scpTexture = textureLoader.load('textures/SCP-173.jpg', undefined, undefined, () => {
         scpTexture.image = textureLoader.load('SCP-173.jpg');
     });
@@ -228,7 +227,7 @@ function createSCP173() {
 }
 
 // ==========================================
-// КАРТА
+// РАСШИРЕННАЯ КАРТА ЗОНЫ 19
 // ==========================================
 
 function createWall(x, z, width, depth, height = 4) {
@@ -250,7 +249,7 @@ function createFloor(x, z, width, depth) {
 }
 
 function createLight(x, y, z, color = 0xffaa00, intensity = 2.0) {
-    const light = new THREE.PointLight(color, intensity, 14);
+    const light = new THREE.PointLight(color, intensity, 15);
     light.position.set(x, y, z);
     scene.add(light);
 }
@@ -258,28 +257,57 @@ function createLight(x, y, z, color = 0xffaa00, intensity = 2.0) {
 function buildBaseMap() {
     colliders = [];
 
-    // Коридор
-    createFloor(0, 0, 6, 30);
-    createWall(-3.2, 0, 0.4, 30);
-    createWall(3.2, 5, 0.4, 20);
-    createWall(0, 15, 6.8, 0.4);
-    createLight(0, 3.5, 8);
-    createLight(0, 3.5, -2);
+    // 1. ЦЕНТРАЛЬНЫЙ КОРИДОР (Север - Юг)
+    createFloor(0, 0, 6, 40);
+    createWall(-3.2, 5, 0.4, 30);
+    createWall(3.2, 10, 0.4, 20);
+    createWall(0, 20, 6.8, 0.4); // Южный тупик
+    createLight(0, 3.5, 10);
+    createLight(0, 3.5, 0);
+    createLight(0, 3.5, -10);
 
-    // Камера SCP-173
+    // 2. ВОСТОЧНОЕ КРЫЛО (Камера SCP-173)
     createFloor(10, -8, 14, 10);
     createWall(10, -13, 14, 0.4);
     createWall(10, -3, 14, 0.4);
     createWall(17, -8, 0.4, 10);
-    createLight(10, 3.5, -8, 0xff1111, 2.5);
+    createLight(10, 3.5, -8, 0xff2222, 2.5); // Красный свет тревоги
 
-    // Комната управления
+    // 3. ЗАПАДНОЕ КРЫЛО (Комната Управления)
     createFloor(-10, -10, 14, 14);
     createWall(-10, -17, 14, 0.4);
     createWall(-17, -10, 0.4, 14);
     createWall(-10, -3, 14, 0.4);
     createWall(-3.2, -14, 0.4, 6);
-    createLight(-10, 3.5, -10, 0x00ff66, 2.0);
+    createLight(-10, 3.5, -10, 0x00ff66, 2.0); // Зеленоватый свет терминалов
+
+    // 4. СЕВЕРНЫЙ ПЕРЕКРЕСТОК И ДЛИННЫЙ КОРИДОР МАТЕРИАЛЬНОЙ БАЗЫ
+    createFloor(0, -28, 6, 16);
+    createWall(3.2, -28, 0.4, 16);
+    createWall(-3.2, -28, 0.4, 16);
+    createLight(0, 3.5, -24, 0xaaaaaa, 1.8);
+
+    // 5. НОВАЯ ЛОКАЦИЯ: СЕКТОР B (Вторая камера содержания SCP-096)
+    createFloor(-14, -28, 22, 10);
+    createWall(-14, -33, 22, 0.4);
+    createWall(-14, -23, 14, 0.4);
+    createWall(-25, -28, 0.4, 10);
+    createLight(-18, 3.5, -28, 0x3366ff, 2.0); // Синий холодный свет
+
+    // Декоративная подсветка и перегородки в Секторе B
+    const containerGeo = new THREE.BoxGeometry(4, 3, 4);
+    const containerMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 });
+    const cell096 = new THREE.Mesh(containerGeo, containerMat);
+    cell096.position.set(-20, 1.5, -28);
+    scene.add(cell096);
+    colliders.push(new THREE.Box3().setFromObject(cell096));
+
+    // 6. НОВАЯ ЛОКАЦИЯ: ШЛЮЗ ЭВАКУАЦИИ (Северная часть)
+    createFloor(0, -42, 12, 12);
+    createWall(-6, -42, 0.4, 12);
+    createWall(6, -42, 0.4, 12);
+    createWall(0, -48, 12, 0.4); // Закрытая гермодверь эвакуации
+    createLight(0, 3.5, -42, 0xffff00, 2.2); // Желтый свет ожидания
 }
 
 // ==========================================
@@ -331,7 +359,7 @@ function moveSCP173() {
         return;
     }
 
-    const stepDistance = 2.2;
+    const stepDistance = 2.4;
     const directionToPlayer = new THREE.Vector3();
     directionToPlayer.subVectors(camera.position, scp173Group.position).normalize();
 
