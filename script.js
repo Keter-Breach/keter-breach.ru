@@ -44,7 +44,7 @@ function startAmbientSound() {
 }
 
 // ==========================================
-// 3D ДВИЖОК С SCP-173 И ОКУРУЖЕНИЕМ
+// 3D ДВИЖОК, СТЕНЫ И КАРТА
 // ==========================================
 
 let scene, camera, renderer;
@@ -55,41 +55,39 @@ let direction = new THREE.Vector3();
 
 let isGame3DActive = false;
 let terminalMesh, scp173Group;
-let flickeringLight;
 let isNearTerminal = false;
+
+// Массив физических границ (коллизий) стен
+let colliders = [];
 
 function init3DWorld() {
     const canvas = document.getElementById('game-canvas');
     
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020502);
-    scene.fog = new THREE.FogExp2(0x020502, 0.08);
+    scene.fog = new THREE.FogExp2(0x020502, 0.06);
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 1.6, 8);
+    camera.position.set(0, 1.6, 12); // Спавн игрока в Главном Коридоре
 
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // ОСВЕЩЕНИЕ ЗОНЫ 19
-    const ambientLight = new THREE.AmbientLight(0x223322, 0.4);
+    // ОСВЕЩЕНИЕ
+    const ambientLight = new THREE.AmbientLight(0x223322, 0.5);
     scene.add(ambientLight);
 
-    flickeringLight = new THREE.PointLight(0xffaa00, 1.8, 18);
-    flickeringLight.position.set(0, 3.5, 0);
-    scene.add(flickeringLight);
+    // ГЕНЕРАЦИЯ БАЗОВОЙ КАРТЫ КОМПЛЕКСА
+    buildBaseMap();
 
-    // --- УЛУЧШЕННОЕ ОКРУЖЕНИЕ (КОРИДОР) ---
-    createCorridor();
-
-    // --- ТЕРМИНАЛ УПРАВЛЕНИЯ ---
+    // ТЕРМИНАЛ ЗАДАЧ
     const termGeo = new THREE.BoxGeometry(0.8, 1.4, 0.4);
     const termMat = new THREE.MeshBasicMaterial({ color: 0x00ff66 });
     terminalMesh = new THREE.Mesh(termGeo, termMat);
-    terminalMesh.position.set(2.5, 1, -12);
+    terminalMesh.position.set(-11, 1, -12); // В комнате управления
     scene.add(terminalMesh);
 
-    // --- SCP-173 (СКУЛЬПТУРА) ---
+    // SCP-173
     createSCP173();
 
     // СОБЫТИЯ
@@ -105,76 +103,92 @@ function init3DWorld() {
     window.addEventListener('resize', onWindowResize);
 }
 
-// Создание визуального стиля коридора Зоны 19
-function createCorridor() {
+// ==========================================
+// ПОСТРОЕНИЕ КАРТЫ ЗОНЫ 19
+// ==========================================
+
+function createWall(x, z, width, depth, height = 4) {
+    const wallGeo = new THREE.BoxGeometry(width, height, depth);
     const wallMat = new THREE.MeshBasicMaterial({ color: 0x112211, wireframe: true });
-    const floorMat = new THREE.MeshBasicMaterial({ color: 0x050a05 });
-    const ceilingMat = new THREE.MeshBasicMaterial({ color: 0x081008 });
+    const wall = new THREE.Mesh(wallGeo, wallMat);
+    wall.position.set(x, height / 2, z);
+    scene.add(wall);
 
-    // Пол
-    const floorGeo = new THREE.PlaneGeometry(8, 30);
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.z = -5;
-    scene.add(floor);
-
-    // Потолок
-    const ceiling = new THREE.Mesh(floorGeo, ceilingMat);
-    ceiling.rotation.x = Math.PI / 2;
-    ceiling.position.set(0, 4, -5);
-    scene.add(ceiling);
-
-    // Стены
-    const wallGeo = new THREE.PlaneGeometry(30, 4);
-    
-    const leftWall = new THREE.Mesh(wallGeo, wallMat);
-    leftWall.rotation.y = Math.PI / 2;
-    leftWall.position.set(-4, 2, -5);
-    scene.add(leftWall);
-
-    const rightWall = new THREE.Mesh(wallGeo, wallMat);
-    rightWall.rotation.y = -Math.PI / 2;
-    rightWall.position.set(4, 2, -5);
-    scene.add(rightWall);
-
-    // Гермодверь в конце
-    const doorGeo = new THREE.BoxGeometry(7.8, 3.8, 0.2);
-    const doorMat = new THREE.MeshBasicMaterial({ color: 0x224422 });
-    const door = new THREE.Mesh(doorGeo, doorMat);
-    door.position.set(0, 1.9, -14.8);
-    scene.add(door);
+    // Добавляем стену в массив для проверки столкновений
+    const box = new THREE.Box3().setFromObject(wall);
+    colliders.push(box);
 }
 
-// Построение фигуры SCP-173
+function createFloor(x, z, width, depth) {
+    const floorGeo = new THREE.PlaneGeometry(width, depth);
+    const floorMat = new THREE.MeshBasicMaterial({ color: 0x050a05 });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(x, 0, z);
+    scene.add(floor);
+}
+
+function createLight(x, y, z, color = 0xffaa00, intensity = 1.5) {
+    const light = new THREE.PointLight(color, intensity, 12);
+    light.position.set(x, y, z);
+    scene.add(light);
+}
+
+function buildBaseMap() {
+    colliders = []; // Очистка коллизий
+
+    // --- 1. ГЛАВНЫЙ КОРИДОР ---
+    createFloor(0, 0, 6, 30);
+    createWall(-3.2, 0, 0.4, 30); // Левая стена
+    createWall(3.2, 5, 0.4, 20);  // Правая стена (с проходом)
+    createWall(0, 15, 6.8, 0.4);  // Задняя стена
+    createLight(0, 3.5, 8);
+    createLight(0, 3.5, -2);
+
+    // --- 2. КАМЕРА СОДЕРЖАНИЯ SCP-173 (СПРАВА) ---
+    createFloor(10, -8, 14, 10);
+    createWall(10, -13, 14, 0.4); // Север
+    createWall(10, -3, 14, 0.4);  // Юг
+    createWall(17, -8, 0.4, 10);  // Восток
+    createLight(10, 3.5, -8, 0xff0000, 2); // Красный свет опасности
+
+    // --- 3. КОМНАТА УПРАВЛЕНИЯ И ТЕРМИНАЛА (СЛЕВА) ---
+    createFloor(-10, -10, 14, 14);
+    createWall(-10, -17, 14, 0.4); // Север
+    createWall(-17, -10, 0.4, 14); // Запад
+    createWall(-10, -3, 14, 0.4);  // Юг
+    createWall(-3.2, -14, 0.4, 6); // Часть стены перехода
+    createLight(-10, 3.5, -10, 0x00ff66, 1.5); // Зеленый свет консоли
+
+    // --- 4. ПЕРЕДНИЙ СЕКТОР (ТУПИК / ШЛЮЗ) ---
+    createWall(0, -15, 6.8, 0.4);
+}
+
 function createSCP173() {
     scp173Group = new THREE.Group();
 
-    // Материал бетона с красной и черной краской
     const bodyMat = new THREE.MeshBasicMaterial({ color: 0xcccccc });
     const headMat = new THREE.MeshBasicMaterial({ color: 0xddbb99 });
-    const paintMat = new THREE.MeshBasicMaterial({ color: 0x990000 }); // "Лицо"
+    const paintMat = new THREE.MeshBasicMaterial({ color: 0x990000 });
 
-    // Туловище (каплевидное/конусное)
     const bodyGeo = new THREE.CylinderGeometry(0.3, 0.5, 1.8, 8);
     const body = new THREE.Mesh(bodyGeo, bodyMat);
     body.position.y = 0.9;
     scp173Group.add(body);
 
-    // Голова
     const headGeo = new THREE.SphereGeometry(0.4, 8, 8);
     const head = new THREE.Mesh(headGeo, headMat);
     head.position.y = 2.0;
     head.scale.set(1, 1.2, 0.9);
     scp173Group.add(head);
 
-    // Краска на лице
     const facePaintGeo = new THREE.BoxGeometry(0.3, 0.3, 0.1);
     const facePaint = new THREE.Mesh(facePaintGeo, paintMat);
     facePaint.position.set(0, 2.0, 0.35);
     scp173Group.add(facePaint);
 
-    // Позиция появления SCP-173 в конце коридора
-    scp173Group.position.set(0, 0, -10);
+    // Начальная позиция SCP-173 в его камере содержания
+    scp173Group.position.set(12, 0, -8);
     scene.add(scp173Group);
 }
 
@@ -186,16 +200,14 @@ function updateBlink(delta) {
     if (!isGame3DActive) return;
 
     if (isBlinking) {
-        blinkMeter += delta * 300; // Быстрое восстановление при моргании
+        blinkMeter += delta * 300;
         if (blinkMeter >= 100) {
             blinkMeter = 100;
             isBlinking = false;
         }
     } else {
-        blinkMeter -= delta * 18; // Постепенное утомление глаз
-        if (blinkMeter <= 0) {
-            triggerBlink();
-        }
+        blinkMeter -= delta * 18;
+        if (blinkMeter <= 0) triggerBlink();
     }
 
     const innerBar = document.getElementById('blink-bar-inner');
@@ -204,24 +216,18 @@ function updateBlink(delta) {
 
 function triggerBlink() {
     isBlinking = true;
-
-    // Пока игрок моргает — SCP-173 мгновенно перемещается к нему!
     moveSCP173();
 }
 
 function isPlayerLookingAt173() {
     if (!scp173Group || isBlinking) return false;
 
-    // Вектор направления взгляда
     const camDir = new THREE.Vector3();
     camera.getWorldDirection(camDir);
 
-    // Вектор от камеры к SCP-173
     const toSCP = new THREE.Vector3().subVectors(scp173Group.position, camera.position).normalize();
-
-    // Угол между взглядом и объектом
     const dot = camDir.dot(toSCP);
-    return dot > 0.4; // Если объект в поле зрения
+    return dot > 0.35;
 }
 
 function moveSCP173() {
@@ -229,28 +235,43 @@ function moveSCP173() {
 
     const dist = camera.position.distanceTo(scp173Group.position);
 
-    // Если SCP-173 совсем близко — скример и смерть
-    if (dist < 2.0) {
+    if (dist < 1.8) {
         triggerHorrorEffect();
         alert("SCP-173 СЛОМАЛ ВАМ ШЕЙНЫЕ ПОЗВОНКИ.\n\nНельзя разрывать зрительный контакт!");
         location.reload();
         return;
     }
 
-    // Движение к игроку
     const targetPos = new THREE.Vector3();
     targetPos.subVectors(camera.position, scp173Group.position).normalize();
     
-    // Перемещаем на 2.5 метра ближе
-    scp173Group.position.add(targetPos.multiplyScalar(2.5));
+    scp173Group.position.add(targetPos.multiplyScalar(2.2));
     scp173Group.lookAt(camera.position.x, scp173Group.position.y, camera.position.z);
 
-    // Звук скрежета бетона при движении
     const audio = document.getElementById('snd-glitch');
     if (audio) {
         audio.currentTime = 0;
         audio.play().catch(() => {});
     }
+}
+
+// ==========================================
+// ПРОВЕРКА СТОЛКНОВЕНИЙ СО СТЕНАМИ
+// ==========================================
+
+function checkCollisions(newPosition) {
+    const playerRadius = 0.5;
+    const playerBox = new THREE.Box3(
+        new THREE.Vector3(newPosition.x - playerRadius, 0, newPosition.z - playerRadius),
+        new THREE.Vector3(newPosition.x + playerRadius, 3, newPosition.z + playerRadius)
+    );
+
+    for (let i = 0; i < colliders.length; i++) {
+        if (playerBox.intersectsBox(colliders[i])) {
+            return true; // Есть столкновение!
+        }
+    }
+    return false;
 }
 
 // ==========================================
@@ -298,20 +319,13 @@ function animate3D() {
     const time = performance.now();
     const delta = (time - prevTime) / 1000;
 
-    // Мигание лампы
-    if (flickeringLight && Math.random() < 0.05) {
-        flickeringLight.intensity = Math.random() * 2;
-    }
-
-    // Обновление моргания
     updateBlink(delta);
 
-    // Если игрок НЕ смотрит на SCP-173 — скульптура медленно ползет даже без моргания
     if (!isPlayerLookingAt173() && Math.random() < 0.02) {
         moveSCP173();
     }
 
-    // Движение игрока
+    // Движение и расчет коллизий
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
 
@@ -322,11 +336,19 @@ function animate3D() {
     if (moveForward || moveBackward) velocity.z -= direction.z * 22.0 * delta;
     if (moveLeft || moveRight) velocity.x -= direction.x * 22.0 * delta;
 
+    // Расчет новой предполагаемой позиции
+    const oldPosition = camera.position.clone();
+    
     camera.translateX(-velocity.x * delta);
     camera.translateZ(velocity.z * delta);
     camera.position.y = 1.6;
 
-    // Проверка расстояния до консоли
+    // Если врезались в стену — возвращаем старые координаты
+    if (checkCollisions(camera.position)) {
+        camera.position.copy(oldPosition);
+    }
+
+    // Проверка расстояния до Терминала
     const dist = camera.position.distanceTo(terminalMesh.position);
     const prompt = document.getElementById('interaction-prompt');
 
@@ -350,7 +372,7 @@ function onWindowResize() {
 }
 
 // ==========================================
-// ИНТЕРФЕЙС И ТЕРМИНАЛЫ
+// ИНТЕРФЕЙС
 // ==========================================
 
 function startGame3D() {
