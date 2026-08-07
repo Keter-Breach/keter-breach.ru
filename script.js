@@ -1,4 +1,4 @@
-// === АУДИОДВИЖОК (Web Audio API) ===
+// === 1. АУДИОДВИЖОК (Web Audio API) ===
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playSound(type) {
@@ -34,7 +34,7 @@ function playSound(type) {
   }
 }
 
-// === ДАННЫЕ 10 СЮЖЕТНЫХ ГЛАВ ===
+// === 2. ДАННЫЕ 10 СЮЖЕТНЫХ ГЛАВ ===
 const storyData = {
   1: {
     title: "ГЛАВА 1: ПРОСЫПАНИЕ",
@@ -126,7 +126,7 @@ const storyData = {
   }
 };
 
-// === СОСТОЯНИЕ ИГРЫ ===
+// === 3. СОСТОЯНИЕ ИГРЫ И UI ===
 let currentChapter = 1;
 let loopCount = 1;
 
@@ -181,7 +181,49 @@ function renderChapter(chapNum) {
   });
 }
 
-// === 3D THREE.JS ДВИЖОК ===
+// === 4. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ (Canvas API) ===
+function createFloorTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  
+  ctx.fillStyle = '#111111';
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.strokeStyle = '#222222';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(0, 0, 256, 256);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(6, 20);
+  return texture;
+}
+
+function createWallTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  
+  ctx.fillStyle = '#222222';
+  ctx.fillRect(0, 0, 256, 256);
+  
+  for (let i = 0; i < 500; i++) {
+    ctx.fillStyle = Math.random() > 0.5 ? '#2a2a2a' : '#1a1a1a';
+    ctx.fillRect(Math.random() * 256, Math.random() * 256, 3, 3);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(1, 10);
+  return texture;
+}
+
+const floorTexture = createFloorTexture();
+const wallTexture = createWallTexture();
+
+// === 5. 3D THREE.JS ДВИЖОК ===
 let scene, camera, renderer, flashlight;
 let flashlightOn = true;
 let battery = 100;
@@ -190,19 +232,8 @@ let prevTime = performance.now();
 const velocity = new THREE.Vector3();
 let stepTimer = 0;
 
-const textureLoader = new THREE.TextureLoader();
 let walls = [];
 let exitDoorMesh;
-
-// Загрузка текстур
-const wallTexture = textureLoader.load('textures/concrete_wall.jpg');
-const floorTexture = textureLoader.load('textures/floor_tiles.jpg');
-
-wallTexture.wrapS = THREE.RepeatWrapping;
-wallTexture.wrapT = THREE.RepeatWrapping;
-floorTexture.wrapS = THREE.RepeatWrapping;
-floorTexture.wrapT = THREE.RepeatWrapping;
-floorTexture.repeat.set(4, 15);
 
 function checkWallCollision(newPosition) {
   const playerRadius = 0.5;
@@ -229,7 +260,7 @@ function init3DMode() {
   playSound('hum');
 
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x020202, 0.05);
+  scene.fog = new THREE.FogExp2(0x020202, 0.04);
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
   camera.position.set(0, 1.6, -5);
@@ -238,8 +269,8 @@ function init3DMode() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   container.appendChild(renderer.domElement);
 
-  // Фонарик игрока
-  flashlight = new THREE.SpotLight(0xccffff, 3.5, 20, Math.PI / 4.5, 0.4, 1);
+  // Фонарик
+  flashlight = new THREE.SpotLight(0xccffff, 3.0, 18, Math.PI / 4, 0.5, 1);
   flashlight.position.set(0.2, -0.2, 0);
   camera.add(flashlight);
   flashlight.target = camera;
@@ -270,7 +301,7 @@ function init3DMode() {
 function toggleFlashlight() {
   if (battery <= 0) return;
   flashlightOn = !flashlightOn;
-  flashlight.intensity = flashlightOn ? 3.5 : 0;
+  flashlight.intensity = flashlightOn ? 3.0 : 0;
   playSound('click');
 }
 
@@ -283,49 +314,48 @@ function onKey(code, state) {
   }
 }
 
-// Построение стандартного помещения
 function build3DMap() {
   walls = [];
 
   const wallMat = new THREE.MeshStandardMaterial({ 
     map: wallTexture, 
-    roughness: 0.6, 
+    roughness: 0.8, 
     metalness: 0.1 
   });
   
   const floorMat = new THREE.MeshStandardMaterial({ 
     map: floorTexture, 
-    roughness: 0.3 
+    roughness: 0.5 
   });
 
   const ceilingMat = new THREE.MeshStandardMaterial({ 
-    color: 0x222222, 
-    roughness: 0.8 
+    color: 0x111111, 
+    roughness: 0.9 
   });
 
   // Пол и потолок
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 60), floorMat);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 60), floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(0, 0, 10);
   scene.add(floor);
 
-  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(20, 60), ceilingMat);
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(12, 60), ceilingMat);
   ceiling.rotation.x = Math.PI / 2;
   ceiling.position.set(0, 3.2, 10);
   scene.add(ceiling);
 
-  // Освещение помещения
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+  // Освещение коридора
+  const ambientLight = new THREE.AmbientLight(0x333333, 1.2);
   scene.add(ambientLight);
 
   const lightPositions = [-10, 5, 20];
   lightPositions.forEach(zPos => {
-    const lampLight = new THREE.PointLight(0xf0f5ff, 1.2, 12);
+    const lampLight = new THREE.PointLight(0xddeeff, 1.0, 15);
     lampLight.position.set(0, 3.0, zPos);
     scene.add(lampLight);
 
     const lampMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(1.5, 0.1, 0.8),
+      new THREE.BoxGeometry(1.2, 0.1, 0.6),
       new THREE.MeshBasicMaterial({ color: 0xffffff })
     );
     lampMesh.position.set(0, 3.15, zPos);
@@ -337,8 +367,8 @@ function build3DMap() {
     { w: 0.5, h: 3.2, d: 40, x: -3, y: 1.6, z: 10 },
     { w: 0.5, h: 3.2, d: 40, x: 3, y: 1.6, z: 10 },
     { w: 6.5, h: 3.2, d: 0.5, x: 0, y: 1.6, z: -10 },
-    { w: 2.0, h: 3.2, d: 0.5, x: -2, y: 1.6, z: 30 },
-    { w: 2.0, h: 3.2, d: 0.5, x: 2, y: 1.6, z: 30 }
+    { w: 2.2, h: 3.2, d: 0.5, x: -2.1, y: 1.6, z: 30 },
+    { w: 2.2, h: 3.2, d: 0.5, x: 2.1, y: 1.6, z: 30 }
   ];
 
   wallBoxes.forEach(b => {
@@ -354,8 +384,8 @@ function build3DMap() {
   // Дверь выхода
   const doorMat = new THREE.MeshStandardMaterial({ 
     color: 0x00ff66, 
-    roughness: 0.2, 
-    metalness: 0.5 
+    roughness: 0.3, 
+    metalness: 0.6 
   });
   exitDoorMesh = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.6, 0.1), doorMat);
   exitDoorMesh.position.set(0, 1.3, 29.8);
