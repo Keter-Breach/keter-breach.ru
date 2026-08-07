@@ -18,7 +18,7 @@ let blinkMeter = 100;
 let isBlinking = false;
 
 // ==========================================
-// ИНИЦИАЛИЗАЦИЯ И ЗВУКИ
+// ИНИЦИАЛИЗАЦИЯ, ЗВУКИ И УПРАВЛЕНИЕ ENTER
 // ==========================================
 
 function initAudioAndApp() {
@@ -43,6 +43,24 @@ function startAmbientSound() {
     }
 }
 
+// ГЛОБАЛЬНЫЙ СЛУШАТЕЛЬ ENTER
+document.addEventListener('keydown', function(event) {
+    if (event.code === 'Enter') {
+        // 1. Старт из начального экрана оверлея
+        const overlay = document.getElementById('start-overlay');
+        if (overlay && !overlay.classList.contains('hidden')) {
+            initAudioAndApp();
+            return;
+        }
+
+        // 2. Старт 3D-игры из Главного Меню
+        const menuBlock = document.getElementById('block-menu');
+        if (menuBlock && !menuBlock.classList.contains('hidden') && !isGame3DActive) {
+            startGame3D();
+        }
+    }
+});
+
 // ==========================================
 // ГЕНЕРАТОРЫ ПРОЦЕДУРНЫХ ТЕКСТУР (Metal & Tiles)
 // ==========================================
@@ -53,11 +71,11 @@ function createTilesTexture() {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Базовый цвет плитки
+    // Цвет плитки
     ctx.fillStyle = '#1c241c';
     ctx.fillRect(0, 0, 512, 512);
 
-    // Сетка плитки
+    // Сетка
     ctx.strokeStyle = '#0a0f0a';
     ctx.lineWidth = 8;
 
@@ -75,7 +93,7 @@ function createTilesTexture() {
         ctx.stroke();
     }
 
-    // Шум и потёртости
+    // Шум
     for (let i = 0; i < 1000; i++) {
         ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.1)';
         ctx.fillRect(Math.random() * 512, Math.random() * 512, 4, 4);
@@ -97,13 +115,13 @@ function createMetalTexture() {
     ctx.fillStyle = '#2a332a';
     ctx.fillRect(0, 0, 512, 512);
 
-    // Панели и каркас
+    // Панели
     ctx.strokeStyle = '#151d15';
     ctx.lineWidth = 6;
     ctx.strokeRect(10, 10, 492, 492);
     ctx.strokeRect(20, 20, 472, 472);
 
-    // Заклепки по углам
+    // Заклепки
     ctx.fillStyle = '#445544';
     const rivets = [[30, 30], [482, 30], [30, 482], [482, 482]];
     rivets.forEach(([rx, ry]) => {
@@ -112,7 +130,7 @@ function createMetalTexture() {
         ctx.fill();
     });
 
-    // Металлические царапины
+    // Царапины
     for (let i = 0; i < 800; i++) {
         ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.15)';
         ctx.fillRect(Math.random() * 512, Math.random() * 512, Math.random() * 20, 2);
@@ -141,7 +159,7 @@ let isNearTerminal = false;
 // Материалы
 let tilesMaterial, metalMaterial;
 
-// Массив физических границ (коллизий) стен
+// Коллизии стен
 let colliders = [];
 
 function init3DWorld() {
@@ -152,25 +170,25 @@ function init3DWorld() {
     scene.fog = new THREE.FogExp2(0x020502, 0.05);
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 1.6, 12); // Спавн игрока в Главном Коридоре
+    camera.position.set(0, 1.6, 12);
 
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // 1. ИНИЦИАЛИЗАЦИЯ ПРОЦЕДУРНЫХ ТЕКСТУР (ПО УМОЛЧАНИЮ)
+    // 1. ИНИЦИАЛИЗАЦИЯ ТЕКСТУР ПО УМОЛЧАНИЮ (ПРОЦЕДУРНЫЕ)
     setupProceduralMaterials();
 
-    // 2. ЕСЛИ ХОТИТЕ ИСПОЛЬЗОВАТЬ СВОИ ФАЙЛЫ ИЗ ПАПКИ textures/ - РАСКОММЕНТИРУЙТЕ СТРОКУ НИЖЕ:
+    // 2. ДЛЯ ЗАГРУЗКИ СВОИХ КАРТИНОК ИЗ ПАПКИ textures/ РАСКОММЕНТИРУЙТЕ СТРОКУ НИЖЕ:
     // loadCustomTextures();
 
     // ОСВЕЩЕНИЕ
     const ambientLight = new THREE.AmbientLight(0x334433, 0.7);
     scene.add(ambientLight);
 
-    // ГЕНЕРАЦИЯ КАРТЫ КОМПЛЕКСА
+    // КАРТА
     buildBaseMap();
 
-    // ТЕРМИНАЛ ЗАДАЧ
+    // ТЕРМИНАЛ
     const termGeo = new THREE.BoxGeometry(0.8, 1.4, 0.4);
     const termMat = new THREE.MeshStandardMaterial({ color: 0x00ff66, emissive: 0x003311 });
     terminalMesh = new THREE.Mesh(termGeo, termMat);
@@ -180,7 +198,7 @@ function init3DWorld() {
     // SCP-173
     createSCP173();
 
-    // СОБЫТИЯ
+    // СОБЫТИЯ ИГРОКА
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
     canvas.addEventListener('click', () => {
@@ -193,7 +211,6 @@ function init3DWorld() {
     window.addEventListener('resize', onWindowResize);
 }
 
-// Настройка процедурных материалов (встроенная генерация)
 function setupProceduralMaterials() {
     const tilesTexture = createTilesTexture();
     tilesTexture.repeat.set(4, 4);
@@ -212,7 +229,6 @@ function setupProceduralMaterials() {
     });
 }
 
-// Функция загрузки собственных изображений из папки textures/
 function loadCustomTextures() {
     const textureLoader = new THREE.TextureLoader();
 
@@ -234,12 +250,12 @@ function loadCustomTextures() {
 }
 
 // ==========================================
-// ПОСТРОЕНИЕ КАРТЫ (Использование Metal и Tiles)
+// ПОСТРОЕНИЕ КАРТЫ С ТЕКСТУРАМИ
 // ==========================================
 
 function createWall(x, z, width, depth, height = 4) {
     const wallGeo = new THREE.BoxGeometry(width, height, depth);
-    const wall = new THREE.Mesh(wallGeo, metalMaterial); // Стена из металла
+    const wall = new THREE.Mesh(wallGeo, metalMaterial);
     wall.position.set(x, height / 2, z);
     scene.add(wall);
 
@@ -249,7 +265,7 @@ function createWall(x, z, width, depth, height = 4) {
 
 function createFloor(x, z, width, depth) {
     const floorGeo = new THREE.PlaneGeometry(width, depth);
-    const floor = new THREE.Mesh(floorGeo, tilesMaterial); // Пол из плитки
+    const floor = new THREE.Mesh(floorGeo, tilesMaterial);
     floor.rotation.x = -Math.PI / 2;
     floor.position.set(x, 0, z);
     scene.add(floor);
@@ -262,30 +278,30 @@ function createLight(x, y, z, color = 0xffaa00, intensity = 2.0) {
 }
 
 function buildBaseMap() {
-    colliders = []; // Очистка коллизий
+    colliders = [];
 
     // --- 1. ГЛАВНЫЙ КОРИДОР ---
     createFloor(0, 0, 6, 30);
-    createWall(-3.2, 0, 0.4, 30); // Левая стена
-    createWall(3.2, 5, 0.4, 20);  // Правая стена (с проходом)
-    createWall(0, 15, 6.8, 0.4);  // Задняя стена
+    createWall(-3.2, 0, 0.4, 30);
+    createWall(3.2, 5, 0.4, 20);
+    createWall(0, 15, 6.8, 0.4);
     createLight(0, 3.5, 8);
     createLight(0, 3.5, -2);
 
-    // --- 2. КАМЕРА СОДЕРЖАНИЯ SCP-173 ---
+    // --- 2. КАМЕРА SCP-173 ---
     createFloor(10, -8, 14, 10);
-    createWall(10, -13, 14, 0.4); // Север
-    createWall(10, -3, 14, 0.4);  // Юг
-    createWall(17, -8, 0.4, 10);  // Восток
-    createLight(10, 3.5, -8, 0xff1111, 2.5); // Красный тревожный свет
+    createWall(10, -13, 14, 0.4);
+    createWall(10, -3, 14, 0.4);
+    createWall(17, -8, 0.4, 10);
+    createLight(10, 3.5, -8, 0xff1111, 2.5);
 
-    // --- 3. КОМНАТА УПРАВЛЕНИЯ И ТЕРМИНАЛА ---
+    // --- 3. КОМНАТА УПРАВЛЕНИЯ ---
     createFloor(-10, -10, 14, 14);
-    createWall(-10, -17, 14, 0.4); // Север
-    createWall(-17, -10, 0.4, 14); // Запад
-    createWall(-10, -3, 14, 0.4);  // Юг
-    createWall(-3.2, -14, 0.4, 6); // Перегородка
-    createLight(-10, 3.5, -10, 0x00ff66, 2.0); // Зеленый консольный свет
+    createWall(-10, -17, 14, 0.4);
+    createWall(-17, -10, 0.4, 14);
+    createWall(-10, -3, 14, 0.4);
+    createWall(-3.2, -14, 0.4, 6);
+    createLight(-10, 3.5, -10, 0x00ff66, 2.0);
 
     // --- 4. ШЛЮЗ ---
     createWall(0, -15, 6.8, 0.4);
@@ -391,7 +407,7 @@ function moveSCP173() {
     if (!hitsWall) {
         scp173Group.position.copy(nextPos);
     } else {
-        // Обход стен (скольжение)
+        // Скольжение вдоль стены
         const slidePosX = scp173Group.position.clone().add(new THREE.Vector3(directionToPlayer.x * stepDistance, 0, 0));
         const slideBoxX = new THREE.Box3(
             new THREE.Vector3(slidePosX.x - scpRadius, 0, slidePosX.z - scpRadius),
@@ -540,7 +556,7 @@ function animate3D() {
 function onWindowResize() {
     if (!camera || !renderer) return;
     camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updatePointerMatrix ? camera.updatePointerMatrix() : camera.updateProjectionMatrix();
+    camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
