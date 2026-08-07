@@ -43,7 +43,6 @@ function startAmbientSound() {
     }
 }
 
-// Запуск по нажатию Enter
 document.addEventListener('keydown', function(event) {
     if (event.code === 'Enter') {
         const overlay = document.getElementById('start-overlay');
@@ -144,7 +143,7 @@ function init3DWorld() {
 
     setupProceduralMaterials();
 
-    const ambientLight = new THREE.AmbientLight(0x223322, 0.6);
+    const ambientLight = new THREE.AmbientLight(0x223322, 0.5);
     scene.add(ambientLight);
 
     buildBaseMap();
@@ -227,7 +226,7 @@ function createSCP173() {
 }
 
 // ==========================================
-// РАСШИРЕННАЯ КАРТА ЗОНЫ 19
+// ИНТЕРЬЕР И ПОТОЛКИ (ВЫЗОВЫ И КОНСТРУКТОРЫ)
 // ==========================================
 
 function createWall(x, z, width, depth, height = 4) {
@@ -248,53 +247,120 @@ function createFloor(x, z, width, depth) {
     scene.add(floor);
 }
 
-function createLight(x, y, z, color = 0xffaa00, intensity = 2.0) {
-    const light = new THREE.PointLight(color, intensity, 15);
-    light.position.set(x, y, z);
-    scene.add(light);
+function createCeiling(x, z, width, depth) {
+    const ceilingGeo = new THREE.PlaneGeometry(width, depth);
+    const ceiling = new THREE.Mesh(ceilingGeo, metalMaterial);
+    ceiling.rotation.x = Math.PI / 2;
+    ceiling.position.set(x, 4, z);
+    scene.add(ceiling);
 }
+
+function createCeilingLight(x, z, color = 0xffaa00, intensity = 2.0) {
+    const light = new THREE.PointLight(color, intensity, 15);
+    light.position.set(x, 3.8, z);
+    scene.add(light);
+
+    const lampGeo = new THREE.BoxGeometry(1.2, 0.1, 0.4);
+    const lampMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: color,
+        emissiveIntensity: 0.8
+    });
+    const lampMesh = new THREE.Mesh(lampGeo, lampMat);
+    lampMesh.position.set(x, 3.95, z);
+    scene.add(lampMesh);
+}
+
+function createDoor(x, z, rotateY = 0) {
+    const doorGroup = new THREE.Group();
+
+    const doorMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.3 });
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+    const frameGeo = new THREE.BoxGeometry(2.4, 3.2, 0.2);
+    const frame = new THREE.Mesh(frameGeo, frameMat);
+    frame.position.y = 1.6;
+    doorGroup.add(frame);
+
+    const panelGeo = new THREE.BoxGeometry(2.0, 3.0, 0.1);
+    const panel = new THREE.Mesh(panelGeo, doorMat);
+    panel.position.set(0, 1.5, 0);
+    doorGroup.add(panel);
+
+    doorGroup.position.set(x, 0, z);
+    doorGroup.rotation.y = rotateY;
+    scene.add(doorGroup);
+
+    const box = new THREE.Box3().setFromObject(panel);
+    colliders.push(box);
+}
+
+function createPropBox(x, z, size = 1) {
+    const boxGeo = new THREE.BoxGeometry(size, size, size);
+    const boxMat = new THREE.MeshStandardMaterial({ color: 0x4a3b32, roughness: 0.8 });
+    const boxMesh = new THREE.Mesh(boxGeo, boxMat);
+    boxMesh.position.set(x, size / 2, z);
+    scene.add(boxMesh);
+
+    colliders.push(new THREE.Box3().setFromObject(boxMesh));
+}
+
+// ==========================================
+// ПОЛНАЯ КАРТА ЗОНЫ 19
+// ==========================================
 
 function buildBaseMap() {
     colliders = [];
 
-    // 1. ЦЕНТРАЛЬНЫЙ КОРИДОР (Север - Юг)
+    // 1. ЦЕНТРАЛЬНЫЙ КОРИДОР
     createFloor(0, 0, 6, 40);
+    createCeiling(0, 0, 6, 40);
     createWall(-3.2, 5, 0.4, 30);
     createWall(3.2, 10, 0.4, 20);
-    createWall(0, 20, 6.8, 0.4); // Южный тупик
-    createLight(0, 3.5, 10);
-    createLight(0, 3.5, 0);
-    createLight(0, 3.5, -10);
+    createWall(0, 20, 6.8, 0.4);
+
+    createCeilingLight(0, 10, 0xffaa00, 2.0);
+    createCeilingLight(0, 0, 0xffaa00, 2.0);
+    createCeilingLight(0, -10, 0xffaa00, 2.0);
+
+    createDoor(0, 5, 0);
+    createPropBox(2, 8, 1.2);
+    createPropBox(2, 9.5, 1.0);
 
     // 2. ВОСТОЧНОЕ КРЫЛО (Камера SCP-173)
     createFloor(10, -8, 14, 10);
+    createCeiling(10, -8, 14, 10);
     createWall(10, -13, 14, 0.4);
     createWall(10, -3, 14, 0.4);
     createWall(17, -8, 0.4, 10);
-    createLight(10, 3.5, -8, 0xff2222, 2.5); // Красный свет тревоги
+    createCeilingLight(10, -8, 0xff1111, 2.5);
+    createDoor(3.2, -8, Math.PI / 2);
 
     // 3. ЗАПАДНОЕ КРЫЛО (Комната Управления)
     createFloor(-10, -10, 14, 14);
+    createCeiling(-10, -10, 14, 14);
     createWall(-10, -17, 14, 0.4);
     createWall(-17, -10, 0.4, 14);
     createWall(-10, -3, 14, 0.4);
     createWall(-3.2, -14, 0.4, 6);
-    createLight(-10, 3.5, -10, 0x00ff66, 2.0); // Зеленоватый свет терминалов
+    createCeilingLight(-10, -10, 0x00ff66, 2.0);
+    createPropBox(-14, -14, 1.4);
 
-    // 4. СЕВЕРНЫЙ ПЕРЕКРЕСТОК И ДЛИННЫЙ КОРИДОР МАТЕРИАЛЬНОЙ БАЗЫ
+    // 4. СЕВЕРНЫЙ ПЕРЕКРЕСТОК
     createFloor(0, -28, 6, 16);
+    createCeiling(0, -28, 6, 16);
     createWall(3.2, -28, 0.4, 16);
     createWall(-3.2, -28, 0.4, 16);
-    createLight(0, 3.5, -24, 0xaaaaaa, 1.8);
+    createCeilingLight(0, -24, 0xaaaaaa, 1.8);
 
-    // 5. НОВАЯ ЛОКАЦИЯ: СЕКТОР B (Вторая камера содержания SCP-096)
+    // 5. СЕКТОР B (Камера SCP-096)
     createFloor(-14, -28, 22, 10);
+    createCeiling(-14, -28, 22, 10);
     createWall(-14, -33, 22, 0.4);
     createWall(-14, -23, 14, 0.4);
     createWall(-25, -28, 0.4, 10);
-    createLight(-18, 3.5, -28, 0x3366ff, 2.0); // Синий холодный свет
+    createCeilingLight(-18, -28, 0x3366ff, 2.0);
 
-    // Декоративная подсветка и перегородки в Секторе B
     const containerGeo = new THREE.BoxGeometry(4, 3, 4);
     const containerMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 });
     const cell096 = new THREE.Mesh(containerGeo, containerMat);
@@ -302,12 +368,14 @@ function buildBaseMap() {
     scene.add(cell096);
     colliders.push(new THREE.Box3().setFromObject(cell096));
 
-    // 6. НОВАЯ ЛОКАЦИЯ: ШЛЮЗ ЭВАКУАЦИИ (Северная часть)
+    // 6. ШЛЮЗ ЭВАКУАЦИИ
     createFloor(0, -42, 12, 12);
+    createCeiling(0, -42, 12, 12);
     createWall(-6, -42, 0.4, 12);
     createWall(6, -42, 0.4, 12);
-    createWall(0, -48, 12, 0.4); // Закрытая гермодверь эвакуации
-    createLight(0, 3.5, -42, 0xffff00, 2.2); // Желтый свет ожидания
+    createWall(0, -48, 12, 0.4);
+    createCeilingLight(0, -42, 0xffff00, 2.2);
+    createDoor(0, -36, 0);
 }
 
 // ==========================================
