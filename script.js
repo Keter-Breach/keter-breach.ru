@@ -18,7 +18,7 @@ let blinkMeter = 100;
 let isBlinking = false;
 
 // ==========================================
-// ИНИЦИАЛИЗАЦИЯ, ЗВУКИ И УПРАВЛЕНИЕ ENTER
+// ИНИЦИАЛИЗАЦИЯ И УПРАВЛЕНИЕ ENTER
 // ==========================================
 
 function initAudioAndApp() {
@@ -43,17 +43,15 @@ function startAmbientSound() {
     }
 }
 
-// ГЛОБАЛЬНЫЙ СЛУШАТЕЛЬ ENTER
+// Слушатель клавиши ENTER
 document.addEventListener('keydown', function(event) {
     if (event.code === 'Enter') {
-        // 1. Старт из начального экрана оверлея
         const overlay = document.getElementById('start-overlay');
         if (overlay && !overlay.classList.contains('hidden')) {
             initAudioAndApp();
             return;
         }
 
-        // 2. Старт 3D-игры из Главного Меню
         const menuBlock = document.getElementById('block-menu');
         if (menuBlock && !menuBlock.classList.contains('hidden') && !isGame3DActive) {
             startGame3D();
@@ -62,7 +60,7 @@ document.addEventListener('keydown', function(event) {
 });
 
 // ==========================================
-// ГЕНЕРАТОРЫ ПРОЦЕДУРНЫХ ТЕКСТУР (Metal & Tiles)
+// ГЕНЕРАТОРЫ ПРОЦЕДУРНЫХ ТЕКСТУР ДЛЯ СТЕН И ПОЛА
 // ==========================================
 
 function createTilesTexture() {
@@ -71,11 +69,9 @@ function createTilesTexture() {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Цвет плитки
     ctx.fillStyle = '#1c241c';
     ctx.fillRect(0, 0, 512, 512);
 
-    // Сетка
     ctx.strokeStyle = '#0a0f0a';
     ctx.lineWidth = 8;
 
@@ -93,7 +89,6 @@ function createTilesTexture() {
         ctx.stroke();
     }
 
-    // Шум
     for (let i = 0; i < 1000; i++) {
         ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.1)';
         ctx.fillRect(Math.random() * 512, Math.random() * 512, 4, 4);
@@ -111,17 +106,14 @@ function createMetalTexture() {
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
 
-    // Металлическая основа
     ctx.fillStyle = '#2a332a';
     ctx.fillRect(0, 0, 512, 512);
 
-    // Панели
     ctx.strokeStyle = '#151d15';
     ctx.lineWidth = 6;
     ctx.strokeRect(10, 10, 492, 492);
     ctx.strokeRect(20, 20, 472, 472);
 
-    // Заклепки
     ctx.fillStyle = '#445544';
     const rivets = [[30, 30], [482, 30], [30, 482], [482, 482]];
     rivets.forEach(([rx, ry]) => {
@@ -130,7 +122,6 @@ function createMetalTexture() {
         ctx.fill();
     });
 
-    // Царапины
     for (let i = 0; i < 800; i++) {
         ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.15)';
         ctx.fillRect(Math.random() * 512, Math.random() * 512, Math.random() * 20, 2);
@@ -156,10 +147,7 @@ let isGame3DActive = false;
 let terminalMesh, scp173Group;
 let isNearTerminal = false;
 
-// Материалы
 let tilesMaterial, metalMaterial;
-
-// Коллизии стен
 let colliders = [];
 
 function init3DWorld() {
@@ -175,11 +163,7 @@ function init3DWorld() {
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // 1. ИНИЦИАЛИЗАЦИЯ ТЕКСТУР ПО УМОЛЧАНИЮ (ПРОЦЕДУРНЫЕ)
     setupProceduralMaterials();
-
-    // 2. ДЛЯ ЗАГРУЗКИ СВОИХ КАРТИНОК ИЗ ПАПКИ textures/ РАСКОММЕНТИРУЙТЕ СТРОКУ НИЖЕ:
-    // loadCustomTextures();
 
     // ОСВЕЩЕНИЕ
     const ambientLight = new THREE.AmbientLight(0x334433, 0.7);
@@ -195,10 +179,10 @@ function init3DWorld() {
     terminalMesh.position.set(-11, 1, -12);
     scene.add(terminalMesh);
 
-    // SCP-173
+    // SCP-173 (СОЗДАНИЕ С ТЕКСТУРОЙ)
     createSCP173();
 
-    // СОБЫТИЯ ИГРОКА
+    // СОБЫТИЯ УПРАВЛЕНИЯ
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
     canvas.addEventListener('click', () => {
@@ -229,28 +213,58 @@ function setupProceduralMaterials() {
     });
 }
 
-function loadCustomTextures() {
+// ==========================================
+// СОЗДАНИЕ МОДЕЛИ SCP-173 С ТЕКСТУРОЙ
+// ==========================================
+
+function createSCP173() {
+    scp173Group = new THREE.Group();
+
     const textureLoader = new THREE.TextureLoader();
+    // Загрузка текстуры развёрстки
+    const scpTexture = textureLoader.load('SCP-173.jpg', 
+        undefined, 
+        undefined, 
+        function() {
+            // Фолбэк, если файл не найден в корне
+            scpTexture.image = textureLoader.load('textures/SCP-173.jpg');
+        }
+    );
 
-    const customWallTex = textureLoader.load('textures/wall_concrete.jpg');
-    customWallTex.wrapS = THREE.RepeatWrapping;
-    customWallTex.wrapT = THREE.RepeatWrapping;
-    customWallTex.repeat.set(2, 1);
+    const scpMaterial = new THREE.MeshStandardMaterial({
+        map: scpTexture,
+        roughness: 0.7,
+        metalness: 0.1
+    });
 
-    const customFloorTex = textureLoader.load('textures/floor_tiles.jpg');
-    customFloorTex.wrapS = THREE.RepeatWrapping;
-    customFloorTex.wrapT = THREE.RepeatWrapping;
-    customFloorTex.repeat.set(4, 4);
+    // ТУЛОВИЩЕ И НОГИ
+    const bodyGeo = new THREE.BoxGeometry(0.8, 1.4, 0.6);
+    const body = new THREE.Mesh(bodyGeo, scpMaterial);
+    body.position.y = 1.0;
+    scp173Group.add(body);
 
-    metalMaterial.map = customWallTex;
-    metalMaterial.needsUpdate = true;
+    // ГОЛОВА С ЕСТЕСТВЕННЫМ НАЛОЖЕНИЕМ ЛИЦА
+    const headGeo = new THREE.BoxGeometry(0.7, 0.8, 0.7);
+    const head = new THREE.Mesh(headGeo, scpMaterial);
+    head.position.y = 2.0;
+    scp173Group.add(head);
 
-    tilesMaterial.map = customFloorTex;
-    tilesMaterial.needsUpdate = true;
+    // РУКИ
+    const armGeo = new THREE.BoxGeometry(0.2, 0.8, 0.2);
+    const leftArm = new THREE.Mesh(armGeo, scpMaterial);
+    leftArm.position.set(-0.5, 1.1, 0);
+    scp173Group.add(leftArm);
+
+    const rightArm = new THREE.Mesh(armGeo, scpMaterial);
+    rightArm.position.set(0.5, 1.1, 0);
+    scp173Group.add(rightArm);
+
+    scp173Group.position.set(12, 0, -8);
+    scene.add(scp173Group);
 }
 
 // ==========================================
-// ПОСТРОЕНИЕ КАРТЫ С ТЕКСТУРАМИ
+// ПОСТРОЕНИЕ КАРТЫ И КОЛЛИЗИИ
 // ==========================================
 
 function createWall(x, z, width, depth, height = 4) {
@@ -280,7 +294,7 @@ function createLight(x, y, z, color = 0xffaa00, intensity = 2.0) {
 function buildBaseMap() {
     colliders = [];
 
-    // --- 1. ГЛАВНЫЙ КОРИДОР ---
+    // ГЛАВНЫЙ КОРИДОР
     createFloor(0, 0, 6, 30);
     createWall(-3.2, 0, 0.4, 30);
     createWall(3.2, 5, 0.4, 20);
@@ -288,14 +302,14 @@ function buildBaseMap() {
     createLight(0, 3.5, 8);
     createLight(0, 3.5, -2);
 
-    // --- 2. КАМЕРА SCP-173 ---
+    // КАМЕРА SCP-173
     createFloor(10, -8, 14, 10);
     createWall(10, -13, 14, 0.4);
     createWall(10, -3, 14, 0.4);
     createWall(17, -8, 0.4, 10);
     createLight(10, 3.5, -8, 0xff1111, 2.5);
 
-    // --- 3. КОМНАТА УПРАВЛЕНИЯ ---
+    // КОМНАТА УПРАВЛЕНИЯ
     createFloor(-10, -10, 14, 14);
     createWall(-10, -17, 14, 0.4);
     createWall(-17, -10, 0.4, 14);
@@ -303,35 +317,8 @@ function buildBaseMap() {
     createWall(-3.2, -14, 0.4, 6);
     createLight(-10, 3.5, -10, 0x00ff66, 2.0);
 
-    // --- 4. ШЛЮЗ ---
+    // ШЛЮЗ
     createWall(0, -15, 6.8, 0.4);
-}
-
-function createSCP173() {
-    scp173Group = new THREE.Group();
-
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.8 });
-    const headMat = new THREE.MeshStandardMaterial({ color: 0xddbb99, roughness: 0.7 });
-    const paintMat = new THREE.MeshStandardMaterial({ color: 0x990000 });
-
-    const bodyGeo = new THREE.CylinderGeometry(0.3, 0.5, 1.8, 8);
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 0.9;
-    scp173Group.add(body);
-
-    const headGeo = new THREE.SphereGeometry(0.4, 8, 8);
-    const head = new THREE.Mesh(headGeo, headMat);
-    head.position.y = 2.0;
-    head.scale.set(1, 1.2, 0.9);
-    scp173Group.add(head);
-
-    const facePaintGeo = new THREE.BoxGeometry(0.3, 0.3, 0.1);
-    const facePaint = new THREE.Mesh(facePaintGeo, paintMat);
-    facePaint.position.set(0, 2.0, 0.35);
-    scp173Group.add(facePaint);
-
-    scp173Group.position.set(12, 0, -8);
-    scene.add(scp173Group);
 }
 
 // ==========================================
@@ -407,7 +394,6 @@ function moveSCP173() {
     if (!hitsWall) {
         scp173Group.position.copy(nextPos);
     } else {
-        // Скольжение вдоль стены
         const slidePosX = scp173Group.position.clone().add(new THREE.Vector3(directionToPlayer.x * stepDistance, 0, 0));
         const slideBoxX = new THREE.Box3(
             new THREE.Vector3(slidePosX.x - scpRadius, 0, slidePosX.z - scpRadius),
@@ -449,7 +435,7 @@ function moveSCP173() {
 }
 
 // ==========================================
-// ПРОВЕРКА СТОЛКНОВЕНИЙ ИГРОКА СО СТЕНАМИ
+// ПРОВЕРКА СТОЛКНОВЕНИЙ И ИГРОВОЙ ЦИКЛ
 // ==========================================
 
 function checkCollisions(newPosition) {
@@ -466,10 +452,6 @@ function checkCollisions(newPosition) {
     }
     return false;
 }
-
-// ==========================================
-// УПРАВЛЕНИЕ И АНИМАЦИЯ
-// ==========================================
 
 let yaw = 0, pitch = 0;
 function onMouseMove(event) {
