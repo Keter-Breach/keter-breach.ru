@@ -235,6 +235,7 @@ function moveSCP173() {
 
     const dist = camera.position.distanceTo(scp173Group.position);
 
+    // Если SCP-173 подобрался вплотную — скример и конец игры
     if (dist < 1.8) {
         triggerHorrorEffect();
         alert("SCP-173 СЛОМАЛ ВАМ ШЕЙНЫЕ ПОЗВОНКИ.\n\nНельзя разрывать зрительный контакт!");
@@ -242,10 +243,67 @@ function moveSCP173() {
         return;
     }
 
-    const targetPos = new THREE.Vector3();
-    targetPos.subVectors(camera.position, scp173Group.position).normalize();
-    
-    scp173Group.position.add(targetPos.multiplyScalar(2.2));
+    // Вычисляем направление от SCP-173 к игроку
+    const stepDistance = 2.2; // Длина шага SCP-173 за телепортацию
+    const directionToPlayer = new THREE.Vector3();
+    directionToPlayer.subVectors(camera.position, scp173Group.position).normalize();
+
+    // Предполагаемая новая позиция SCP-173
+    const nextPos = scp173Group.position.clone().add(directionToPlayer.multiplyScalar(stepDistance));
+
+    // Размеры (Hitbox) SCP-173 для проверки столкновения со стенами
+    const scpRadius = 0.6;
+    const scpBox = new THREE.Box3(
+        new THREE.Vector3(nextPos.x - scpRadius, 0, nextPos.z - scpRadius),
+        new THREE.Vector3(nextPos.x + scpRadius, 3, nextPos.z + scpRadius)
+    );
+
+    // Проверяем столкновение со стенами комплекса
+    let hitsWall = false;
+    for (let i = 0; i < colliders.length; i++) {
+        if (scpBox.intersectsBox(colliders[i])) {
+            hitsWall = true;
+            break;
+        }
+    }
+
+    // Если на прямом пути нет стены — делаем шаг к игроку
+    if (!hitsWall) {
+        scp173Group.position.copy(nextPos);
+    } else {
+        // Если прямой путь заблокирован стеной, пробуем обходить по оси X или Z (скольжение вдоль стены)
+        const slidePosX = scp173Group.position.clone().add(new THREE.Vector3(directionToPlayer.x * stepDistance, 0, 0));
+        const slideBoxX = new THREE.Box3(
+            new THREE.Vector3(slidePosX.x - scpRadius, 0, slidePosX.z - scpRadius),
+            new THREE.Vector3(slidePosX.x + scpRadius, 3, slidePosX.z + scpRadius)
+        );
+
+        let hitX = false;
+        for (let i = 0; i < colliders.length; i++) {
+            if (slideBoxX.intersectsBox(colliders[i])) { hitX = true; break; }
+        }
+
+        if (!hitX) {
+            scp173Group.position.copy(slidePosX);
+        } else {
+            const slidePosZ = scp173Group.position.clone().add(new THREE.Vector3(0, 0, directionToPlayer.z * stepDistance));
+            const slideBoxZ = new THREE.Box3(
+                new THREE.Vector3(slidePosZ.x - scpRadius, 0, slidePosZ.z - scpRadius),
+                new THREE.Vector3(slidePosZ.x + scpRadius, 3, slidePosZ.z + scpRadius)
+            );
+
+            let hitZ = false;
+            for (let i = 0; i < colliders.length; i++) {
+                if (slideBoxZ.intersectsBox(colliders[i])) { hitZ = true; break; }
+            }
+
+            if (!hitZ) {
+                scp173Group.position.copy(slidePosZ);
+            }
+        }
+    }
+
+    // Разворачиваем SCP-173 лицом к игроку после перемещения
     scp173Group.lookAt(camera.position.x, scp173Group.position.y, camera.position.z);
 
     const audio = document.getElementById('snd-glitch');
@@ -256,7 +314,7 @@ function moveSCP173() {
 }
 
 // ==========================================
-// ПРОВЕРКА СТОЛКНОВЕНИЙ СО СТЕНАМИ
+// ПРОВЕРКА СТОЛКНОВЕНИЙ ИГРОКА СО СТЕНАМИ
 // ==========================================
 
 function checkCollisions(newPosition) {
@@ -372,7 +430,7 @@ function onWindowResize() {
 }
 
 // ==========================================
-// ИНТЕРФЕЙС
+// ИНТЕРФЕЙС И ТЕРМИНАЛЫ
 // ==========================================
 
 function startGame3D() {
