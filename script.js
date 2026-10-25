@@ -1654,6 +1654,19 @@ renderChapter(1);
       playSound = function (name) {
         if (settings.volume <= 0) return;
 
+        if (name === "deny") {
+          try {
+            const glitch = new Audio("audio/glitch.mp3");
+            glitch.volume = Math.min(1, settings.volume * 0.25);
+            const glitchPromise = glitch.play();
+            if (glitchPromise && typeof glitchPromise.catch === "function") {
+              glitchPromise.catch(() => {});
+            }
+          } catch (error) {
+            // Звук отказа Web Audio остаётся резервным вариантом.
+          }
+        }
+
         const sound = SOUNDS[name];
         if (!sound) return originalPlaySound(name);
 
