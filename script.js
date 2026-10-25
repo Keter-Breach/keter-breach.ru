@@ -1235,14 +1235,14 @@ renderChapter(1);
         z-index: 99999;
         display: flex;
         align-items: center;
-        justify-content: center;
-        padding: 20px;
+        justify-content: flex-start;
+        padding: 20px clamp(16px, 3vw, 48px);
         overflow-y: auto;
         color: #dce8df;
         background:
-          radial-gradient(ellipse at 50% 45%, rgba(20,38,26,.18), transparent 54%),
-          repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 4px),
-          linear-gradient(135deg, rgba(1,4,3,.985), rgba(3,8,5,.99));
+          linear-gradient(90deg, rgba(0,0,0,.42) 0%, rgba(0,0,0,.12) 58%, rgba(0,0,0,.08) 100%),
+          url("menu-background.svg") center / cover no-repeat,
+          #030506;
         font-family: "Courier New", monospace;
         box-sizing: border-box;
         isolation: isolate;
@@ -1252,15 +1252,21 @@ renderChapter(1);
         position: fixed;
         inset: 0;
         pointer-events: none;
-        opacity: .18;
+        opacity: .22;
         background-image:
-          linear-gradient(rgba(100,150,110,.12) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(100,150,110,.12) 1px, transparent 1px);
-        background-size: 48px 48px;
-        mask-image: radial-gradient(ellipse at center, black, transparent 82%);
+          repeating-linear-gradient(0deg, rgba(210,225,220,.12) 0 1px, transparent 1px 3px),
+          linear-gradient(90deg, transparent 0 48%, rgba(255,30,25,.05) 49%, transparent 50% 100%);
+        background-size: 100% 4px, 100% 100%;
+        animation: keter-vhs-jitter 11s steps(1, end) infinite;
+        pointer-events: none;
+      }
+      @keyframes keter-vhs-jitter {
+        0%, 91%, 93%, 100% { opacity: .2; transform: translateX(0); }
+        92% { opacity: .32; transform: translateX(2px); }
+        94% { opacity: .12; transform: translateX(-1px); }
       }
       #keter-overlay::after {
-        content: "SECURITY FEED // D-12     •     SIGNAL LOST     •     INTERNAL USE ONLY";
+        content: "CAM 01 // MAIN ELEVATOR     •     REC 00:00:17     •     INTERNAL USE ONLY";
         position: fixed;
         left: 22px;
         right: 22px;
@@ -1285,14 +1291,19 @@ renderChapter(1);
       .keter-panel {
         position: relative;
         z-index: 1;
-        width: min(100%, 650px);
-        padding: clamp(24px, 4vw, 40px);
-        border: 1px solid #405c47;
+        width: min(100%, 570px);
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+        margin-right: auto;
+        padding: clamp(22px, 3.5vw, 36px);
+        border: 1px solid rgba(106,139,120,.48);
         background:
-          linear-gradient(135deg, rgba(9,17,12,.995), rgba(3,7,5,.998) 72%),
-          #050906;
-        box-shadow: 0 32px 100px rgba(0,0,0,.92), 0 0 0 1px rgba(120,170,130,.035), 0 0 55px rgba(0,255,100,.035);
-        overflow: hidden;
+          linear-gradient(135deg, rgba(3,7,7,.96), rgba(3,6,7,.86) 72%),
+          #050708;
+        -webkit-backdrop-filter: blur(3px);
+        backdrop-filter: blur(3px);
+        box-shadow: 0 32px 100px rgba(0,0,0,.84), 0 0 0 1px rgba(120,170,130,.035), 0 0 38px rgba(255,25,18,.055);
+        overflow-x: hidden;
       }
       .keter-panel::before {
         content: "";
@@ -1312,6 +1323,22 @@ renderChapter(1);
         letter-spacing: 1.5px;
       }
       #keter-main-menu { min-height: 0; }
+      #keter-main-menu .keter-title {
+        color: #f0f3ee;
+        text-shadow: 2px 0 rgba(255,30,25,.2), -2px 0 rgba(30,190,255,.12), 0 0 22px rgba(230,20,18,.13);
+        letter-spacing: .075em;
+      }
+      #keter-main-menu .keter-divider { background: linear-gradient(90deg, #71302c, #2b3b32 55%, transparent); }
+      #keter-main-menu .keter-button { border-color: rgba(115,145,130,.42); background: rgba(0,0,0,.34); }
+      #keter-main-menu .keter-button.primary { background: rgba(120,255,158,.92); border-color: #8affaa; }
+      @media (max-width: 720px) {
+        #keter-overlay { justify-content: center; padding: 12px; background-position: 63% center; }
+        .keter-panel { margin: auto; max-height: calc(100vh - 24px); }
+        #keter-main-menu .keter-title { font-size: clamp(38px, 11vw, 54px); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #keter-overlay::before, #keter-main-menu .keter-eyebrow::before { animation: none !important; }
+      }
       #keter-main-menu .keter-eyebrow::before {
         content: "● LIVE ";
         color: #ff5149;
