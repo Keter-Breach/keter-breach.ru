@@ -436,9 +436,9 @@ function init3DMode() {
     hintEl.style.cssText = base + "top:50%;margin-top:40px;";
     hintEl.textContent = "Кликните, чтобы управлять";
     container.append(toastEl, hintEl);
-    const fx = document.createElement('div'); // виньетка и линии развёртки
-    fx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 48%,rgba(0,0,0,.58) 100%),repeating-linear-gradient(0deg,rgba(0,0,0,.055) 0 1px,transparent 1px 4px);';
-    container.append(fx);
+     const fx = document.createElement('div'); // тяжёлая виньетка и линии развёртки
+     fx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,.04) 18%,rgba(0,0,0,.82) 100%),repeating-linear-gradient(0deg,rgba(0,0,0,.075) 0 1px,transparent 1px 3px);';
+     container.append(fx);
 
     container.addEventListener('click', () => document.body.requestPointerLock());
     document.addEventListener('mousemove', onMouseMove);
