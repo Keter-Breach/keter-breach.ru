@@ -153,7 +153,7 @@ function cracks(g, s, n) {
 
 const TEX = {
   concrete: () => canvasTex(512, (g, s) => {
-    fillBg(g, s, '#5c5e5f'); speckle(g, s, 9000, 0.35); stains(g, s, 5, 'rgba(30,25,15,0.35)'); cracks(g, s, 2);
+    fillBg(g, s, '#626463'); speckle(g, s, 2600, 0.14); stains(g, s, 3, 'rgba(30,25,15,0.18)'); cracks(g, s, 1);
     g.fillStyle = 'rgba(0,0,0,0.4)'; g.fillRect(0, s - 3, s, 3); g.fillRect(0, 0, 3, s); // стыки плит
   }),
   metal: () => canvasTex(512, (g, s) => {
@@ -165,7 +165,7 @@ const TEX = {
       g.fillStyle = '#15171a';
       [[14, 14], [p - 14, 14], [14, p - 14], [p - 14, p - 14]].forEach(([a, b]) => { g.beginPath(); g.arc(x + a, y + b, 4, 0, 7); g.fill(); });
     }
-    speckle(g, s, 6000, 0.3); stains(g, s, 3, 'rgba(90,40,15,0.35)');
+    speckle(g, s, 1800, 0.12); stains(g, s, 2, 'rgba(90,40,15,0.2)');
     g.strokeStyle = 'rgba(255,255,255,0.1)';
     for (let i = 0; i < 14; i++) { const x = rnd() * s, y = rnd() * s; g.beginPath(); g.moveTo(x, y); g.lineTo(x + rnd() * 40 - 20, y + rnd() * 40 - 20); g.stroke(); }
   }),
@@ -256,15 +256,15 @@ function buildMaterials() {
   // Для цвета используем процедурные/файловые текстуры, но не выдаём их за
   // карты высот: это устраняет чёрно-белую зернистость на стенах и полу.
   const M = (t, r, m = 0) => new THREE.MeshStandardMaterial({ map: t, roughness: r, metalness: m });
-  const fl = TEX.metal(); fl.repeat.set(30, 40);
-  const cl = TEX.ceil(); cl.repeat.set(30, 40);
-  wallMaterial = M(TEX.concrete(), 0.9, 0, 0.035);
-  floorMaterial = M(fl, 0.55, 0.25, 0.025);
-  doorMaterial = M(TEX.door(), 0.65, 0.15, 0.035);
-  tableMaterial = M(TEX.wood(), 0.75, 0, 0.035);
-  serverMaterial = M(TEX.rack(), 0.45, 0.45, 0.025);
+  const fl = TEX.metal(); fl.repeat.set(18, 24);
+  const cl = TEX.ceil(); cl.repeat.set(24, 32);
+  wallMaterial = M(TEX.concrete(), 0.94, 0);
+  floorMaterial = M(fl, 0.72, 0.12);
+  doorMaterial = M(TEX.door(), 0.72, 0.08);
+  tableMaterial = M(TEX.wood(), 0.82, 0);
+  serverMaterial = M(TEX.rack(), 0.58, 0.3);
   MAT = {
-    ceil: M(cl, 0.9, 0, 0.035), cab: M(TEX.cab(), 0.6, 0.25, 0.025), bed: M(TEX.cloth(), 0.8, 0, 0.08), statue: M(TEX.statue(), 0.95, 0, 0.04),
+    ceil: M(cl, 0.94), cab: M(TEX.cab(), 0.78, 0.12), bed: M(TEX.cloth(), 0.86), statue: M(TEX.statue(), 0.97),
     keter: new THREE.MeshStandardMaterial({ map: TEX.keterBase(), roughness: 0.25, metalness: 0.3, emissive: 0xff2200, emissiveMap: TEX.keterVein(), emissiveIntensity: 0.8 }),
     glass: new THREE.MeshStandardMaterial({ color: 0x88aacc, transparent: true, opacity: 0.15, roughness: 0.1 }),
     tank: new THREE.MeshStandardMaterial({ color: 0x66ffaa, transparent: true, opacity: 0.25, roughness: 0.1 }),
@@ -273,13 +273,13 @@ function buildMaterials() {
   };
 
   // Реальные файлы проекта повышают детализацию; процедурные материалы остаются fallback.
-  loadImageTexture("textures/Concrete034.png", wallMaterial);
-  // У PlaneGeometry UV уже растянуты на весь пол; повторяем рисунок примерно раз в 2 м.
-  loadImageTexture("textures/MetalPlates006.png", floorMaterial, 30, 40);
+  // Стены и пол оставляем на контролируемых процедурных текстурах: внешние
+  // материалы Concrete034/MetalPlates006 дают в этой сцене слишком крупный рисунок.
+  // Повторяемые узоры сохраняем только там, где они читаются как реальные детали.
   loadImageTexture("textures/Paint002.png", doorMaterial);
   loadImageTexture("textures/dark_wood_diff_1k.jpg", tableMaterial);
   loadImageTexture("textures/Metal041B.png", serverMaterial);
-  loadImageTexture("textures/Marble08_1K_BaseColor.png", MAT.cab);
+  // Для шкафов используем нейтральную процедурную краску вместо мраморного рисунка.
 }
 
 // Физически масштабируем UV по каждой грани. 4 world units = один повтор,
@@ -387,7 +387,7 @@ function init3DMode() {
     hintEl.textContent = "Кликните, чтобы управлять";
     container.append(toastEl, hintEl);
     const fx = document.createElement('div'); // виньетка и линии развёртки
-    fx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 45%,rgba(0,0,0,.75) 100%),repeating-linear-gradient(0deg,rgba(0,0,0,.12) 0 1px,transparent 1px 3px);';
+    fx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 48%,rgba(0,0,0,.58) 100%),repeating-linear-gradient(0deg,rgba(0,0,0,.055) 0 1px,transparent 1px 4px);';
     container.append(fx);
 
     container.addEventListener('click', () => document.body.requestPointerLock());
