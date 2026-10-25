@@ -366,6 +366,8 @@ let scene, camera, renderer, flashlight, world, hintEl, toastEl;
 let initialized = false;
 let flashlightOn = true, battery = 100;
 let lowBatteryStaticPlayed = false;
+let wakeupProgress = 0;
+let wakeupActive = false;
 let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, isSprinting = false;
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
@@ -393,11 +395,11 @@ function init3DMode() {
 
   // Однократная инициализация: рендерер, слушатели, фонарик — не дублируются при рестарте
   if (!initialized) {
-    container.style.filter = "contrast(1.12) brightness(0.92) sepia(0.12) saturate(0.86)";
+    container.style.filter = "contrast(1.16) brightness(0.72) sepia(0.18) saturate(0.58)";
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020305);
-    scene.fog = new THREE.FogExp2(0x020305, 0.035);
+    scene.fog = new THREE.FogExp2(0x020305, 0.052);
 
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ'; // yaw отдельно от pitch: взгляд вверх не замедляет ходьбу
@@ -405,7 +407,7 @@ function init3DMode() {
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 0.82;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -423,7 +425,7 @@ function init3DMode() {
     flashlight.target.position.set(0, 0, -1); // камера смотрит в -Z
     camera.add(flashlight, flashlight.target);
     scene.add(camera);
-    scene.add(new THREE.AmbientLight(0x171b22, 0.48));
+    scene.add(new THREE.AmbientLight(0x11141a, 0.24));
 
     // Подсказки поверх игры (вместо alert, который ломал pointer lock)
     const base = "position:absolute;left:50%;transform:translateX(-50%);padding:10px 18px;" +
@@ -459,8 +461,11 @@ function init3DMode() {
 
   battery = 100; flashlightOn = true; flashlight.intensity = 5.0;
   velocity.set(0, 0, 0); openingDoors = [];
-  camera.position.set(0, 1.6, -8);
-  camera.rotation.set(0, Math.PI, 0); // лицом к +Z, вглубь комплекса
+  camera.position.set(0, 0.72, -8);
+  camera.rotation.set(0.22, Math.PI, 0); // приходит в себя на полу лифта, затем поднимает голову
+  wakeupProgress = 0;
+  wakeupActive = true;
+  showToast("Вы приходите в себя в остановившемся лифте...", 4200);
   document.getElementById("battery-level").textContent = "100%";
   prevTime = performance.now();
   updateInventoryHUD();
@@ -497,22 +502,9 @@ function toggleFlashlight() {
 // Шлюз D-12 -> Главный холл (Администрация / Медпункт) -> [L-1] Узел данных -> Зал содержания -> [L-2] Эвакуация -> [выход]
 let hazardTex = null;
 
-function addSign(lines, x, y, z, rotY = Math.PI, color = '#ffd34d', scale = 1, parent = world) {
-  const c = document.createElement('canvas');
-  c.width = 512; c.height = 160;
-  const g = c.getContext('2d');
-  g.fillStyle = '#14161a'; g.fillRect(0, 0, 512, 160);
-  g.strokeStyle = color; g.lineWidth = 5; g.strokeRect(5, 5, 502, 150);
-  g.fillStyle = color; g.textAlign = 'center';
-  g.font = 'bold 40px Courier New'; g.fillText(lines[0], 256, lines[1] ? 72 : 95);
-  if (lines[1]) { g.font = '26px Courier New'; g.fillText(lines[1], 256, 122); }
-  const tex = new THREE.CanvasTexture(c);
-  tex.encoding = THREE.sRGBEncoding;
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(1.6 * scale, 0.5 * scale),
-    new THREE.MeshBasicMaterial({ map: tex, color: 0xbbbbbb }));
-  m.position.set(x, y, z); m.rotation.y = rotY;
-  parent.add(m);
-  return m;
+function addSign() {
+  // Таблички отключены для более реалистичного, менее игрового окружения.
+  return null;
 }
 
 function hazardStripe(x, z) {
@@ -576,9 +568,9 @@ function build10ZonesMap() {
   }
 
   function addPointLight(x, z, color = 0xffa040, y = 2.8) {
-    const light = new THREE.PointLight(color, 1.05, 12);
+    const light = new THREE.PointLight(color, 0.58, 10);
     light.position.set(x, y, z); world.add(light);
-    if (color === 0xff3322 || color === 0x40ffee) flickers.push({ light, base: 1.05 });
+    if (color === 0xff3322 || color === 0x40ffee) flickers.push({ light, base: 0.58 });
     box(new THREE.MeshBasicMaterial({ color: 0xffeeaa }), 0.8, 0.1, 0.3, x, 3.1, z);
   }
 
@@ -600,6 +592,22 @@ function build10ZonesMap() {
     g.position.set(x, 0, z); g.rotation.y = faceX > 0 ? Math.PI / 2 : -Math.PI / 2;
     world.add(g);
   };
+
+  // --- Стартовый лифт: игрок приходит в себя внутри кабины ---
+  box(MAT.cab, 0.18, 3.0, 4.5, -2.0, 1.5, -7.65, true);
+  box(MAT.cab, 0.18, 3.0, 4.5, 2.0, 1.5, -7.65, true);
+  box(MAT.cab, 4.0, 3.0, 0.18, 0, 1.5, -9.85, true);
+  box(MAT.cab, 4.0, 0.12, 4.5, 0, 3.08, -7.65);
+  // Двери застряли в полуоткрытом положении — проход остаётся доступным.
+  box(MAT.cab, 0.88, 2.65, 0.12, -1.48, 1.32, -5.42, true);
+  box(MAT.cab, 0.88, 2.65, 0.12, 1.48, 1.32, -5.42, true);
+  box(new THREE.MeshBasicMaterial({ color: 0x30100d }), 0.08, 2.4, 0.05, -1.98, 1.35, -5.32);
+  box(new THREE.MeshBasicMaterial({ color: 0x30100d }), 0.08, 2.4, 0.05, 1.98, 1.35, -5.32);
+  const elevatorLamp = new THREE.PointLight(0x8d1f17, 0.42, 6);
+  elevatorLamp.position.set(0, 2.65, -7.2);
+  world.add(elevatorLamp);
+  flickers.push({ light: elevatorLamp, base: 0.42 });
+  box(new THREE.MeshBasicMaterial({ color: 0x4b1713 }), 0.65, 0.04, 0.18, 0, 2.92, -7.2);
 
   // --- Стены и проёмы ---
   wallLine('z', -10, -4, 4);                         // Шлюз D-12
@@ -852,6 +860,15 @@ function animate3D() {
   const locked = isLocked();
   hintEl.style.display = locked ? 'none' : 'block';
 
+  // Медленное пробуждение: взгляд поднимается с пола лифта.
+  if (wakeupActive) {
+    wakeupProgress = Math.min(1, wakeupProgress + delta / 3.4);
+    const t = wakeupProgress * wakeupProgress * (3 - 2 * wakeupProgress);
+    camera.position.y = 0.72 + 0.88 * t;
+    camera.rotation.x = 0.22 * (1 - t);
+    if (wakeupProgress >= 1) wakeupActive = false;
+  }
+
   if (locked) {
     // Батарея
     if (flashlightOn && battery > 0) {
@@ -882,7 +899,7 @@ function animate3D() {
     }
 
     // Движение относительно направления взгляда (только по горизонтали)
-    const speed = isSprinting ? 13.0 : 8.0;
+    const speed = isSprinting ? 9.0 : 5.2;
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
 
