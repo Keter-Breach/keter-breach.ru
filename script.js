@@ -229,8 +229,8 @@ const TEX = {
 };
 
 function loadImageTexture(path, material, repeatX = 1, repeatY = 1) {
-  // Загружаем только цветовую карту. Для bumpMap/normalMap нужны отдельные
-  // специальные изображения; повторное использование albedo давало ложный рельеф.
+  // Загружаем цветовую карту. Не используем её же как bumpMap:
+  // яркие/тёмные пятна albedo иначе превращаются в грубые физические бугры.
   const loader = new THREE.TextureLoader();
   loader.load(
     path,
@@ -241,8 +241,8 @@ function loadImageTexture(path, material, repeatX = 1, repeatY = 1) {
       texture.encoding = THREE.sRGBEncoding;
       texture.needsUpdate = true;
 
-      // Сохраняем процедурный bumpMap, созданный для fallback-материала,
-      // и заменяем только основной цветовой слой.
+      // Заменяем только цветовой слой; bump/normal map подключаются отдельно,
+      // когда в проекте есть специально подготовленные карты рельефа.
       material.map = texture;
       material.needsUpdate = true;
       console.info("[KETER] Текстура загружена:", path);
@@ -253,9 +253,9 @@ function loadImageTexture(path, material, repeatX = 1, repeatY = 1) {
 }
 
 function buildMaterials() {
-  // Процедурные bump-карты имеют высокий контраст: слабый рельеф не превращает
-  // стены и пол в чёрно-белую «рябь», но сохраняет тактильную детализацию.
-  const M = (t, r, m = 0, bump = 0.06) => new THREE.MeshStandardMaterial({ map: t, bumpMap: t, bumpScale: bump, roughness: r, metalness: m });
+  // Для цвета используем процедурные/файловые текстуры, но не выдаём их за
+  // карты высот: это устраняет чёрно-белую зернистость на стенах и полу.
+  const M = (t, r, m = 0) => new THREE.MeshStandardMaterial({ map: t, roughness: r, metalness: m });
   const fl = TEX.metal(); fl.repeat.set(30, 40);
   const cl = TEX.ceil(); cl.repeat.set(30, 40);
   wallMaterial = M(TEX.concrete(), 0.9, 0, 0.035);
