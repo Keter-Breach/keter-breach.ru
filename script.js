@@ -160,6 +160,66 @@ function generateKeycardTexture(levelStr, colorHex) {
 let MAT = null, dust = null, flickers = [];
 const rnd = Math.random;
 
+function dataTexture(size, draw) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  draw(canvas.getContext('2d'), size);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.encoding = THREE.LinearEncoding;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+// Procedural PBR detail maps: grayscale bump + roughness maps, kept separate
+// from the albedo texture so color noise never becomes exaggerated relief.
+function makeSurfaceMaps(kind) {
+  const bump = dataTexture(256, (g, size) => {
+    const base = kind === 'concrete' ? 116 : kind === 'steel' ? 132 : kind === 'paint' ? 124 : 120;
+    g.fillStyle = 'rgb(' + base + ',' + base + ',' + base + ')';
+    g.fillRect(0, 0, size, size);
+    for (let i = 0; i < (kind === 'concrete' ? 1700 : 900); i++) {
+      const v = Math.max(0, Math.min(255, base + (Math.random() - 0.5) * (kind === 'concrete' ? 66 : 34)));
+      const a = kind === 'concrete' ? 0.22 : 0.16;
+      g.fillStyle = 'rgba(' + Math.round(v) + ',' + Math.round(v) + ',' + Math.round(v) + ',' + a + ')';
+      const w = 1 + Math.random() * (kind === 'concrete' ? 4 : 2);
+      const h = kind === 'steel' ? 3 + Math.random() * 34 : 1 + Math.random() * 4;
+      const x = Math.random() * size, y = Math.random() * size;
+      g.fillRect(x, y, w, h);
+    }
+    if (kind === 'concrete' || kind === 'paint') {
+      for (let i = 0; i < 10; i++) {
+        const x = Math.random() * size, y = Math.random() * size;
+        const r = 5 + Math.random() * 24;
+        const grad = g.createRadialGradient(x, y, 0, x, y, r);
+        grad.addColorStop(0, 'rgba(45,45,45,0.16)');
+        grad.addColorStop(1, 'rgba(190,190,190,0)');
+        g.fillStyle = grad; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+      }
+    }
+    // Fine hairline scratches on steel, deliberately low contrast.
+    if (kind === 'steel') {
+      g.lineWidth = 1;
+      for (let i = 0; i < 48; i++) {
+        const x = Math.random() * size, y = Math.random() * size;
+        g.strokeStyle = Math.random() > 0.5 ? 'rgba(220,220,220,0.18)' : 'rgba(25,25,25,0.2)';
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + (Math.random() - 0.5) * 2, y + 8 + Math.random() * 48); g.stroke();
+      }
+    }
+  });
+  const roughness = dataTexture(128, (g, size) => {
+    const base = kind === 'steel' ? 145 : kind === 'paint' ? 188 : 205;
+    g.fillStyle = 'rgb(' + base + ',' + base + ',' + base + ')';
+    g.fillRect(0, 0, size, size);
+    for (let i = 0; i < 320; i++) {
+      const v = Math.max(0, Math.min(255, base + (Math.random() - 0.5) * 54));
+      g.fillStyle = 'rgba(' + Math.round(v) + ',' + Math.round(v) + ',' + Math.round(v) + ',0.22)';
+      g.fillRect(Math.random() * size, Math.random() * size, 2 + Math.random() * 5, 2 + Math.random() * 5);
+    }
+  });
+  return { bump, roughness };
+}
+
 function canvasTex(size, draw) {
   const c = document.createElement('canvas'); c.width = c.height = size;
   draw(c.getContext('2d'), size);
@@ -327,18 +387,28 @@ function loadImageTexture(path, material, repeatX = 1, repeatY = 1) {
 }
 
 function buildMaterials() {
-  // Для цвета используем процедурные/файловые текстуры, но не выдаём их за
-  // карты высот: это устраняет чёрно-белую зернистость на стенах и полу.
-  const M = (t, r, m = 0) => new THREE.MeshStandardMaterial({ map: t, roughness: r, metalness: m });
+  // Color maps describe albedo only. Surface relief and microsurface roughness
+  // use independent linear-space data maps, as expected by a PBR material.
+  const M = (t, r, m = 0, detail = 'concrete', bumpScale = 0.035) => {
+    const maps = makeSurfaceMaps(detail);
+    return new THREE.MeshStandardMaterial({
+      map: t, roughness: r, metalness: m,
+      bumpMap: maps.bump, bumpScale,
+      roughnessMap: maps.roughness
+    });
+  };
   const fl = TEX.metal(); fl.repeat.set(18, 24);
   const cl = TEX.ceil(); cl.repeat.set(24, 32);
-  wallMaterial = M(TEX.concrete(), 0.94, 0);
-  floorMaterial = M(fl, 0.72, 0.12);
-  doorMaterial = M(TEX.door(), 0.72, 0.08);
-  tableMaterial = M(TEX.wood(), 0.82, 0);
-  serverMaterial = M(TEX.rack(), 0.58, 0.3);
+  wallMaterial = M(TEX.concrete(), 0.94, 0, 'concrete', 0.045);
+  floorMaterial = M(fl, 0.72, 0.12, 'steel', 0.025);
+  doorMaterial = M(TEX.door(), 0.72, 0.08, 'paint', 0.022);
+  tableMaterial = M(TEX.wood(), 0.82, 0, 'paint', 0.018);
+  serverMaterial = M(TEX.rack(), 0.58, 0.3, 'steel', 0.018);
   MAT = {
-    ceil: M(cl, 0.94), cab: M(TEX.cab(), 0.78, 0.12), bed: M(TEX.cloth(), 0.86), statue: M(TEX.statue(), 0.97),
+    ceil: M(cl, 0.94, 0, 'concrete', 0.025),
+    cab: M(TEX.cab(), 0.78, 0.12, 'steel', 0.018),
+    bed: M(TEX.cloth(), 0.86, 0, 'paint', 0.012),
+    statue: M(TEX.statue(), 0.97, 0, 'concrete', 0.018),
     keter: new THREE.MeshStandardMaterial({ map: TEX.keterBase(), roughness: 0.25, metalness: 0.3, emissive: 0xff2200, emissiveMap: TEX.keterVein(), emissiveIntensity: 0.8 }),
     glass: new THREE.MeshStandardMaterial({ color: 0x88aacc, transparent: true, opacity: 0.15, roughness: 0.1 }),
     tank: new THREE.MeshStandardMaterial({ color: 0x66ffaa, transparent: true, opacity: 0.25, roughness: 0.1 }),
