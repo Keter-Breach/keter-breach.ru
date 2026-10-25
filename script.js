@@ -1361,6 +1361,15 @@ renderChapter(1);
       onChange: value => {
         settings.volume = Number(value);
         saveSettings();
+
+        if (vhsAmbient) {
+          vhsAmbient.volume = Math.min(1, settings.volume * 0.18);
+          if (settings.volume <= 0) {
+            pauseVhsAmbient();
+          } else if (isPointerLocked() && is3DVisible()) {
+            startVhsAmbient();
+          }
+        }
       }
     });
 
