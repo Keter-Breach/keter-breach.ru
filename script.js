@@ -858,6 +858,38 @@ renderChapter(1);
   let menuPanel;
   let settingsPanel;
   let statusText;
+  let vhsAmbient = null;
+
+  function getVhsAmbient() {
+    if (!vhsAmbient) {
+      vhsAmbient = new Audio("audio/vhs.mp3");
+      vhsAmbient.loop = true;
+      vhsAmbient.preload = "auto";
+      vhsAmbient.volume = Math.min(1, settings.volume * 0.18);
+    }
+    return vhsAmbient;
+  }
+
+  function startVhsAmbient() {
+    try {
+      const audio = getVhsAmbient();
+      audio.volume = Math.min(1, settings.volume * 0.18);
+      if (settings.volume <= 0) {
+        audio.pause();
+        return;
+      }
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {});
+      }
+    } catch (error) {
+      console.warn("[KETER] Не удалось запустить VHS-аудио:", error);
+    }
+  }
+
+  function pauseVhsAmbient() {
+    if (vhsAmbient) vhsAmbient.pause();
+  }
 
   function loadSettings() {
     try {
@@ -1485,6 +1517,7 @@ renderChapter(1);
 
   function newGame() {
     pauseRequested = false;
+    pauseVhsAmbient();
     window.__keterPaused = true;
     moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
 
@@ -1509,6 +1542,7 @@ renderChapter(1);
 
   function returnToMainMenu() {
     pauseRequested = false;
+    pauseVhsAmbient();
     window.__keterPaused = true;
     moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
 
@@ -1533,6 +1567,7 @@ renderChapter(1);
   function openPauseMenu() {
     if (!is3DVisible()) return;
     pauseRequested = true;
+    pauseVhsAmbient();
     window.__keterPaused = true;
     moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
     showOverlay(menuPanel);
@@ -1551,6 +1586,7 @@ renderChapter(1);
     init3DMode = function () {
       originalInit3DMode();
       applyGraphicsSettings();
+      startVhsAmbient();
     };
 
     // Применяем чувствительность мыши, не меняя механику камеры.
@@ -1608,6 +1644,7 @@ renderChapter(1);
       if (isPointerLocked()) {
         pauseRequested = false;
         window.__keterPaused = false;
+        startVhsAmbient();
         hideOverlay();
         return;
       }
@@ -1615,6 +1652,7 @@ renderChapter(1);
       // Потеря захвата мыши в 3D переводит игру на паузу.
       if (sessionStarted && is3DVisible()) {
         window.__keterPaused = true;
+        pauseVhsAmbient();
         moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
         showOverlay(menuPanel);
         setStatus("Пауза");
@@ -1634,6 +1672,7 @@ renderChapter(1);
       if (is3DVisible() && sessionStarted) {
         // Не вызываем Pointer Lock автоматически при возвращении.
         window.__keterPaused = true;
+        pauseVhsAmbient();
         moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
         showOverlay(menuPanel);
         setStatus("Окно потеряло фокус. Нажмите «Начать / продолжить».");
