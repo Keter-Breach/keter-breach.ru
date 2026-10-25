@@ -253,17 +253,18 @@ function loadImageTexture(path, material, repeatX = 1, repeatY = 1) {
 }
 
 function buildMaterials() {
-  const M = (t, r, m = 0, bump = 0.8) => new THREE.MeshStandardMaterial({ map: t, bumpMap: t, bumpScale: bump, roughness: r, metalness: m });
-  // Более редкая раскладка: меньше заметных швов и повторяющихся крупных пятен.
-  const fl = TEX.metal(); fl.repeat.set(30, 40);   // повтор примерно раз в 4 м
+  // Процедурные bump-карты имеют высокий контраст: слабый рельеф не превращает
+  // стены и пол в чёрно-белую «рябь», но сохраняет тактильную детализацию.
+  const M = (t, r, m = 0, bump = 0.06) => new THREE.MeshStandardMaterial({ map: t, bumpMap: t, bumpScale: bump, roughness: r, metalness: m });
+  const fl = TEX.metal(); fl.repeat.set(30, 40);
   const cl = TEX.ceil(); cl.repeat.set(30, 40);
-  wallMaterial = M(TEX.concrete(), 0.9);
-  floorMaterial = M(fl, 0.45, 0.4);
-  doorMaterial = M(TEX.door(), 0.5, 0.5);
-  tableMaterial = M(TEX.wood(), 0.7);
-  serverMaterial = M(TEX.rack(), 0.35, 0.6);
+  wallMaterial = M(TEX.concrete(), 0.9, 0, 0.035);
+  floorMaterial = M(fl, 0.55, 0.25, 0.025);
+  doorMaterial = M(TEX.door(), 0.65, 0.15, 0.035);
+  tableMaterial = M(TEX.wood(), 0.75, 0, 0.035);
+  serverMaterial = M(TEX.rack(), 0.45, 0.45, 0.025);
   MAT = {
-    ceil: M(cl, 0.9), cab: M(TEX.cab(), 0.5, 0.5), bed: M(TEX.cloth(), 0.8, 0, 0.3), statue: M(TEX.statue(), 0.95),
+    ceil: M(cl, 0.9, 0, 0.035), cab: M(TEX.cab(), 0.6, 0.25, 0.025), bed: M(TEX.cloth(), 0.8, 0, 0.08), statue: M(TEX.statue(), 0.95, 0, 0.04),
     keter: new THREE.MeshStandardMaterial({ map: TEX.keterBase(), roughness: 0.25, metalness: 0.3, emissive: 0xff2200, emissiveMap: TEX.keterVein(), emissiveIntensity: 0.8 }),
     glass: new THREE.MeshStandardMaterial({ color: 0x88aacc, transparent: true, opacity: 0.15, roughness: 0.1 }),
     tank: new THREE.MeshStandardMaterial({ color: 0x66ffaa, transparent: true, opacity: 0.25, roughness: 0.1 }),
