@@ -153,8 +153,14 @@ function cracks(g, s, n) {
 
 const TEX = {
   concrete: () => canvasTex(512, (g, s) => {
-    fillBg(g, s, '#626463'); speckle(g, s, 2600, 0.14); stains(g, s, 3, 'rgba(30,25,15,0.18)'); cracks(g, s, 1);
-    g.fillStyle = 'rgba(0,0,0,0.4)'; g.fillRect(0, s - 3, s, 3); g.fillRect(0, 0, 3, s); // стыки плит
+    fillBg(g, s, '#626463'); speckle(g, s, 900, 0.07);
+    // Ровные бетонные панели вместо больших радиальных пятен, которые на стенах
+    // выглядели как повторяющиеся белые круги при близкой раскладке UV.
+    g.strokeStyle = 'rgba(15,18,18,0.22)'; g.lineWidth = 2;
+    g.strokeRect(2, 2, s - 4, s - 4);
+    g.strokeStyle = 'rgba(230,232,228,0.08)'; g.lineWidth = 1;
+    g.strokeRect(7, 7, s - 14, s - 14);
+    g.fillStyle = 'rgba(0,0,0,0.22)'; g.fillRect(0, s - 3, s, 3); g.fillRect(0, 0, 3, s); // стыки плит
   }),
   metal: () => canvasTex(512, (g, s) => {
     fillBg(g, s, '#2b2f33'); const p = s / 2;
@@ -165,7 +171,7 @@ const TEX = {
       g.fillStyle = '#15171a';
       [[14, 14], [p - 14, 14], [14, p - 14], [p - 14, p - 14]].forEach(([a, b]) => { g.beginPath(); g.arc(x + a, y + b, 4, 0, 7); g.fill(); });
     }
-    speckle(g, s, 1800, 0.12); stains(g, s, 2, 'rgba(90,40,15,0.2)');
+    speckle(g, s, 650, 0.06);
     g.strokeStyle = 'rgba(255,255,255,0.1)';
     for (let i = 0; i < 14; i++) { const x = rnd() * s, y = rnd() * s; g.beginPath(); g.moveTo(x, y); g.lineTo(x + rnd() * 40 - 20, y + rnd() * 40 - 20); g.stroke(); }
   }),
@@ -224,7 +230,7 @@ const TEX = {
   ceil: () => canvasTex(256, (g, s) => {
     fillBg(g, s, '#23272b'); g.strokeStyle = 'rgba(0,0,0,0.7)'; g.lineWidth = 4; g.strokeRect(0, 0, s, s);
     g.strokeStyle = 'rgba(255,255,255,0.06)'; g.lineWidth = 2; g.strokeRect(6, 6, s - 12, s - 12);
-    speckle(g, s, 2500, 0.3); stains(g, s, 2, 'rgba(30,25,10,0.4)');
+    speckle(g, s, 900, 0.08);
   })
 };
 
@@ -304,11 +310,11 @@ function scaleBoxUV(geo, w, h, d, tile = 4) {
 }
 
 function makeDust() { // пылинки в воздухе, плавно дрейфуют вверх
-  const n = 500, pos = new Float32Array(n * 3);
+  const n = 220, pos = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) { pos[i * 3] = (rnd() - 0.5) * 30; pos[i * 3 + 1] = rnd() * 3; pos[i * 3 + 2] = -9 + rnd() * 90; }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x9aa6b0, size: 0.03, transparent: true, opacity: 0.5, depthWrite: false }));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x9aa6b0, size: 0.022, transparent: true, opacity: 0.28, depthWrite: false }));
   world.add(pts);
   return pts;
 }
@@ -354,10 +360,10 @@ function init3DMode() {
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ'; // yaw отдельно от pitch: взгляд вверх не замедляет ходьбу
 
-    renderer = new THREE.WebGLRenderer({ antialias: false });
+    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.3;
+    renderer.toneMappingExposure = 1.15;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setSize(window.innerWidth, window.innerHeight);
