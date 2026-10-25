@@ -195,7 +195,7 @@ function cracks(g, s, n) {
 
 const TEX = {
   concrete: () => canvasTex(512, (g, s) => {
-    fillBg(g, s, '#626463'); speckle(g, s, 900, 0.07);
+    fillBg(g, s, '#45494a'); speckle(g, s, 650, 0.035);
     // Ровные бетонные панели вместо больших радиальных пятен, которые на стенах
     // выглядели как повторяющиеся белые круги при близкой раскладке UV.
     g.strokeStyle = 'rgba(15,18,18,0.22)'; g.lineWidth = 2;
@@ -220,7 +220,7 @@ const TEX = {
   door: () => canvasTex(256, (g, s) => {
     fillBg(g, s, '#4a5750'); g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 4; g.strokeRect(24, 24, s - 48, s - 48);
     g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = 2; g.strokeRect(28, 28, s - 56, s - 56);
-    speckle(g, s, 3000, 0.35); stains(g, s, 3, 'rgba(20,10,0,0.4)');
+    speckle(g, s, 700, 0.07); stains(g, s, 3, 'rgba(20,10,0,0.24)');
     g.fillStyle = '#d9a400'; g.fillRect(0, s - 14, s, 8);
   }),
   wood: () => canvasTex(256, (g, s) => {
@@ -240,11 +240,37 @@ const TEX = {
     }
     speckle(g, s, 2000, 0.3);
   }),
-  cab: () => canvasTex(256, (g, s) => {
-    fillBg(g, s, '#454c50'); g.strokeStyle = 'rgba(0,0,0,0.6)'; g.lineWidth = 3; g.strokeRect(2, 2, s - 4, s - 4);
-    g.beginPath(); g.moveTo(s / 2, 2); g.lineTo(s / 2, s - 2); g.stroke();
-    for (let i = 0; i < 6; i++) { g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(24, 30 + i * 8, s / 2 - 48, 3); g.fillRect(s / 2 + 24, 30 + i * 8, s / 2 - 48, 3); }
-    speckle(g, s, 2500, 0.3); stains(g, s, 2, 'rgba(80,35,10,0.35)');
+  cab: () => canvasTex(512, (g, s) => {
+    // Сталь лифта: спокойная базовая поверхность, мелкие потёртости вместо
+    // контрастных чёрно-белых точек, которые выглядели как грязный камуфляж.
+    const base = g.createLinearGradient(0, 0, s, 0);
+    base.addColorStop(0, '#292f33');
+    base.addColorStop(0.48, '#41474a');
+    base.addColorStop(1, '#252a2e');
+    g.fillStyle = base; g.fillRect(0, 0, s, s);
+    g.fillStyle = 'rgba(0,0,0,0.24)'; g.fillRect(0, 0, s, 7); g.fillRect(0, s - 7, s, 7);
+    g.strokeStyle = 'rgba(0,0,0,0.62)'; g.lineWidth = 2;
+    g.strokeRect(3, 3, s - 6, s - 6);
+    g.strokeStyle = 'rgba(190,198,199,0.09)'; g.lineWidth = 1;
+    g.strokeRect(8, 8, s - 16, s - 16);
+    g.beginPath(); g.moveTo(s / 2, 4); g.lineTo(s / 2, s - 4); g.stroke();
+    // Тонкие вертикальные шлифовальные следы.
+    for (let i = 0; i < 90; i++) {
+      const x = rnd() * s, y = rnd() * s, h = 5 + rnd() * 54;
+      g.strokeStyle = rnd() < 0.7 ? 'rgba(0,0,0,0.10)' : 'rgba(210,216,215,0.07)';
+      g.lineWidth = 1 + rnd() * 1.2;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + (rnd() - 0.5) * 3, Math.min(s, y + h)); g.stroke();
+    }
+    // Редкие пятна влаги и следы эксплуатации.
+    stains(g, s, 2, 'rgba(8,12,14,0.24)');
+    speckle(g, s, 220, 0.035);
+    // Технические панели и крепёж.
+    g.fillStyle = 'rgba(0,0,0,0.25)';
+    g.fillRect(20, 20, s - 40, 2); g.fillRect(20, s - 22, s - 40, 2);
+    g.fillStyle = 'rgba(210,215,213,0.18)';
+    [[14,14],[s-14,14],[14,s-14],[s-14,s-14]].forEach(([x,y]) => {
+      g.beginPath(); g.arc(x, y, 2.4, 0, Math.PI * 2); g.fill();
+    });
   }),
   cloth: () => canvasTex(256, (g, s) => {
     fillBg(g, s, '#aeb6b4');
