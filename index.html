@@ -288,7 +288,7 @@
   <canvas id="minimap-canvas" width="120" height="120"></canvas>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="this.onerror=null;this.src=\'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js\'"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';}else{document.getElementById('description').textContent='ОШИБКА: не удалось загрузить 3D-движок. Проверьте соединение и обновите страницу (Ctrl+F5).';}"></script>
 <script src="script.js"></script>
 
 </body>
