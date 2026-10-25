@@ -228,6 +228,25 @@ const TEX = {
   })
 };
 
+function loadImageTexture(path, material, repeatX = 1, repeatY = 1) {
+  // Процедурная текстура остаётся запасным вариантом, если файл не загрузится.
+  const loader = new THREE.TextureLoader();
+  loader.load(
+    path,
+    texture => {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(repeatX, repeatY);
+      texture.encoding = THREE.sRGBEncoding;
+      material.map = texture;
+      material.bumpMap = texture;
+      material.needsUpdate = true;
+    },
+    undefined,
+    error => console.warn("[KETER] Не удалось загрузить текстуру " + path, error)
+  );
+}
+
 function buildMaterials() {
   const M = (t, r, m = 0, bump = 0.8) => new THREE.MeshStandardMaterial({ map: t, bumpMap: t, bumpScale: bump, roughness: r, metalness: m });
   const fl = TEX.metal(); fl.repeat.set(60, 80);   // плита 2x2 м
@@ -245,6 +264,14 @@ function buildMaterials() {
     liquid: new THREE.MeshBasicMaterial({ color: 0x22cc66 }),
     orange: new THREE.MeshStandardMaterial({ color: 0xb85a10, roughness: 0.8 })
   };
+
+  // Реальные файлы проекта повышают детализацию; процедурные материалы остаются fallback.
+  loadImageTexture("textures/Concrete034.png", wallMaterial);
+  loadImageTexture("textures/MetalPlates006.png", floorMaterial, 60, 80);
+  loadImageTexture("textures/Paint002.png", doorMaterial);
+  loadImageTexture("textures/dark_wood_diff_1k.jpg", tableMaterial);
+  loadImageTexture("textures/Metal041B.png", serverMaterial);
+  loadImageTexture("textures/Marble08_1K_BaseColor.png", MAT.cab);
 }
 
 // Текстура тянется по размеру стены: 1 повтор на 2 метра, без растяжения
