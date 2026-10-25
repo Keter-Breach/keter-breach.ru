@@ -1455,17 +1455,28 @@ renderChapter(1);
 
     if (!sessionStarted) {
       sessionStarted = true;
+      window.__keterPaused = false;
       if (typeof renderChapter === "function") {
         renderChapter(1);
       }
     } else if (is3DVisible()) {
       // Захват мыши должен быть вызван действием пользователя.
       try {
-        document.body.requestPointerLock();
+        const request = document.body.requestPointerLock();
+        if (request && typeof request.catch === "function") {
+          request.catch(() => {
+            window.__keterPaused = true;
+            showOverlay(menuPanel);
+            setStatus("Не удалось захватить мышь. Нажмите, чтобы повторить.");
+          });
+        }
       } catch (error) {
+        window.__keterPaused = true;
         showOverlay(menuPanel);
+        setStatus("Не удалось захватить мышь. Нажмите, чтобы повторить.");
       }
     } else {
+      window.__keterPaused = false;
       if (typeof renderChapter === "function") {
         renderChapter(1);
       }
