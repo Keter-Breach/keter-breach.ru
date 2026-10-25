@@ -54,17 +54,37 @@ function playSound(name) {
 }
 
 // === 2. СЮЖЕТ И СОСТОЯНИЕ ===
-const freshState = () => ({ keycardL1: false, keycardL2: false, accessProtocol: false });
+const freshState = () => ({ keycardL1: false, keycardL2: false });
 window.playerState = freshState();
 let loopCount = 1;
-let accessQuestStep = 0;
+
+const personnelDossier = {
+  title: "ДОСЬЕ ПЕРСОНАЛА ФОНДА",
+  location: "Архив / доступ уровень 3",
+  desc: [
+    "ДОКТОР ГИРС (DR. GEARS) — исследователь и руководитель, известный холодным самообладанием, дисциплиной и аналитическим подходом. Обычно занимается оценкой рисков и организацией исследований.",
+    "",
+    "ДОКТОР ДЖЕК БРАЙТ / ЭЛИАС ШОУ — в старых архивах встречается имя Джек Брайт; в более новых материалах персонаж часто обозначается как Элиас Шоу. Исследователь с аномальным опытом, известный нестандартными решениями и склонностью нарушать протоколы.",
+    "",
+    "ДОКТОР АЛТО КЛЕФ (DR. ALTO CLEF) — специалист по взаимодействию с аномалиями и полевым операциям. Репутация непредсказуемого сотрудника сочетается с высокой практической эффективностью.",
+    "",
+    "ДОКТОР БЕНДЖАМИН КОНДРАКИ (DR. BENJAMIN KONDRAKI) — полевой исследователь, известный резким характером и готовностью действовать в опасных условиях. В историях Фонда часто появляется в конфликтах вокруг содержания SCP.",
+    "",
+    "СОВЕТ O5 — закрытая группа высшего руководства Фонда. Личности и состав Совета засекречены; он принимает стратегические решения по наиболее опасным объектам.",
+    "",
+    "Примечание: истории SCP создаются разными авторами и могут противоречить друг другу. Это краткий обзор известных персонажей, а не единая официальная биография."
+  ].join("\n")
+};
 
 const storyData = {
   1: {
     title: "ГЛАВА 1: НАРУШЕНИЕ СОДЕРЖАНИЯ",
     location: "Сектор D-12",
-    desc: "Аварийные сирены ревут. Комплекс погрузился во тьму. Перед входом в сектор нужно восстановить протокол допуска: терминал охраны всё ещё работает на резервном питании.",
-    choices: [{ text: "Начать протокол допуска", nextChapter: "ACCESS_QUEST" }]
+    desc: "Аварийные сирены ревут. Комплекс погрузился во тьму. Найдите пропускные карты, восстановите питание шлюзов и выберитесь на поверхность, пока не поздно.",
+    choices: [
+      { text: "Войти в комплекс (3D)", nextChapter: 2 },
+      { text: "Открыть досье ключевых сотрудников Фонда", nextChapter: "PERSONNEL_DOSSIER" }
+    ]
   },
   2: { title: "3D КОМПЛЕКС", is3D: true },
   3: {
@@ -75,99 +95,33 @@ const storyData = {
   }
 };
 
-const accessQuest = [
-  {
-    title: "ПРОТОКОЛ 01: РЕЗЕРВНЫЙ КОД",
-    location: "Пост охраны D-12",
-    desc: "На терминале мигает запись дежурного: «Код состоит из числа аварийных ламп, затем дверей шлюза и запасных выходов». В коридоре вы насчитали 2 аварийные лампы, 4 двери и 1 запасной выход. Введите код в правильном порядке.",
-    choices: [
-      { text: "241 — лампы / двери / выходы", correct: true },
-      { text: "214 — лампы / выходы / двери", correct: false },
-      { text: "412 — двери / лампы / выходы", correct: false }
-    ],
-    success: "КОД ПРИНЯТ. Терминал разблокировал схему электропитания."
-  },
-  {
-    title: "ПРОТОКОЛ 02: ПИТАНИЕ ШЛЮЗА",
-    location: "Электрощитовая",
-    desc: "На панели два контура. Красный помечен «АВАРИЙНАЯ БЛОКИРОВКА», зелёный — «СЕРВИС / РЕЗЕРВ». Нужно подать питание на считыватель карты, не запуская блокировку.",
-    choices: [
-      { text: "Включить зелёный сервисный контур", correct: true },
-      { text: "Запустить красный аварийный контур", correct: false }
-    ],
-    success: "ПИТАНИЕ ВОССТАНОВЛЕНО. Считыватель пропусков активен."
-  }
-];
-
-function renderAccessQuest() {
-  const step = accessQuestStep;
-  const data = accessQuest[step];
-  if (!data) {
-    window.playerState.accessProtocol = true;
-    renderChapter("ACCESS_GRANTED");
-    return;
-  }
-
-  document.getElementById("chapter-title").textContent = data.title;
-  document.getElementById("current-location").textContent = data.location;
-  document.getElementById("description").textContent = data.desc;
-  document.getElementById("loop-count").textContent = `#${loopCount} · ДОПУСК ${step + 1}/2`;
-
-  const container = document.getElementById("buttons-container");
-  container.innerHTML = "";
-  data.choices.forEach(choice => {
-    const btn = document.createElement("button");
-    btn.textContent = choice.text;
-    btn.onclick = () => {
-      playSound("click");
-      if (choice.correct) {
-        accessQuestStep++;
-        if (step === 0) {
-          document.getElementById("description").textContent = data.success;
-          container.innerHTML = "";
-          const next = document.createElement("button");
-          next.textContent = "Продолжить протокол";
-          next.onclick = () => { playSound("click"); renderAccessQuest(); };
-          container.appendChild(next);
-        } else {
-          window.playerState.accessProtocol = true;
-          renderChapter("ACCESS_GRANTED");
-        }
-      } else {
-        document.getElementById("description").textContent = "ОТКАЗ ДОСТУПА. Терминал записал неверную последовательность. Подсказка находится в журнале дежурного — попробуйте ещё раз.";
-        btn.disabled = true;
-        btn.textContent += " — ОТКАЗ";
-      }
-    };
-    container.appendChild(btn);
-  });
-}
-
 function renderChapter(chapNum) {
   if (chapNum === 'RESET') {
     loopCount++;
     window.playerState = freshState();
-    accessQuestStep = 0;
     chapNum = 1;
   }
-  if (chapNum === "ACCESS_QUEST") {
-    accessQuestStep = 0;
-    renderAccessQuest();
-    return;
-  }
-  if (chapNum === "ACCESS_GRANTED") {
-    document.getElementById("chapter-title").textContent = "ДОПУСК ПОДТВЕРЖДЁН";
-    document.getElementById("current-location").textContent = "Шлюз D-12";
-    document.getElementById("description").textContent = "Пропускной протокол завершён. В журнале появился зелёный маркер: СЕКТОР ОТКРЫТ. За шлюзом начинается тёмный комплекс — дальше только вы и фонарь.";
-    document.getElementById("loop-count").textContent = `#${loopCount} · ДОПУСК OK`;
+
+  if (chapNum === "PERSONNEL_DOSSIER") {
+    document.getElementById("chapter-title").textContent = personnelDossier.title;
+    document.getElementById("current-location").textContent = personnelDossier.location;
+    document.getElementById("description").textContent = personnelDossier.desc;
+    document.getElementById("loop-count").textContent = `#${loopCount} · АРХИВ`;
+
     const container = document.getElementById("buttons-container");
     container.innerHTML = "";
-    const enter = document.createElement("button");
-    enter.textContent = "Войти в комплекс (3D)";
-    enter.onclick = () => { playSound("click"); renderChapter(2); };
-    container.appendChild(enter);
+    [
+      { text: "← Вернуться к досье инцидента", nextChapter: 1 },
+      { text: "Войти в комплекс (3D)", nextChapter: 2 }
+    ].forEach(choice => {
+      const btn = document.createElement("button");
+      btn.textContent = choice.text;
+      btn.onclick = () => { playSound("click"); renderChapter(choice.nextChapter); };
+      container.appendChild(btn);
+    });
     return;
   }
+
   const data = storyData[chapNum];
   if (!data) return;
   if (data.is3D) { init3DMode(); return; }
@@ -182,11 +136,10 @@ function renderChapter(chapNum) {
   data.choices.forEach(choice => {
     const btn = document.createElement("button");
     btn.textContent = choice.text;
-    btn.onclick = () => { playSound('click'); renderChapter(choice.nextChapter); };
+    btn.onclick = () => { playSound("click"); renderChapter(choice.nextChapter); };
     container.appendChild(btn);
   });
 }
-
 function generateKeycardTexture(levelStr, colorHex) {
   const canvas = document.createElement('canvas');
   canvas.width = 256; canvas.height = 160;
