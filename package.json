@@ -1,0 +1,9 @@
+{
+  "name": "project-keter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser-based VHS survival horror prototype",
+  "scripts": {
+    "test": "node scripts/smoke-check.mjs"
+  }
+}
