@@ -117,3 +117,24 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Flashlight battery warnings stay readable in the dark HUD. */
+#battery-level.battery-low {
+  color: #ffbd59 !important;
+  text-shadow: 0 0 7px rgba(255, 166, 55, .35);
+}
+
+#battery-level.battery-critical {
+  color: #ff625b !important;
+  text-shadow: 0 0 8px rgba(255, 30, 24, .55);
+  animation: battery-warning 1s steps(2, end) infinite;
+}
+
+@keyframes battery-warning {
+  50% { opacity: .45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #battery-level.battery-critical { animation: none; }
+}
