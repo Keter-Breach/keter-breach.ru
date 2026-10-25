@@ -1580,6 +1580,18 @@ renderChapter(1);
     window.__keterPaused = true;
     moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
 
+    // Если 3D-мир уже создавался, полный перезапуск сбросит также двери,
+    // позицию игрока, фонарь и собранные объекты, не только сюжет.
+    if (initialized) {
+      try {
+        sessionStorage.setItem("keter-start-fresh", "1");
+        window.location.reload();
+        return;
+      } catch (error) {
+        console.warn("[KETER] Не удалось перезапустить игру полностью:", error);
+      }
+    }
+
     if (document.pointerLockElement) {
       document.exitPointerLock();
     }
@@ -1776,8 +1788,25 @@ renderChapter(1);
     installCoreHooks();
     installEvents();
     applyGraphicsSettings();
-    showOverlay(menuPanel);
-    setStatus("Система готова.");
+
+    let startFresh = false;
+    try {
+      startFresh = sessionStorage.getItem("keter-start-fresh") === "1";
+      if (startFresh) sessionStorage.removeItem("keter-start-fresh");
+    } catch (error) {
+      // Если хранилище недоступно, обычное меню всё равно работает.
+    }
+
+    if (startFresh && typeof renderChapter === "function") {
+      sessionStarted = true;
+      window.__keterPaused = false;
+      renderChapter(1);
+      hideOverlay();
+      setStatus("Новая игра началась.");
+    } else {
+      showOverlay(menuPanel);
+      setStatus("Система готова.");
+    }
   }
 
   if (document.readyState === "loading") {
