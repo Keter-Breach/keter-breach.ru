@@ -254,7 +254,8 @@ function loadImageTexture(path, material, repeatX = 1, repeatY = 1) {
 
 function buildMaterials() {
   const M = (t, r, m = 0, bump = 0.8) => new THREE.MeshStandardMaterial({ map: t, bumpMap: t, bumpScale: bump, roughness: r, metalness: m });
-  const fl = TEX.metal(); fl.repeat.set(60, 80);   // плита 2x2 м
+  // Более редкая раскладка: меньше заметных швов и повторяющихся крупных пятен.
+  const fl = TEX.metal(); fl.repeat.set(30, 40);   // повтор примерно раз в 4 м
   const cl = TEX.ceil(); cl.repeat.set(30, 40);
   wallMaterial = M(TEX.concrete(), 0.9);
   floorMaterial = M(fl, 0.45, 0.4);
@@ -273,19 +274,30 @@ function buildMaterials() {
   // Реальные файлы проекта повышают детализацию; процедурные материалы остаются fallback.
   loadImageTexture("textures/Concrete034.png", wallMaterial);
   // У PlaneGeometry UV уже растянуты на весь пол; повторяем рисунок примерно раз в 2 м.
-  loadImageTexture("textures/MetalPlates006.png", floorMaterial, 60, 80);
+  loadImageTexture("textures/MetalPlates006.png", floorMaterial, 30, 40);
   loadImageTexture("textures/Paint002.png", doorMaterial);
   loadImageTexture("textures/dark_wood_diff_1k.jpg", tableMaterial);
   loadImageTexture("textures/Metal041B.png", serverMaterial);
   loadImageTexture("textures/Marble08_1K_BaseColor.png", MAT.cab);
 }
 
-// Текстура тянется по размеру стены: 1 повтор на 2 метра, без растяжения
-function scaleBoxUV(geo, w, h, d, tile = 2) {
-  const uv = geo.attributes.uv, dims = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
-  for (let f = 0; f < 6; f++) for (let i = 0; i < 4; i++) {
-    const k = f * 4 + i;
-    uv.setXY(k, uv.getX(k) * dims[f][0] / tile, uv.getY(k) * dims[f][1] / tile);
+// Физически масштабируем UV по каждой грани. 4 world units = один повтор,
+// поэтому рисунок сохраняет масштаб и не превращается в растянутую картинку.
+function scaleBoxUV(geo, w, h, d, tile = 4) {
+  const uv = geo.attributes.uv;
+  const dims = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
+  if (!uv || uv.count < 24) return;
+
+  for (let face = 0; face < 6; face++) {
+    const [faceWidth, faceHeight] = dims[face];
+    for (let corner = 0; corner < 4; corner++) {
+      const index = face * 4 + corner;
+      uv.setXY(
+        index,
+        uv.getX(index) * faceWidth / tile,
+        uv.getY(index) * faceHeight / tile
+      );
+    }
   }
   uv.needsUpdate = true;
 }
