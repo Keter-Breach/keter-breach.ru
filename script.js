@@ -800,7 +800,7 @@ function animate3D() {
           lowBatteryStaticPlayed = true;
           try {
             const staticAudio = new Audio("audio/static.mp3");
-            staticAudio.volume = Math.min(1, settingsVolumeForAudio() * 0.3);
+            staticAudio.volume = Math.min(1, Number(window.__keterVolume ?? 0.7) * 0.3);
             const staticPromise = staticAudio.play();
             if (staticPromise && typeof staticPromise.catch === "function") {
               staticPromise.catch(() => {});
@@ -897,6 +897,7 @@ renderChapter(1);
   };
 
   let settings = loadSettings();
+  window.__keterVolume = settings.volume;
   let coreLoaded = false;
   let sessionStarted = false;
   let pauseRequested = false;
@@ -907,15 +908,6 @@ renderChapter(1);
   let settingsPanel;
   let statusText;
   let vhsAmbient = null;
-
-  function settingsVolumeForAudio() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
-      return Math.max(0, Math.min(1, Number(saved.volume ?? DEFAULT_SETTINGS.volume)));
-    } catch (error) {
-      return DEFAULT_SETTINGS.volume;
-    }
-  }
 
   function getVhsAmbient() {
     if (!vhsAmbient) {
@@ -1390,6 +1382,7 @@ renderChapter(1);
       format: value => `${Math.round(Number(value) * 100)}%`,
       onChange: value => {
         settings.volume = Number(value);
+        window.__keterVolume = settings.volume;
         saveSettings();
 
         if (vhsAmbient) {
