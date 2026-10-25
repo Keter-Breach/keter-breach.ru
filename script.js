@@ -229,7 +229,8 @@ const TEX = {
 };
 
 function loadImageTexture(path, material, repeatX = 1, repeatY = 1) {
-  // Процедурная текстура остаётся запасным вариантом, если файл не загрузится.
+  // Загружаем только цветовую карту. Для bumpMap/normalMap нужны отдельные
+  // специальные изображения; повторное использование albedo давало ложный рельеф.
   const loader = new THREE.TextureLoader();
   loader.load(
     path,
@@ -238,12 +239,16 @@ function loadImageTexture(path, material, repeatX = 1, repeatY = 1) {
       texture.wrapT = THREE.RepeatWrapping;
       texture.repeat.set(repeatX, repeatY);
       texture.encoding = THREE.sRGBEncoding;
+      texture.needsUpdate = true;
+
+      // Сохраняем процедурный bumpMap, созданный для fallback-материала,
+      // и заменяем только основной цветовой слой.
       material.map = texture;
-      material.bumpMap = texture;
       material.needsUpdate = true;
+      console.info("[KETER] Текстура загружена:", path);
     },
     undefined,
-    error => console.warn("[KETER] Не удалось загрузить текстуру " + path, error)
+    error => console.warn("[KETER] Не удалось загрузить текстуру " + path + "; оставляем процедурную.", error)
   );
 }
 
@@ -267,6 +272,7 @@ function buildMaterials() {
 
   // Реальные файлы проекта повышают детализацию; процедурные материалы остаются fallback.
   loadImageTexture("textures/Concrete034.png", wallMaterial);
+  // У PlaneGeometry UV уже растянуты на весь пол; повторяем рисунок примерно раз в 2 м.
   loadImageTexture("textures/MetalPlates006.png", floorMaterial, 60, 80);
   loadImageTexture("textures/Paint002.png", doorMaterial);
   loadImageTexture("textures/dark_wood_diff_1k.jpg", tableMaterial);
