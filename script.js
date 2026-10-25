@@ -114,6 +114,159 @@ function generateKeycardTexture(levelStr, colorHex) {
   return tex;
 }
 
+// === 2b. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ (рисуются на canvas, внешние файлы не нужны) ===
+let MAT = null, dust = null, flickers = [];
+const rnd = Math.random;
+
+function canvasTex(size, draw) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  draw(c.getContext('2d'), size);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+  return t;
+}
+const fillBg = (g, s, col) => { g.fillStyle = col; g.fillRect(0, 0, s, s); };
+function speckle(g, s, n, a) {
+  for (let i = 0; i < n; i++) {
+    const v = rnd() < 0.5 ? 0 : 255;
+    g.fillStyle = `rgba(${v},${v},${v},${rnd() * a})`;
+    g.fillRect(rnd() * s, rnd() * s, 1 + rnd() * 2, 1 + rnd() * 2);
+  }
+}
+function stains(g, s, n, col) {
+  for (let i = 0; i < n; i++) {
+    const x = s * 0.15 + rnd() * s * 0.7, y = s * 0.15 + rnd() * s * 0.7, r = s * 0.05 + rnd() * s * 0.12;
+    const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+}
+function cracks(g, s, n) {
+  g.strokeStyle = 'rgba(10,10,10,0.8)'; g.lineWidth = 1.5;
+  for (let i = 0; i < n; i++) {
+    let x = s * 0.2 + rnd() * s * 0.6, y = s * 0.1 + rnd() * s * 0.3;
+    g.beginPath(); g.moveTo(x, y);
+    for (let k = 0; k < 8; k++) { x += (rnd() - 0.5) * 40; y += 10 + rnd() * 25; g.lineTo(x, y); }
+    g.stroke();
+  }
+}
+
+const TEX = {
+  concrete: () => canvasTex(512, (g, s) => {
+    fillBg(g, s, '#5c5e5f'); speckle(g, s, 9000, 0.35); stains(g, s, 5, 'rgba(30,25,15,0.35)'); cracks(g, s, 2);
+    g.fillStyle = 'rgba(0,0,0,0.4)'; g.fillRect(0, s - 3, s, 3); g.fillRect(0, 0, 3, s); // стыки плит
+  }),
+  metal: () => canvasTex(512, (g, s) => {
+    fillBg(g, s, '#2b2f33'); const p = s / 2;
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
+      const x = i * p, y = j * p;
+      g.fillStyle = `hsl(210,6%,${20 + rnd() * 6}%)`; g.fillRect(x + 3, y + 3, p - 6, p - 6);
+      g.strokeStyle = 'rgba(255,255,255,0.12)'; g.strokeRect(x + 5, y + 5, p - 10, p - 10);
+      g.fillStyle = '#15171a';
+      [[14, 14], [p - 14, 14], [14, p - 14], [p - 14, p - 14]].forEach(([a, b]) => { g.beginPath(); g.arc(x + a, y + b, 4, 0, 7); g.fill(); });
+    }
+    speckle(g, s, 6000, 0.3); stains(g, s, 3, 'rgba(90,40,15,0.35)');
+    g.strokeStyle = 'rgba(255,255,255,0.1)';
+    for (let i = 0; i < 14; i++) { const x = rnd() * s, y = rnd() * s; g.beginPath(); g.moveTo(x, y); g.lineTo(x + rnd() * 40 - 20, y + rnd() * 40 - 20); g.stroke(); }
+  }),
+  door: () => canvasTex(256, (g, s) => {
+    fillBg(g, s, '#4a5750'); g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 4; g.strokeRect(24, 24, s - 48, s - 48);
+    g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = 2; g.strokeRect(28, 28, s - 56, s - 56);
+    speckle(g, s, 3000, 0.35); stains(g, s, 3, 'rgba(20,10,0,0.4)');
+    g.fillStyle = '#d9a400'; g.fillRect(0, s - 14, s, 8);
+  }),
+  wood: () => canvasTex(256, (g, s) => {
+    fillBg(g, s, '#3a281c');
+    for (let i = 0; i < 70; i++) {
+      g.strokeStyle = `rgba(${rnd() < 0.5 ? 20 : 90},${rnd() < 0.5 ? 10 : 55},10,${0.15 + rnd() * 0.25})`; g.lineWidth = 1 + rnd() * 2;
+      const x = rnd() * s; g.beginPath(); g.moveTo(x, 0); g.bezierCurveTo(x + rnd() * 14 - 7, s / 3, x + rnd() * 14 - 7, 2 * s / 3, x, s); g.stroke();
+    }
+    speckle(g, s, 1500, 0.25);
+  }),
+  rack: () => canvasTex(256, (g, s) => {
+    fillBg(g, s, '#1f2327');
+    for (let y = 12; y < s - 10; y += 32) {
+      g.fillStyle = '#0b0d0f'; g.fillRect(14, y, s - 28, 22);
+      for (let x = 22; x < s - 40; x += 7) { g.fillStyle = 'rgba(255,255,255,0.07)'; g.fillRect(x, y + 4, 3, 14); }
+      g.fillStyle = rnd() < 0.5 ? '#0f0' : '#f80'; g.fillRect(s - 30, y + 8, 6, 6);
+    }
+    speckle(g, s, 2000, 0.3);
+  }),
+  cab: () => canvasTex(256, (g, s) => {
+    fillBg(g, s, '#454c50'); g.strokeStyle = 'rgba(0,0,0,0.6)'; g.lineWidth = 3; g.strokeRect(2, 2, s - 4, s - 4);
+    g.beginPath(); g.moveTo(s / 2, 2); g.lineTo(s / 2, s - 2); g.stroke();
+    for (let i = 0; i < 6; i++) { g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(24, 30 + i * 8, s / 2 - 48, 3); g.fillRect(s / 2 + 24, 30 + i * 8, s / 2 - 48, 3); }
+    speckle(g, s, 2500, 0.3); stains(g, s, 2, 'rgba(80,35,10,0.35)');
+  }),
+  cloth: () => canvasTex(256, (g, s) => {
+    fillBg(g, s, '#aeb6b4');
+    for (let y = 0; y < s; y += 4) { g.fillStyle = 'rgba(0,0,0,0.05)'; g.fillRect(0, y, s, 1); }
+    g.fillStyle = 'rgba(40,80,130,0.5)'; g.fillRect(0, s * 0.4, s, 16);
+    speckle(g, s, 2500, 0.25); stains(g, s, 3, 'rgba(120,20,15,0.3)');
+  }),
+  statue: () => canvasTex(256, (g, s) => { // SCP-173: бетон с потёками краски
+    fillBg(g, s, '#8b8576'); speckle(g, s, 6000, 0.4);
+    for (let i = 0; i < 9; i++) {
+      g.strokeStyle = ['rgba(200,90,20,0.55)', 'rgba(40,110,150,0.5)', 'rgba(120,40,30,0.5)'][i % 3]; g.lineWidth = 3 + rnd() * 6;
+      const x = rnd() * s; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + rnd() * 30 - 15, s); g.stroke();
+    }
+    cracks(g, s, 3); stains(g, s, 3, 'rgba(60,20,10,0.4)');
+  }),
+  keterBase: () => canvasTex(256, (g, s) => { fillBg(g, s, '#0c0608'); stains(g, s, 8, 'rgba(60,8,8,0.5)'); speckle(g, s, 4000, 0.3); }),
+  keterVein: () => canvasTex(256, (g, s) => {
+    fillBg(g, s, '#000'); g.strokeStyle = '#ff2a10';
+    for (let i = 0; i < 14; i++) {
+      g.lineWidth = 1 + rnd() * 3; let x = rnd() * s, y = rnd() * s; g.beginPath(); g.moveTo(x, y);
+      for (let k = 0; k < 6; k++) { x += rnd() * 60 - 30; y += rnd() * 60 - 30; g.lineTo(x, y); }
+      g.stroke();
+    }
+  }),
+  ceil: () => canvasTex(256, (g, s) => {
+    fillBg(g, s, '#23272b'); g.strokeStyle = 'rgba(0,0,0,0.7)'; g.lineWidth = 4; g.strokeRect(0, 0, s, s);
+    g.strokeStyle = 'rgba(255,255,255,0.06)'; g.lineWidth = 2; g.strokeRect(6, 6, s - 12, s - 12);
+    speckle(g, s, 2500, 0.3); stains(g, s, 2, 'rgba(30,25,10,0.4)');
+  })
+};
+
+function buildMaterials() {
+  const M = (t, r, m = 0, bump = 0.8) => new THREE.MeshStandardMaterial({ map: t, bumpMap: t, bumpScale: bump, roughness: r, metalness: m });
+  const fl = TEX.metal(); fl.repeat.set(60, 80);   // плита 2x2 м
+  const cl = TEX.ceil(); cl.repeat.set(30, 40);
+  wallMaterial = M(TEX.concrete(), 0.9);
+  floorMaterial = M(fl, 0.45, 0.4);
+  doorMaterial = M(TEX.door(), 0.5, 0.5);
+  tableMaterial = M(TEX.wood(), 0.7);
+  serverMaterial = M(TEX.rack(), 0.35, 0.6);
+  MAT = {
+    ceil: M(cl, 0.9), cab: M(TEX.cab(), 0.5, 0.5), bed: M(TEX.cloth(), 0.8, 0, 0.3), statue: M(TEX.statue(), 0.95),
+    keter: new THREE.MeshStandardMaterial({ map: TEX.keterBase(), roughness: 0.25, metalness: 0.3, emissive: 0xff2200, emissiveMap: TEX.keterVein(), emissiveIntensity: 0.8 }),
+    glass: new THREE.MeshStandardMaterial({ color: 0x88aacc, transparent: true, opacity: 0.15, roughness: 0.1 }),
+    tank: new THREE.MeshStandardMaterial({ color: 0x66ffaa, transparent: true, opacity: 0.25, roughness: 0.1 }),
+    liquid: new THREE.MeshBasicMaterial({ color: 0x22cc66 }),
+    orange: new THREE.MeshStandardMaterial({ color: 0xb85a10, roughness: 0.8 })
+  };
+}
+
+// Текстура тянется по размеру стены: 1 повтор на 2 метра, без растяжения
+function scaleBoxUV(geo, w, h, d, tile = 2) {
+  const uv = geo.attributes.uv, dims = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
+  for (let f = 0; f < 6; f++) for (let i = 0; i < 4; i++) {
+    const k = f * 4 + i;
+    uv.setXY(k, uv.getX(k) * dims[f][0] / tile, uv.getY(k) * dims[f][1] / tile);
+  }
+  uv.needsUpdate = true;
+}
+
+function makeDust() { // пылинки в воздухе, плавно дрейфуют вверх
+  const n = 500, pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { pos[i * 3] = (rnd() - 0.5) * 30; pos[i * 3 + 1] = rnd() * 3; pos[i * 3 + 2] = -9 + rnd() * 90; }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x9aa6b0, size: 0.03, transparent: true, opacity: 0.5, depthWrite: false }));
+  world.add(pts);
+  return pts;
+}
+
 // === 3. 3D ДВИЖОК ===
 let scene, camera, renderer, flashlight, world, hintEl, toastEl;
 let initialized = false;
@@ -156,17 +309,22 @@ function init3DMode() {
 
     renderer = new THREE.WebGLRenderer({ antialias: false });
     renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.3;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
 
-    wallMaterial = loadCustomMaterial('textures/damaged_concrete.jpg', 4, 2, 0.8);
-    floorMaterial = loadCustomMaterial('textures/MetalPlates006.png', 12, 16, 0.4);
-    doorMaterial = loadCustomMaterial('textures/Paint002.png', 1, 1, 0.5);
-    tableMaterial = loadCustomMaterial('textures/dark_wood_diff_1k.jpg', 1, 1, 0.7);
-    serverMaterial = loadCustomMaterial('textures/Metal041B.png', 1, 1, 0.3);
+    buildMaterials();
 
     flashlight = new THREE.SpotLight(0xddeeff, 5.0, 35, Math.PI / 3, 0.4, 1.5);
     flashlight.position.set(0, 0, 0);
+    flashlight.castShadow = true;
+    flashlight.shadow.mapSize.set(1024, 1024);
+    flashlight.shadow.bias = -0.0005;
+    flashlight.shadow.camera.near = 0.2;
+    flashlight.shadow.camera.far = 35;
     flashlight.target.position.set(0, 0, -1); // камера смотрит в -Z
     camera.add(flashlight, flashlight.target);
     scene.add(camera);
@@ -181,6 +339,9 @@ function init3DMode() {
     hintEl.style.cssText = base + "top:50%;margin-top:40px;";
     hintEl.textContent = "Кликните, чтобы управлять";
     container.append(toastEl, hintEl);
+    const fx = document.createElement('div'); // виньетка и линии развёртки
+    fx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 45%,rgba(0,0,0,.75) 100%),repeating-linear-gradient(0deg,rgba(0,0,0,.12) 0 1px,transparent 1px 3px);';
+    container.append(fx);
 
     container.addEventListener('click', () => document.body.requestPointerLock());
     document.addEventListener('mousemove', onMouseMove);
@@ -279,23 +440,26 @@ function hazardStripe(x, z) {
 }
 
 function build10ZonesMap() {
-  walls = []; interactiveItems = []; doors = {};
+  walls = []; interactiveItems = []; doors = {}; flickers = [];
 
-  const ceilingMat = new THREE.MeshStandardMaterial({ color: 0x0a0c10, roughness: 0.9 });
-  const cabMat = new THREE.MeshStandardMaterial({ color: 0x2a2f33, roughness: 0.6 });
-  const bedMat = new THREE.MeshStandardMaterial({ color: 0xb8c0c0, roughness: 0.5 });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.2 });
-  const glassMat = new THREE.MeshStandardMaterial({ color: 0x88aacc, transparent: true, opacity: 0.15, roughness: 0.1 });
+  const ceilingMat = MAT.ceil;
+  const cabMat = MAT.cab;
+  const bedMat = MAT.bed;
+  const darkMat = MAT.keter;
+  const glassMat = MAT.glass;
   const redMat = () => new THREE.MeshBasicMaterial({ color: 0xff2222 });
 
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 160), floorMaterial);
-  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 30); world.add(floor);
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 30); floor.receiveShadow = true; world.add(floor);
   const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(120, 160), ceilingMat);
   ceiling.rotation.x = Math.PI / 2; ceiling.position.set(0, 3.2, 30); world.add(ceiling);
 
   const box = (mat, w, h, d, x, y, z, solid) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    const geo = new THREE.BoxGeometry(w, h, d);
+    scaleBoxUV(geo, w, h, d);
+    const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
+    if (mat.isMeshStandardMaterial && !mat.transparent) { m.castShadow = true; m.receiveShadow = true; }
     world.add(m);
     if (solid) walls.push({ mesh: m, box: new THREE.Box3().setFromObject(m) });
     return m;
@@ -319,6 +483,7 @@ function build10ZonesMap() {
   function addPointLight(x, z, color = 0xffa040, y = 2.8) {
     const light = new THREE.PointLight(color, 1.8, 15);
     light.position.set(x, y, z); world.add(light);
+    if (color === 0xff3322 || color === 0x40ffee) flickers.push({ light, base: 1.8 });
     box(new THREE.MeshBasicMaterial({ color: 0xffeeaa }), 0.8, 0.1, 0.3, x, 3.1, z);
   }
 
@@ -331,7 +496,7 @@ function build10ZonesMap() {
   const addStatue = (x, z, faceX) => { // «статуя» в духе SCP-173
     const g = new THREE.Group();
     const part = (w, h, d, px, py, pz) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMaterial);
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), MAT.statue);
       m.position.set(px, py, pz); g.add(m);
     };
     part(0.5, 1.0, 0.3, 0, 1.1, 0); part(0.3, 0.3, 0.3, 0, 1.8, 0);
@@ -343,18 +508,21 @@ function build10ZonesMap() {
 
   // --- Стены и проёмы ---
   wallLine('z', -10, -4, 4);                         // Шлюз D-12
-  wallLine('x', -4, -10, 2); wallLine('x', 4, -10, 2);
+  wallLine('x', -4, -10, 2, [[-5, -1]]); wallLine('x', 4, -10, 2);
+  wallLine('z', -9, -14, -4); wallLine('z', 1, -14, -4); wallLine('x', -14, -9, 1); // Блок D-класса
   wallLine('z', 2, -5, 5, [[-1.5, 1.5]]);            // шлюз -> холл
   wallLine('x', -5, 2, 24, [[8, 12]]);               // холл (проём в Администрацию)
   wallLine('x', 5, 2, 24, [[8, 12]]);                // холл (проём в Медпункт)
   wallLine('z', 24, -5, 5, [[-1, 1]]);               // дверь L-1
   wallLine('z', 4, -15, -5); wallLine('z', 16, -15, -5); wallLine('x', -15, 4, 16); // Администрация
   wallLine('z', 4, 5, 15); wallLine('z', 16, 5, 15); wallLine('x', 15, 4, 16);      // Медпункт
-  wallLine('x', -5, 24, 44); wallLine('x', 5, 24, 44);                              // Узел данных
+  wallLine('x', -5, 24, 44); wallLine('x', 5, 24, 44, [[31, 35]]);
+  wallLine('z', 27, 5, 15); wallLine('z', 39, 5, 15); wallLine('x', 15, 27, 39); // Лаборатория                              // Узел данных
   wallLine('z', 44, -16, 16, [[-1.5, 1.5]]);         // узел -> зал содержания
   wallLine('x', -16, 44, 60); wallLine('x', 16, 44, 60);
   wallLine('z', 60, -16, 16, [[-1, 1]]);             // дверь L-2
-  wallLine('x', -4, 60, 80); wallLine('x', 4, 60, 80);
+  wallLine('x', -4, 60, 80, [[66, 70]]); wallLine('x', 4, 60, 80);
+  wallLine('z', 63, -14, -4); wallLine('z', 77, -14, -4); wallLine('x', -14, 63, 77); // Пост охраны
   wallLine('z', 80, -4, 4, [[-1, 1]]);               // выходная дверь
 
   // --- Освещение: у каждой зоны свой цвет ---
@@ -411,6 +579,38 @@ function build10ZonesMap() {
   }));
   mkTable(2, 40);
   spawnKeycard(2, 0.82, 40, '2', '#aa00ff', 'keycardL2');
+
+  const solid = (m) => { world.add(m); walls.push({ mesh: m, box: new THREE.Box3().setFromObject(m) }); };
+  dust = makeDust();
+
+  // --- Блок D-класса: нары, стол, запасная батарея ---
+  addPointLight(-9, -4, 0xffa040);
+  addSign(['БЛОК D-КЛАССА', 'ЖИЛЫЕ ПОМЕЩЕНИЯ'], -3.72, 2.75, -3, Math.PI / 2);
+  [-7, -4, -1].forEach(z => { box(MAT.cab, 0.9, 1.6, 2, -13, 0.8, z, true); box(MAT.orange, 0.8, 0.12, 1.8, -13, 1.66, z); });
+  mkTable(-8, -7);
+  spawnBattery(-6, 0.3, -2);
+
+  // --- Лаборатория: столы, ёмкости с образцами ---
+  addPointLight(10, 33, 0x33ff88);
+  addSign(['ЛАБОРАТОРИЯ', 'ИССЛЕДОВАНИЯ SCP'], 4.72, 2.75, 33, -Math.PI / 2, '#66ffaa');
+  [30, 36].forEach(z => box(MAT.cab, 3, 0.9, 1, 8.5, 0.45, z, true));
+  [29, 33, 37].forEach(z => {
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 2.5, 16), MAT.tank); t.position.set(13.8, 1.25, z); solid(t);
+    const l = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 2.2, 12), MAT.liquid); l.position.set(13.8, 1.25, z); world.add(l);
+    const b = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), MAT.keter); b.position.set(13.8, 1.2, z); world.add(b);
+  });
+
+  // --- Пост охраны: шкафчики, мониторы, ящики ---
+  addPointLight(-9, 70, 0xffd080);
+  addSign(['ПОСТ ОХРАНЫ', 'ТОЛЬКО ПЕРСОНАЛ'], -3.72, 2.75, 68, Math.PI / 2, '#66aaff');
+  for (let i = 0; i < 6; i++) box(MAT.cab, 0.6, 2, 0.9, -13.5, 1, 64 + i * 1.1, true);
+  mkTable(-9, 75);
+  addSign(['КАМ-04', 'СИГНАЛ ПОТЕРЯН'], -9.8, 1.15, 75.45, Math.PI, '#33ff88', 0.4);
+  addSign(['КАМ-07', 'ЗАЛ СОДЕРЖАНИЯ'], -8.2, 1.15, 75.45, Math.PI, '#ff4444', 0.4);
+  box(tableMaterial, 1, 1, 1, -6, 0.5, 63.9, true); box(tableMaterial, 1, 1, 1, -6, 0.5, 64.9, true);
+
+  // --- Колонны в зале содержания ---
+  [[-5, 48], [5, 48], [-5, 56], [5, 56]].forEach(([x, z]) => box(wallMaterial, 1, 3.2, 1, x, 1.6, z, true));
 
   // --- Зал содержания: камеры по обеим сторонам ---
   const zs = [44, 49, 54, 60];
@@ -595,6 +795,17 @@ function animate3D() {
 
   // Пленочный дрифт камеры (не накапливается)
   camera.rotation.z = Math.sin(time * 0.0007) * 0.004 + (Math.random() - 0.5) * 0.0008;
+
+  flickers.forEach(f => { f.light.intensity = f.base * (Math.random() < 0.03 ? 0.25 : 1); });
+  if (MAT) MAT.keter.emissiveIntensity = 0.7 + 0.3 * Math.sin(time * 0.003);
+  if (dust) {
+    const p = dust.geometry.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      let y = p.getY(i) + delta * 0.05; if (y > 3) y = 0;
+      p.setY(i, y); p.setX(i, p.getX(i) + Math.sin(time * 0.0005 + i) * 0.0015);
+    }
+    p.needsUpdate = true;
+  }
 
   drawMinimap();
   renderer.render(scene, camera);
