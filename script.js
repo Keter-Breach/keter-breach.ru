@@ -345,7 +345,7 @@ function init3DMode() {
 
   // Однократная инициализация: рендерер, слушатели, фонарик — не дублируются при рестарте
   if (!initialized) {
-    container.style.filter = "contrast(1.3) brightness(0.85) sepia(0.2) saturate(0.8)";
+    container.style.filter = "contrast(1.12) brightness(0.92) sepia(0.12) saturate(0.86)";
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020305);
@@ -910,7 +910,7 @@ renderChapter(1);
   const DEFAULT_SETTINGS = {
     quality: "medium",
     shadows: true,
-    brightness: 1.3,
+    brightness: 1.15,
     volume: 0.7,
     mouseSensitivity: 0.002
   };
@@ -1508,7 +1508,7 @@ renderChapter(1);
       const container = el("three-container");
       if (container) {
         container.style.filter =
-          "contrast(1.3) brightness(0.85) sepia(0.2) saturate(0.8)";
+          "contrast(1.12) brightness(0.92) sepia(0.12) saturate(0.86)";
       }
     } catch (error) {
       console.warn("[KETER] Не удалось применить графику:", error);
