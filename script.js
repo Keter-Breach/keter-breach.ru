@@ -351,12 +351,19 @@ function scaleBoxUV(geo, w, h, d, tile = 4) {
   uv.needsUpdate = true;
 }
 
-function makeDust() { // пылинки в воздухе, плавно дрейфуют вверх
-  const n = 160, pos = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) { pos[i * 3] = (rnd() - 0.5) * 30; pos[i * 3 + 1] = rnd() * 3; pos[i * 3 + 2] = -9 + rnd() * 90; }
+function makeDust() { // мелкая пыль и редкие частицы в лучах фонаря
+  const n = 300, pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    pos[i * 3] = (rnd() - 0.5) * 22;
+    pos[i * 3 + 1] = 0.08 + rnd() * 2.8;
+    pos[i * 3 + 2] = -9 + rnd() * 88;
+  }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x9aa6b0, size: 0.022, transparent: true, opacity: 0.28, depthWrite: false }));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    color: 0x87948b, size: 0.018, transparent: true, opacity: 0.2,
+    depthWrite: false, sizeAttenuation: true
+  }));
   world.add(pts);
   return pts;
 }
@@ -399,7 +406,7 @@ function init3DMode() {
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020305);
-    scene.fog = new THREE.FogExp2(0x020305, 0.052);
+    scene.fog = new THREE.FogExp2(0x030407, 0.065);
 
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ'; // yaw отдельно от pitch: взгляд вверх не замедляет ходьбу
@@ -407,7 +414,7 @@ function init3DMode() {
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.82;
+    renderer.toneMappingExposure = 0.72;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -425,7 +432,7 @@ function init3DMode() {
     flashlight.target.position.set(0, 0, -1); // камера смотрит в -Z
     camera.add(flashlight, flashlight.target);
     scene.add(camera);
-    scene.add(new THREE.AmbientLight(0x11141a, 0.24));
+    scene.add(new THREE.AmbientLight(0x090d12, 0.16));
 
     // Подсказки поверх игры (вместо alert, который ломал pointer lock)
     const base = "position:absolute;left:50%;transform:translateX(-50%);padding:10px 18px;" +
@@ -568,10 +575,10 @@ function build10ZonesMap() {
   }
 
   function addPointLight(x, z, color = 0xffa040, y = 2.8) {
-    const light = new THREE.PointLight(color, 0.58, 10);
+    const light = new THREE.PointLight(color, 0.42, 8);
     light.position.set(x, y, z); world.add(light);
-    if (color === 0xff3322 || color === 0x40ffee) flickers.push({ light, base: 0.58 });
-    box(new THREE.MeshBasicMaterial({ color: 0xffeeaa }), 0.8, 0.1, 0.3, x, 3.1, z);
+    if (color === 0xff3322 || color === 0x40ffee) flickers.push({ light, base: 0.42 });
+    box(new THREE.MeshBasicMaterial({ color: color === 0xff3322 ? 0x4d0b0b : 0x554a2c }), 0.8, 0.1, 0.3, x, 3.1, z);
   }
 
   const mkTable = (x, z) => {
@@ -934,7 +941,10 @@ function animate3D() {
   // Пленочный дрифт камеры (не накапливается)
   camera.rotation.z = Math.sin(time * 0.0007) * 0.004 + (Math.random() - 0.5) * 0.0008;
 
-  flickers.forEach(f => { f.light.intensity = f.base * (Math.random() < 0.03 ? 0.25 : 1); });
+  flickers.forEach(f => {
+    const outage = Math.random() < 0.065;
+    f.light.intensity = f.base * (outage ? 0.08 : 0.82 + Math.random() * 0.18);
+  });
   if (MAT) MAT.keter.emissiveIntensity = 0.7 + 0.3 * Math.sin(time * 0.003);
   if (dust) {
     const p = dust.geometry.attributes.position;
@@ -975,7 +985,7 @@ renderChapter(1);
   const DEFAULT_SETTINGS = {
     quality: "medium",
     shadows: true,
-    brightness: 1.15,
+    brightness: 0.95,
     volume: 0.7,
     mouseSensitivity: 0.002
   };
@@ -1037,7 +1047,7 @@ renderChapter(1);
       }
 
       merged.shadows = Boolean(merged.shadows);
-      merged.brightness = clamp(Number(merged.brightness) || 1.3, 0.7, 2);
+      merged.brightness = clamp(Number(merged.brightness) || DEFAULT_SETTINGS.brightness, 0.65, 1.5);
       merged.volume = clamp(Number(merged.volume) || 0, 0, 1);
       merged.mouseSensitivity = clamp(
         Number(merged.mouseSensitivity) || 0.002,
@@ -1732,12 +1742,12 @@ renderChapter(1);
         flashlight.shadow.needsUpdate = true;
       }
 
-      renderer.toneMappingExposure = settings.brightness;
+      renderer.toneMappingExposure = settings.brightness * 0.76;
 
       const container = el("three-container");
       if (container) {
         container.style.filter =
-          "contrast(1.12) brightness(0.92) sepia(0.12) saturate(0.86)";
+          "contrast(1.22) brightness(0.78) sepia(0.2) saturate(0.62)";
       }
     } catch (error) {
       console.warn("[KETER] Не удалось применить графику:", error);
