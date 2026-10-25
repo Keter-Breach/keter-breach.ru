@@ -29,6 +29,12 @@ try {
   const firstChoice = page.locator("#buttons-container button").first();
   await firstChoice.click();
   await page.locator("#three-container").waitFor({ state: "visible", timeout: 15000 });
+
+  // The 3D mode deliberately opens its own in-game terminal overlay. Start
+  // through that UI instead of clicking a story button underneath the overlay.
+  const startButton = page.locator("#keter-main-menu button").first();
+  await startButton.waitFor({ state: "visible", timeout: 10000 });
+  await startButton.click();
   await page.waitForFunction(() => {
     const canvas = document.querySelector("#three-container canvas");
     return canvas && canvas.width > 0 && canvas.height > 0;
