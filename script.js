@@ -744,6 +744,12 @@ function animate3D() {
   if (document.getElementById("three-container").classList.contains("hidden")) return;
   requestAnimationFrame(animate3D);
 
+  // Меню паузы замораживает симуляцию, но оставляет цикл рендера готовым к продолжению.
+  if (window.__keterPaused) {
+    prevTime = performance.now();
+    return;
+  }
+
   const time = performance.now();
   const delta = Math.min((time - prevTime) / 1000, 0.1); // защита от скачков после смены вкладки
   prevTime = time;
@@ -1467,16 +1473,33 @@ renderChapter(1);
   }
 
   function newGame() {
-    hideOverlay();
-    sessionStarted = true;
+    pauseRequested = false;
+    window.__keterPaused = true;
+    moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
 
+    if (document.pointerLockElement) {
+      document.exitPointerLock();
+    }
+
+    const three = el("three-container");
+    const textGame = el("text-game");
+    if (three) three.classList.add("hidden");
+    if (textGame) textGame.classList.remove("hidden");
+
+    sessionStarted = true;
     if (typeof renderChapter === "function") {
       renderChapter("RESET");
     }
+
+    window.__keterPaused = false;
+    hideOverlay();
+    setStatus("Новая игра началась.");
   }
 
   function returnToMainMenu() {
     pauseRequested = false;
+    window.__keterPaused = true;
+    moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
 
     if (document.pointerLockElement) {
       document.exitPointerLock();
@@ -1493,11 +1516,13 @@ renderChapter(1);
     }
 
     showOverlay(menuPanel);
+    setStatus("Главное меню.");
   }
 
   function openPauseMenu() {
     if (!is3DVisible()) return;
     pauseRequested = true;
+    window.__keterPaused = true;
     moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
     showOverlay(menuPanel);
     setStatus("Игра приостановлена. Нажмите «Начать / продолжить», чтобы вернуться.");
@@ -1571,12 +1596,15 @@ renderChapter(1);
     document.addEventListener("pointerlockchange", () => {
       if (isPointerLocked()) {
         pauseRequested = false;
+        window.__keterPaused = false;
         hideOverlay();
         return;
       }
 
-      // Если мышь отпущена во время 3D-игры, показываем паузу.
+      // Потеря захвата мыши в 3D переводит игру на паузу.
       if (sessionStarted && is3DVisible()) {
+        window.__keterPaused = true;
+        moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
         showOverlay(menuPanel);
         setStatus("Пауза");
       }
@@ -1594,6 +1622,8 @@ renderChapter(1);
     window.addEventListener("blur", () => {
       if (is3DVisible() && sessionStarted) {
         // Не вызываем Pointer Lock автоматически при возвращении.
+        window.__keterPaused = true;
+        moveForward = moveBackward = moveLeft = moveRight = isSprinting = false;
         showOverlay(menuPanel);
         setStatus("Окно потеряло фокус. Нажмите «Начать / продолжить».");
       }
