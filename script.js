@@ -310,7 +310,7 @@ function scaleBoxUV(geo, w, h, d, tile = 4) {
 }
 
 function makeDust() { // пылинки в воздухе, плавно дрейфуют вверх
-  const n = 220, pos = new Float32Array(n * 3);
+  const n = 160, pos = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) { pos[i * 3] = (rnd() - 0.5) * 30; pos[i * 3 + 1] = rnd() * 3; pos[i * 3 + 2] = -9 + rnd() * 90; }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -381,7 +381,7 @@ function init3DMode() {
     flashlight.target.position.set(0, 0, -1); // камера смотрит в -Z
     camera.add(flashlight, flashlight.target);
     scene.add(camera);
-    scene.add(new THREE.AmbientLight(0x111622, 0.4));
+    scene.add(new THREE.AmbientLight(0x171b22, 0.48));
 
     // Подсказки поверх игры (вместо alert, который ломал pointer lock)
     const base = "position:absolute;left:50%;transform:translateX(-50%);padding:10px 18px;" +
@@ -534,9 +534,9 @@ function build10ZonesMap() {
   }
 
   function addPointLight(x, z, color = 0xffa040, y = 2.8) {
-    const light = new THREE.PointLight(color, 1.8, 15);
+    const light = new THREE.PointLight(color, 1.05, 12);
     light.position.set(x, y, z); world.add(light);
-    if (color === 0xff3322 || color === 0x40ffee) flickers.push({ light, base: 1.8 });
+    if (color === 0xff3322 || color === 0x40ffee) flickers.push({ light, base: 1.05 });
     box(new THREE.MeshBasicMaterial({ color: 0xffeeaa }), 0.8, 0.1, 0.3, x, 3.1, z);
   }
 
@@ -840,7 +840,7 @@ function animate3D() {
     }
 
     // Движение относительно направления взгляда (только по горизонтали)
-    const speed = isSprinting ? 38.0 : 20.0;
+    const speed = isSprinting ? 13.0 : 8.0;
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
 
