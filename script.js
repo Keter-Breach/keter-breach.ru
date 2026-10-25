@@ -573,7 +573,9 @@ function init3DMode() {
   wakeupProgress = 0;
   wakeupActive = true;
   showToast("Вы приходите в себя в остановившемся лифте...", 4200);
-  document.getElementById("battery-level").textContent = "100%";
+  const batteryHUD = document.getElementById("battery-level");
+  batteryHUD.textContent = "100%";
+  batteryHUD.classList.remove("battery-low", "battery-critical");
   prevTime = performance.now();
   updateInventoryHUD();
   animate3D();
@@ -1011,7 +1013,10 @@ function animate3D() {
     // Батарея
     if (flashlightOn && battery > 0) {
       battery -= delta * (isSprinting ? 0.3 : 0.08);
-      document.getElementById("battery-level").textContent = `${Math.max(0, Math.round(battery))}%`;
+      const batteryHUD = document.getElementById("battery-level");
+      batteryHUD.textContent = `${Math.max(0, Math.round(battery))}%`;
+      batteryHUD.classList.toggle("battery-low", battery <= 30 && battery > 15);
+      batteryHUD.classList.toggle("battery-critical", battery <= 15);
       if (battery <= 0) {
         flashlightOn = false;
         flashlight.intensity = 0;
