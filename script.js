@@ -615,6 +615,21 @@ function build10ZonesMap() {
   world.add(elevatorLamp);
   flickers.push({ light: elevatorLamp, base: 0.42 });
   box(new THREE.MeshBasicMaterial({ color: 0x4b1713 }), 0.65, 0.04, 0.18, 0, 2.92, -7.2);
+  // Потёртые швы панелей, вентиляционная решётка и панель вызова лифта.
+  const seamMat = new THREE.MeshStandardMaterial({ color: 0x171b1d, roughness: 0.9, metalness: 0.18 });
+  const edgeMat = new THREE.MeshStandardMaterial({ color: 0x45494a, roughness: 0.82, metalness: 0.28 });
+  [-1.25, -0.62, 0, 0.62, 1.25].forEach(x => {
+    box(seamMat, 0.018, 2.65, 0.012, x, 1.45, -9.74);
+  });
+  for (let i = 0; i < 7; i++) {
+    box(seamMat, 0.52, 0.025, 0.018, 1.88, 1.82 + i * 0.075, -7.45);
+  }
+  box(edgeMat, 0.28, 0.56, 0.06, 1.87, 1.38, -7.45);
+  box(new THREE.MeshBasicMaterial({ color: 0x6e1815 }), 0.12, 0.08, 0.025, 1.83, 1.55, -7.40);
+  box(new THREE.MeshBasicMaterial({ color: 0x17281b }), 0.12, 0.08, 0.025, 1.83, 1.39, -7.40);
+  // Тёмные потёртости у порога кабины.
+  box(seamMat, 2.6, 0.018, 0.16, 0, 0.025, -5.28);
+  box(edgeMat, 2.5, 0.025, 0.055, 0, 0.035, -5.38);
 
   // --- Стены и проёмы ---
   wallLine('z', -10, -4, 4);                         // Шлюз D-12
@@ -661,6 +676,22 @@ function build10ZonesMap() {
   addSign(['АДМИНИСТРАЦИЯ', 'СЕКТОРА D-12'], -4.72, 2.75, 10, Math.PI / 2);
   addSign(['МЕДПУНКТ', 'ТОЛЬКО ПЕРСОНАЛ'], 4.72, 2.75, 10, -Math.PI / 2, '#66ffaa');
   addSign(['ЗАЛ СОДЕРЖАНИЯ', 'ПРОТОКОЛ: KETER'], 0, 2.75, 43.72, Math.PI, '#ff5555');
+
+  // --- Инженерные детали: кабель-каналы, сервисные панели и следы ремонта ---
+  const conduitMat = new THREE.MeshStandardMaterial({ color: 0x202528, roughness: 0.86, metalness: 0.24 });
+  [-3.7, 3.7].forEach(x => {
+    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 76, 7), conduitMat);
+    pipe.position.set(x, 3.02, 25); world.add(pipe);
+    const smaller = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 76, 6), seamMat);
+    smaller.position.set(x + (x < 0 ? 0.16 : -0.16), 2.88, 25); world.add(smaller);
+  });
+  [-4.72, 4.72].forEach(x => [7, 19, 29, 40, 53, 72].forEach(z => {
+    box(conduitMat, 0.055, 0.62, 0.78, x, 1.72, z);
+    box(seamMat, 0.06, 0.035, 0.64, x, 1.9, z);
+    box(seamMat, 0.06, 0.035, 0.64, x, 1.54, z);
+    box(new THREE.MeshBasicMaterial({ color: z > 40 ? 0x48120f : 0x203629 }),
+      0.065, 0.055, 0.055, x, 1.72, z - 0.22);
+  }));
 
   // --- Главный холл: трубы, ящики ---
   [-4.5, 4.5].forEach(x => {
