@@ -826,6 +826,63 @@ function build10ZonesMap() {
   const solid = (m) => { world.add(m); walls.push({ mesh: m, box: new THREE.Box3().setFromObject(m) }); };
   dust = makeDust();
 
+  // --- Хоррор-декали: засохшая кровь и следы аварийной эвакуации ---
+  // Текстура создаётся процедурно: не требует внешних файлов и не влияет на коллизии.
+  const makeBloodDecalTexture = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 256;
+    const g = canvas.getContext('2d');
+    const stain = (x, y, rx, ry, alpha) => {
+      g.save();
+      g.translate(x, y); g.scale(rx, ry);
+      const grad = g.createRadialGradient(0, 0, 0, 0, 0, 1);
+      grad.addColorStop(0, 'rgba(48,5,7,' + alpha + ')');
+      grad.addColorStop(0.55, 'rgba(72,8,10,' + (alpha * 0.8) + ')');
+      grad.addColorStop(1, 'rgba(28,3,5,0)');
+      g.fillStyle = grad; g.beginPath(); g.arc(0, 0, 1, 0, Math.PI * 2); g.fill();
+      g.restore();
+    };
+    stain(120, 128, 82, 58, 0.82);
+    for (let i = 0; i < 17; i++) {
+      const x = 65 + Math.random() * 125, y = 75 + Math.random() * 115;
+      stain(x, y, 8 + Math.random() * 25, 5 + Math.random() * 19, 0.55);
+    }
+    // Узкие потёки, словно кровь размазали ботинком по бетону.
+    g.lineCap = 'round';
+    for (let i = 0; i < 9; i++) {
+      const x = 70 + Math.random() * 115, y = 112 + Math.random() * 55;
+      g.strokeStyle = 'rgba(39,3,5,' + (0.22 + Math.random() * 0.38) + ')';
+      g.lineWidth = 1 + Math.random() * 5;
+      g.beginPath(); g.moveTo(x, y); g.bezierCurveTo(x - 8, y + 14, x + 12, y + 22, x + (Math.random() - 0.5) * 30, y + 42 + Math.random() * 35); g.stroke();
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.encoding = THREE.sRGBEncoding;
+    texture.anisotropy = 4;
+    return texture;
+  };
+  const bloodTexture = makeBloodDecalTexture();
+  const bloodMat = new THREE.MeshBasicMaterial({
+    map: bloodTexture, transparent: true, opacity: 0.72,
+    depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1
+  });
+  const floorBlood = (x, z, sx, sz, rotation = 0) => {
+    const decal = new THREE.Mesh(new THREE.PlaneGeometry(sx, sz), bloodMat);
+    decal.rotation.x = -Math.PI / 2;
+    decal.rotation.z = rotation;
+    decal.position.set(x, 0.018, z);
+    world.add(decal);
+  };
+  // Небольшие, не слишком яркие следы — игрок замечает их в луче фонаря.
+  floorBlood(-1.75, 18.6, 1.9, 1.25, 0.35);
+  floorBlood(1.65, 47.2, 1.55, 1.05, -0.55);
+  floorBlood(-2.15, 56.8, 1.7, 1.1, 0.2);
+  floorBlood(1.8, 66.1, 1.4, 0.9, -0.3);
+  // След на стене у камер содержания: заметен только при близком осмотре.
+  const wallBlood = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.45), bloodMat);
+  wallBlood.position.set(-15.735, 1.15, 51.4);
+  wallBlood.rotation.y = Math.PI / 2;
+  world.add(wallBlood);
+
   // --- Блок D-класса: нары, стол, запасная батарея ---
   addPointLight(-9, -4, 0xffa040);
   addSign(['БЛОК D-КЛАССА', 'ЖИЛЫЕ ПОМЕЩЕНИЯ'], -3.72, 2.75, -3, Math.PI / 2);
