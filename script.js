@@ -1388,10 +1388,10 @@ renderChapter(1);
     );
 
     menuPanel.appendChild(
-      makeButton("▤  ДОСЬЕ И ПРОТОКОЛ ДОПУСКА", () => {
+      makeButton("▤  ДОСЬЕ КЛЮЧЕВЫХ СОТРУДНИКОВ", () => {
         hideOverlay();
         sessionStarted = true;
-        if (typeof renderChapter === "function") renderChapter(1);
+        if (typeof renderChapter === "function") renderChapter("PERSONNEL_DOSSIER");
       })
     );
 
