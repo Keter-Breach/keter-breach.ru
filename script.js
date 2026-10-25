@@ -545,7 +545,11 @@ function init3DMode() {
 
     container.addEventListener('click', () => document.body.requestPointerLock());
     document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('keydown', (e) => onKey(e.code, true));
+    document.addEventListener('keydown', (e) => {
+      // Не повторяем одноразовые действия, пока клавиша удерживается.
+      if (e.repeat && (e.code === 'KeyF' || e.code === 'KeyE')) return;
+      onKey(e.code, true);
+    });
     document.addEventListener('keyup', (e) => onKey(e.code, false));
     window.addEventListener('blur', () => { moveForward = moveBackward = moveLeft = moveRight = isSprinting = false; });
     window.addEventListener('resize', () => {
@@ -1037,8 +1041,14 @@ function animate3D() {
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
 
-    const dirZ = Number(moveForward) - Number(moveBackward);
-    const dirX = Number(moveRight) - Number(moveLeft);
+    let dirZ = Number(moveForward) - Number(moveBackward);
+    let dirX = Number(moveRight) - Number(moveLeft);
+    // Диагональ не должна быть быстрее движения по одной оси.
+    const inputLength = Math.hypot(dirX, dirZ);
+    if (inputLength > 1) {
+      dirX /= inputLength;
+      dirZ /= inputLength;
+    }
     const sin = Math.sin(camera.rotation.y), cos = Math.cos(camera.rotation.y);
     velocity.x += (-sin * dirZ + cos * dirX) * speed * delta;
     velocity.z += (-cos * dirZ - sin * dirX) * speed * delta;
@@ -1900,8 +1910,11 @@ renderChapter(1);
 
       const container = el("three-container");
       if (container) {
+        // Связываем ползунок экспозиции и с постобработочным фильтром,
+        // чтобы настройка была заметна даже в затемнённой VHS-сцене.
+        const displayBrightness = clamp(settings.brightness / 0.95 * 0.78, 0.55, 1.25);
         container.style.filter =
-          "contrast(1.22) brightness(0.78) sepia(0.2) saturate(0.62)";
+          `contrast(1.16) brightness(${displayBrightness.toFixed(2)}) sepia(0.18) saturate(0.58)`;
       }
     } catch (error) {
       console.warn("[KETER] Не удалось применить графику:", error);
@@ -1931,6 +1944,13 @@ renderChapter(1);
 
     const sensitivity = el("keter-sensitivity");
     if (sensitivity) sensitivity.value = String(settings.mouseSensitivity);
+
+    // Синхронизируем громкость фонового VHS после сброса настроек.
+    window.__keterVolume = settings.volume;
+    if (vhsAmbient) {
+      vhsAmbient.volume = Math.min(1, settings.volume * 0.18);
+      if (settings.volume <= 0) pauseVhsAmbient();
+    }
 
     // Обновляем подписи слайдеров.
     [
