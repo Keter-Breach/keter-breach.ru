@@ -54,16 +54,17 @@ function playSound(name) {
 }
 
 // === 2. СЮЖЕТ И СОСТОЯНИЕ ===
-const freshState = () => ({ keycardL1: false, keycardL2: false });
+const freshState = () => ({ keycardL1: false, keycardL2: false, accessProtocol: false });
 window.playerState = freshState();
 let loopCount = 1;
+let accessQuestStep = 0;
 
 const storyData = {
   1: {
     title: "ГЛАВА 1: НАРУШЕНИЕ СОДЕРЖАНИЯ",
     location: "Сектор D-12",
-    desc: "Аварийные сирены ревут. Комплекс погрузился во тьму. Найдите пропускные карты и выберитесь на поверхность, пока не поздно.",
-    choices: [{ text: "Войти в комплекс (3D)", nextChapter: 2 }]
+    desc: "Аварийные сирены ревут. Комплекс погрузился во тьму. Перед входом в сектор нужно восстановить протокол допуска: терминал охраны всё ещё работает на резервном питании.",
+    choices: [{ text: "Начать протокол допуска", nextChapter: "ACCESS_QUEST" }]
   },
   2: { title: "3D КОМПЛЕКС", is3D: true },
   3: {
@@ -74,13 +75,101 @@ const storyData = {
   }
 };
 
+const accessQuest = [
+  {
+    title: "ПРОТОКОЛ 01: РЕЗЕРВНЫЙ КОД",
+    location: "Пост охраны D-12",
+    desc: "На терминале мигает запись дежурного: «Код состоит из числа аварийных ламп, затем дверей шлюза и запасных выходов». В коридоре вы насчитали 2 аварийные лампы, 4 двери и 1 запасной выход. Введите код в правильном порядке.",
+    choices: [
+      { text: "241 — лампы / двери / выходы", correct: true },
+      { text: "214 — лампы / выходы / двери", correct: false },
+      { text: "412 — двери / лампы / выходы", correct: false }
+    ],
+    success: "КОД ПРИНЯТ. Терминал разблокировал схему электропитания."
+  },
+  {
+    title: "ПРОТОКОЛ 02: ПИТАНИЕ ШЛЮЗА",
+    location: "Электрощитовая",
+    desc: "На панели два контура. Красный помечен «АВАРИЙНАЯ БЛОКИРОВКА», зелёный — «СЕРВИС / РЕЗЕРВ». Нужно подать питание на считыватель карты, не запуская блокировку.",
+    choices: [
+      { text: "Включить зелёный сервисный контур", correct: true },
+      { text: "Запустить красный аварийный контур", correct: false }
+    ],
+    success: "ПИТАНИЕ ВОССТАНОВЛЕНО. Считыватель пропусков активен."
+  }
+];
+
+function renderAccessQuest() {
+  const step = accessQuestStep;
+  const data = accessQuest[step];
+  if (!data) {
+    window.playerState.accessProtocol = true;
+    renderChapter("ACCESS_GRANTED");
+    return;
+  }
+
+  document.getElementById("chapter-title").textContent = data.title;
+  document.getElementById("current-location").textContent = data.location;
+  document.getElementById("description").textContent = data.desc;
+  document.getElementById("loop-count").textContent = `#${loopCount} · ДОПУСК ${step + 1}/2`;
+
+  const container = document.getElementById("buttons-container");
+  container.innerHTML = "";
+  data.choices.forEach(choice => {
+    const btn = document.createElement("button");
+    btn.textContent = choice.text;
+    btn.onclick = () => {
+      playSound("click");
+      if (choice.correct) {
+        accessQuestStep++;
+        if (step === 0) {
+          document.getElementById("description").textContent = data.success;
+          container.innerHTML = "";
+          const next = document.createElement("button");
+          next.textContent = "Продолжить протокол";
+          next.onclick = () => { playSound("click"); renderAccessQuest(); };
+          container.appendChild(next);
+        } else {
+          window.playerState.accessProtocol = true;
+          renderChapter("ACCESS_GRANTED");
+        }
+      } else {
+        document.getElementById("description").textContent = "ОТКАЗ ДОСТУПА. Терминал записал неверную последовательность. Подсказка находится в журнале дежурного — попробуйте ещё раз.";
+        btn.disabled = true;
+        btn.textContent += " — ОТКАЗ";
+      }
+    };
+    container.appendChild(btn);
+  });
+}
+
 function renderChapter(chapNum) {
   if (chapNum === 'RESET') {
     loopCount++;
     window.playerState = freshState();
+    accessQuestStep = 0;
     chapNum = 1;
   }
+  if (chapNum === "ACCESS_QUEST") {
+    accessQuestStep = 0;
+    renderAccessQuest();
+    return;
+  }
+  if (chapNum === "ACCESS_GRANTED") {
+    document.getElementById("chapter-title").textContent = "ДОПУСК ПОДТВЕРЖДЁН";
+    document.getElementById("current-location").textContent = "Шлюз D-12";
+    document.getElementById("description").textContent = "Пропускной протокол завершён. В журнале появился зелёный маркер: СЕКТОР ОТКРЫТ. За шлюзом начинается тёмный комплекс — дальше только вы и фонарь.";
+    document.getElementById("loop-count").textContent = `#${loopCount} · ДОПУСК OK`;
+    const container = document.getElementById("buttons-container");
+    container.innerHTML = "";
+    const enter = document.createElement("button");
+    enter.textContent = "Войти в комплекс (3D)";
+    enter.onclick = () => { playSound("click"); renderChapter(2); };
+    container.appendChild(enter);
+    return;
+  }
   const data = storyData[chapNum];
+  if (!data) return;
   if (data.is3D) { init3DMode(); return; }
 
   document.getElementById("chapter-title").textContent = data.title;
@@ -1063,12 +1152,58 @@ renderChapter(1);
       }
 
       .keter-panel {
-        width: min(100%, 560px);
+        position: relative;
+        width: min(100%, 600px);
         padding: clamp(22px, 5vw, 42px);
-        border: 1px solid #386044;
-        background: rgba(8, 15, 10, .97);
-        box-shadow: 0 0 55px rgba(0, 255, 100, .08);
+        border: 1px solid #42634b;
+        background:
+          linear-gradient(135deg, rgba(18,30,21,.98), rgba(5,10,7,.99));
+        box-shadow: 0 24px 90px rgba(0,0,0,.72), 0 0 55px rgba(0,255,100,.08);
+        overflow: hidden;
       }
+      .keter-panel::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #6bff9b 0 18%, #253d2c 18% 100%);
+      }
+      #keter-main-menu .keter-title {
+        font-size: clamp(42px, 8vw, 64px);
+        letter-spacing: 4px;
+        margin-top: 8px;
+      }
+      #keter-main-menu .keter-subtitle {
+        max-width: 46ch;
+      }
+      .keter-status-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin: 8px 0 22px;
+      }
+      .keter-status-cell {
+        min-width: 0;
+        padding: 10px 9px;
+        border: 1px solid #263d2d;
+        background: rgba(0,0,0,.24);
+      }
+      .keter-status-cell span {
+        display: block;
+        margin-bottom: 6px;
+        color: #829887;
+        font-size: 9px;
+        letter-spacing: 1.4px;
+      }
+      .keter-status-cell b {
+        display: block;
+        color: #a9f9bc;
+        font-size: 10px;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
+      .keter-status-cell b.warning { color: #ffb66e; }
+      .keter-controls { padding-top: 2px; font-size: 10px; }
 
       .keter-eyebrow {
         color: #6bff9b;
@@ -1201,6 +1336,10 @@ renderChapter(1);
       @media (max-width: 480px) {
         #keter-overlay { padding: 10px; }
         .keter-panel { padding: 22px; }
+        .keter-status-strip { grid-template-columns: 1fr; }
+        .keter-status-cell { display: flex; justify-content: space-between; gap: 12px; }
+        .keter-status-cell span { margin: 0; }
+        #keter-main-menu .keter-title { letter-spacing: 2px; }
       }
     `;
 
@@ -1263,10 +1402,29 @@ renderChapter(1);
 
     menuPanel = makePanel(
       "keter-main-menu",
-      "SCP FOUNDATION  /  SECTOR D-12",
+      "SCP FOUNDATION  /  INTERNAL TERMINAL  /  D-12",
       "PROJECT: KETER",
-      "CONTAINMENT FAILURE // INCIDENT 12-D"
+      "СИСТЕМА СДЕРЖИВАНИЯ НЕСТАБИЛЬНА. СВЯЗЬ С ПОВЕРХНОСТЬЮ ПОТЕРЯНА."
     );
+
+    const statusStrip = document.createElement("div");
+    statusStrip.className = "keter-status-strip";
+    [
+      ["СИСТЕМА", "АВАРИЙНАЯ", "warning"],
+      ["СЕКТОР", "D-12", ""],
+      ["ДОПУСК", "НЕ ПОДТВЕРЖДЁН", "warning"]
+    ].forEach(([label, value, state]) => {
+      const item = document.createElement("div");
+      item.className = "keter-status-cell";
+      const small = document.createElement("span");
+      small.textContent = label;
+      const strong = document.createElement("b");
+      strong.textContent = value;
+      if (state) strong.classList.add(state);
+      item.append(small, strong);
+      statusStrip.appendChild(item);
+    });
+    menuPanel.appendChild(statusStrip);
 
     menuPanel.appendChild(
       makeButton("▶  НАЧАТЬ / ПРОДОЛЖИТЬ", startOrContinue, true)
@@ -1277,14 +1435,16 @@ renderChapter(1);
     );
 
     menuPanel.appendChild(
-      makeButton("⚙  НАСТРОЙКИ ГРАФИКИ", () => {
-        showOverlay(settingsPanel);
+      makeButton("▤  ДОСЬЕ И ПРОТОКОЛ ДОПУСКА", () => {
+        hideOverlay();
+        sessionStarted = true;
+        if (typeof renderChapter === "function") renderChapter(1);
       })
     );
 
     menuPanel.appendChild(
-      makeButton("↩  ВЕРНУТЬСЯ К СЮЖЕТУ", () => {
-        hideOverlay();
+      makeButton("⚙  НАСТРОЙКИ", () => {
+        showOverlay(settingsPanel);
       })
     );
 
@@ -1293,9 +1453,9 @@ renderChapter(1);
     menuPanel.appendChild(divider);
 
     const help = document.createElement("div");
-    help.className = "keter-subtitle";
+    help.className = "keter-subtitle keter-controls";
     help.textContent =
-      "WASD — движение · SHIFT — бег · F — фонарь · E — взаимодействие · ESC — меню";
+      "УПРАВЛЕНИЕ: WASD — движение · SHIFT — бег · F — фонарь · E — взаимодействие · ESC — пауза";
     menuPanel.appendChild(help);
 
     settingsPanel = makePanel(
