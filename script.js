@@ -298,6 +298,7 @@ function makeDust() { // пылинки в воздухе, плавно дрей
 let scene, camera, renderer, flashlight, world, hintEl, toastEl;
 let initialized = false;
 let flashlightOn = true, battery = 100;
+let lowBatteryStaticPlayed = false;
 let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, isSprinting = false;
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
@@ -789,8 +790,28 @@ function animate3D() {
     if (flashlightOn && battery > 0) {
       battery -= delta * (isSprinting ? 0.3 : 0.08);
       document.getElementById("battery-level").textContent = `${Math.max(0, Math.round(battery))}%`;
-      if (battery <= 0) { flashlightOn = false; flashlight.intensity = 0; showToast("Фонарь погас"); }
-      else if (battery < 15) flashlight.intensity = Math.random() < 0.08 ? 1.0 : 5.0; // мерцание
+      if (battery <= 0) {
+        flashlightOn = false;
+        flashlight.intensity = 0;
+        showToast("Фонарь погас");
+      } else if (battery < 15) {
+        flashlight.intensity = Math.random() < 0.08 ? 1.0 : 5.0; // мерцание
+        if (!lowBatteryStaticPlayed) {
+          lowBatteryStaticPlayed = true;
+          try {
+            const staticAudio = new Audio("audio/static.mp3");
+            staticAudio.volume = Math.min(1, settingsVolumeForAudio() * 0.3);
+            const staticPromise = staticAudio.play();
+            if (staticPromise && typeof staticPromise.catch === "function") {
+              staticPromise.catch(() => {});
+            }
+          } catch (error) {
+            // Мерцание фонаря продолжает работать без аудио.
+          }
+        }
+      } else {
+        lowBatteryStaticPlayed = false;
+      }
     }
 
     // Движение относительно направления взгляда (только по горизонтали)
@@ -886,6 +907,15 @@ renderChapter(1);
   let settingsPanel;
   let statusText;
   let vhsAmbient = null;
+
+  function settingsVolumeForAudio() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+      return Math.max(0, Math.min(1, Number(saved.volume ?? DEFAULT_SETTINGS.volume)));
+    } catch (error) {
+      return DEFAULT_SETTINGS.volume;
+    }
+  }
 
   function getVhsAmbient() {
     if (!vhsAmbient) {
