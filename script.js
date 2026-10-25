@@ -1101,16 +1101,40 @@ renderChapter(1);
         justify-content: center;
         padding: 20px;
         overflow-y: auto;
-        color: #e6eee8;
+        color: #dce8df;
         background:
-          linear-gradient(rgba(3,8,5,.84), rgba(3,8,5,.94)),
-          repeating-linear-gradient(
-            0deg,
-            transparent 0 3px,
-            rgba(0,255,100,.025) 3px 4px
-          );
+          radial-gradient(ellipse at 50% 45%, rgba(20,38,26,.18), transparent 54%),
+          repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 4px),
+          linear-gradient(135deg, rgba(1,4,3,.985), rgba(3,8,5,.99));
         font-family: "Courier New", monospace;
         box-sizing: border-box;
+        isolation: isolate;
+      }
+      #keter-overlay::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: .18;
+        background-image:
+          linear-gradient(rgba(100,150,110,.12) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(100,150,110,.12) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: radial-gradient(ellipse at center, black, transparent 82%);
+      }
+      #keter-overlay::after {
+        content: "SECURITY FEED // D-12     •     SIGNAL LOST     •     INTERNAL USE ONLY";
+        position: fixed;
+        left: 22px;
+        right: 22px;
+        bottom: 16px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(89,125,98,.25);
+        color: rgba(112,145,120,.48);
+        font-size: 9px;
+        letter-spacing: 2px;
+        text-align: center;
+        pointer-events: none;
       }
 
       #keter-overlay.keter-hidden {
@@ -1123,12 +1147,14 @@ renderChapter(1);
 
       .keter-panel {
         position: relative;
-        width: min(100%, 600px);
-        padding: clamp(22px, 5vw, 42px);
-        border: 1px solid #42634b;
+        z-index: 1;
+        width: min(100%, 650px);
+        padding: clamp(24px, 4vw, 40px);
+        border: 1px solid #405c47;
         background:
-          linear-gradient(135deg, rgba(18,30,21,.98), rgba(5,10,7,.99));
-        box-shadow: 0 24px 90px rgba(0,0,0,.72), 0 0 55px rgba(0,255,100,.08);
+          linear-gradient(135deg, rgba(9,17,12,.995), rgba(3,7,5,.998) 72%),
+          #050906;
+        box-shadow: 0 32px 100px rgba(0,0,0,.92), 0 0 0 1px rgba(120,170,130,.035), 0 0 55px rgba(0,255,100,.035);
         overflow: hidden;
       }
       .keter-panel::before {
@@ -1136,7 +1162,53 @@ renderChapter(1);
         position: absolute;
         top: 0; left: 0; right: 0;
         height: 3px;
-        background: linear-gradient(90deg, #6bff9b 0 18%, #253d2c 18% 100%);
+        background: linear-gradient(90deg, #ff463f 0 3%, #6bff9b 3% 20%, #17271c 20% 100%);
+        box-shadow: 0 0 14px rgba(255,45,40,.22);
+      }
+      .keter-panel::after {
+        content: "D-12 / SEC-03";
+        position: absolute;
+        top: 14px;
+        right: 18px;
+        color: #536b59;
+        font-size: 9px;
+        letter-spacing: 1.5px;
+      }
+      #keter-main-menu { min-height: 0; }
+      #keter-main-menu .keter-eyebrow::before {
+        content: "● LIVE ";
+        color: #ff5149;
+        letter-spacing: 1px;
+        animation: keter-alarm 1.8s steps(2, end) infinite;
+      }
+      @keyframes keter-alarm {
+        50% { opacity: .28; }
+      }
+      .keter-alert-banner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 2px 0 18px;
+        padding: 10px 12px;
+        color: #d9a39a;
+        border: 1px solid rgba(159,59,50,.38);
+        border-left: 3px solid #a73a32;
+        background: linear-gradient(90deg, rgba(83,20,18,.25), rgba(8,12,9,.4));
+        font-size: 10px;
+        line-height: 1.5;
+        letter-spacing: .7px;
+      }
+      .keter-alert-banner b { color: #ff8174; font-weight: 700; }
+      .keter-terminal-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 18px;
+        padding-top: 12px;
+        border-top: 1px solid #1b2b20;
+        color: #526b58;
+        font-size: 9px;
+        letter-spacing: .7px;
       }
       #keter-main-menu .keter-title {
         font-size: clamp(42px, 8vw, 64px);
@@ -1217,17 +1289,21 @@ renderChapter(1);
         font-size: 13px;
         letter-spacing: .5px;
         border: 1px solid #304438;
-        background: #101a13;
+        background: linear-gradient(100deg, rgba(15,25,18,.96), rgba(5,10,7,.96));
         cursor: pointer;
-        transition: background .15s, border-color .15s, color .15s;
+        position: relative;
+        transition: background .18s, border-color .18s, color .18s, transform .18s;
+        box-shadow: inset 3px 0 0 rgba(0,0,0,0);
       }
 
       .keter-button:hover,
       .keter-button:focus-visible {
         color: #8dffad;
         border-color: #69ff91;
-        background: #17271b;
+        background: linear-gradient(100deg, #14291a, #08110b);
         outline: none;
+        transform: translateX(2px);
+        box-shadow: inset 3px 0 0 #69ff91;
       }
 
       .keter-button.primary {
@@ -1304,8 +1380,11 @@ renderChapter(1);
       }
 
       @media (max-width: 480px) {
-        #keter-overlay { padding: 10px; }
-        .keter-panel { padding: 22px; }
+        #keter-overlay { padding: 10px 10px 40px; }
+        #keter-overlay::after { left: 10px; right: 10px; bottom: 5px; font-size: 7px; }
+        .keter-panel { padding: 26px 18px 22px; }
+        .keter-panel::after { top: 10px; right: 10px; font-size: 8px; }
+        .keter-terminal-footer { flex-direction: column; gap: 5px; }
         .keter-status-strip { grid-template-columns: 1fr; }
         .keter-status-cell { display: flex; justify-content: space-between; gap: 12px; }
         .keter-status-cell span { margin: 0; }
@@ -1396,6 +1475,11 @@ renderChapter(1);
     });
     menuPanel.appendChild(statusStrip);
 
+    const alertBanner = document.createElement("div");
+    alertBanner.className = "keter-alert-banner";
+    alertBanner.innerHTML = "<b>! АВАРИЙНЫЙ ПРОТОКОЛ</b><span>Внутренняя сеть недоступна. Последний пакет данных получен 00:17:43 назад.</span>";
+    menuPanel.appendChild(alertBanner);
+
     menuPanel.appendChild(
       makeButton("▶  НАЧАТЬ / ПРОДОЛЖИТЬ", startOrContinue, true)
     );
@@ -1427,6 +1511,15 @@ renderChapter(1);
     help.textContent =
       "УПРАВЛЕНИЕ: WASD — движение · SHIFT — бег · F — фонарь · E — взаимодействие · ESC — пауза";
     menuPanel.appendChild(help);
+
+    const terminalFooter = document.createElement("div");
+    terminalFooter.className = "keter-terminal-footer";
+    const footerLeft = document.createElement("span");
+    footerLeft.textContent = "INCIDENT D-12 / FILE 07-44";
+    const footerRight = document.createElement("span");
+    footerRight.textContent = "СИНХРОНИЗАЦИЯ: НЕТ";
+    terminalFooter.append(footerLeft, footerRight);
+    menuPanel.appendChild(terminalFooter);
 
     settingsPanel = makePanel(
       "keter-settings",
