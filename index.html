@@ -122,11 +122,16 @@
   .meta .redact { background: var(--ink); color: var(--ink); border-bottom: none; padding: 0 6px; }
 
   p#description {
-    font-size: 15px;
-    line-height: 1.75;
-    color: #22262a;
-    margin-bottom: 28px;
-    max-width: 62ch;
+    font-size: 14px;
+    line-height: 1.65;
+    color: #dce8dd;
+    white-space: pre-line;
+    margin-bottom: 24px;
+    max-width: 78ch;
+    max-height: min(48vh, 520px);
+    overflow-y: auto;
+    padding-right: 8px;
+    scrollbar-color: #45644c #0a100c;
   }
 
   #buttons-container {
