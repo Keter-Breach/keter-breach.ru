@@ -237,88 +237,206 @@ function toggleFlashlight() {
   playSound('click');
 }
 
-// === 4. КАРТА ===
+// === 4. КАРТА: ОБЪЕКТ SCP, СЕКТОР D-12 ===
+// Шлюз D-12 -> Главный холл (Администрация / Медпункт) -> [L-1] Узел данных -> Зал содержания -> [L-2] Эвакуация -> [выход]
+let hazardTex = null;
+
+function addSign(lines, x, y, z, rotY = Math.PI, color = '#ffd34d', scale = 1, parent = world) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 160;
+  const g = c.getContext('2d');
+  g.fillStyle = '#14161a'; g.fillRect(0, 0, 512, 160);
+  g.strokeStyle = color; g.lineWidth = 5; g.strokeRect(5, 5, 502, 150);
+  g.fillStyle = color; g.textAlign = 'center';
+  g.font = 'bold 40px Courier New'; g.fillText(lines[0], 256, lines[1] ? 72 : 95);
+  if (lines[1]) { g.font = '26px Courier New'; g.fillText(lines[1], 256, 122); }
+  const tex = new THREE.CanvasTexture(c);
+  tex.encoding = THREE.sRGBEncoding;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(1.6 * scale, 0.5 * scale),
+    new THREE.MeshBasicMaterial({ map: tex, color: 0xbbbbbb }));
+  m.position.set(x, y, z); m.rotation.y = rotY;
+  parent.add(m);
+  return m;
+}
+
+function hazardStripe(x, z) {
+  if (!hazardTex) {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    g.fillStyle = '#d9a400'; g.fillRect(0, 0, 128, 128);
+    g.fillStyle = '#111';
+    for (let i = -128; i < 128; i += 32) {
+      g.beginPath(); g.moveTo(i, 128); g.lineTo(i + 16, 128); g.lineTo(i + 144, 0); g.lineTo(i + 128, 0); g.fill();
+    }
+    hazardTex = new THREE.CanvasTexture(c);
+    hazardTex.wrapS = hazardTex.wrapT = THREE.RepeatWrapping;
+    hazardTex.repeat.set(3, 1);
+    hazardTex.encoding = THREE.sRGBEncoding;
+  }
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.6), new THREE.MeshBasicMaterial({ map: hazardTex, color: 0x777777 }));
+  m.rotation.x = -Math.PI / 2; m.position.set(x, 0.02, z);
+  world.add(m);
+}
+
 function build10ZonesMap() {
   walls = []; interactiveItems = []; doors = {};
+
   const ceilingMat = new THREE.MeshStandardMaterial({ color: 0x0a0c10, roughness: 0.9 });
+  const cabMat = new THREE.MeshStandardMaterial({ color: 0x2a2f33, roughness: 0.6 });
+  const bedMat = new THREE.MeshStandardMaterial({ color: 0xb8c0c0, roughness: 0.5 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.2 });
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x88aacc, transparent: true, opacity: 0.15, roughness: 0.1 });
+  const redMat = () => new THREE.MeshBasicMaterial({ color: 0xff2222 });
 
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 160), floorMaterial);
-  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 30);
-  world.add(floor);
-
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 30); world.add(floor);
   const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(120, 160), ceilingMat);
-  ceiling.rotation.x = Math.PI / 2; ceiling.position.set(0, 3.2, 30);
-  world.add(ceiling);
+  ceiling.rotation.x = Math.PI / 2; ceiling.position.set(0, 3.2, 30); world.add(ceiling);
 
-  function addSolid(mesh) {
-    world.add(mesh);
-    walls.push({ mesh, box: new THREE.Box3().setFromObject(mesh) });
-  }
-
-  function addW(w, h, d, x, y, z) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMaterial);
-    m.position.set(x, y, z); addSolid(m);
-  }
-
-  function addPointLight(x, z, color = 0xffa040) {
-    const light = new THREE.PointLight(color, 1.8, 15);
-    light.position.set(x, 2.8, z);
-    world.add(light);
-    const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.3), new THREE.MeshBasicMaterial({ color: 0xffeeaa }));
-    lamp.position.set(x, 3.1, z);
-    world.add(lamp);
-  }
-
-  addW(8, 3.2, 0.5, 0, 1.6, -10); addW(0.5, 3.2, 12, -4, 1.6, -4); addW(0.5, 3.2, 12, 4, 1.6, -4);
-  addW(0.5, 3.2, 20, -4, 1.6, 12); addW(0.5, 3.2, 20, 4, 1.6, 12);
-  addW(12, 3.2, 0.5, -10, 1.6, 6); addW(12, 3.2, 0.5, -10, 1.6, 18); addW(0.5, 3.2, 12, -16, 1.6, 12);
-  addW(12, 3.2, 0.5, 10, 1.6, 6); addW(12, 3.2, 0.5, 10, 1.6, 18); addW(0.5, 3.2, 16, 16, 1.6, 12);
-  addW(3, 3.2, 0.5, -2.5, 1.6, 22); addW(3, 3.2, 0.5, 2.5, 1.6, 22);
-  addW(0.5, 3.2, 20, -6, 1.6, 32); addW(0.5, 3.2, 20, 6, 1.6, 32);
-  addW(16, 3.2, 0.5, -8, 1.6, 42); addW(16, 3.2, 0.5, 8, 1.6, 42); addW(0.5, 3.2, 16, -16, 1.6, 50); addW(0.5, 3.2, 16, 16, 1.6, 50);
-  addW(14, 3.2, 0.5, -9, 1.6, 58); addW(14, 3.2, 0.5, 9, 1.6, 58);
-  addW(0.5, 3.2, 20, -4, 1.6, 68); addW(0.5, 3.2, 20, 4, 1.6, 68);
-  addW(3.2, 3.2, 0.5, -2.4, 1.6, 78); addW(3.2, 3.2, 0.5, 2.4, 1.6, 78);
-
-  addPointLight(0, -4);
-  addPointLight(0, 12, 0xff3322);
-  addPointLight(-10, 12, 0x40a0ff);
-  addPointLight(0, 32);
-  addPointLight(0, 50, 0xff3322);
-  addPointLight(0, 68);
-
-  const makeDoor = (x, y, z) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.8, 0.2), doorMaterial);
-    m.position.set(x, y, z); addSolid(m);
+  const box = (mat, w, h, d, x, y, z, solid) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    world.add(m);
+    if (solid) walls.push({ mesh: m, box: new THREE.Box3().setFromObject(m) });
     return m;
   };
-  doors.doorL1 = makeDoor(0, 1.4, 22);
-  doors.doorL2 = makeDoor(0, 1.4, 58);
-  doors.doorExit = makeDoor(0, 1.4, 78);
 
-  // Стол
-  const mkTable = (x, z) => {
-    const top = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 1.2), tableMaterial);
-    top.position.set(x, 0.75, z); addSolid(top);
-    [[-1.1, -0.5], [1.1, -0.5], [-1.1, 0.5], [1.1, 0.5]].forEach(([dx, dz]) => {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.75, 0.1), tableMaterial);
-      leg.position.set(x + dx, 0.375, z + dz); world.add(leg);
+  // Стена вдоль оси с проёмами. axis 'z': идёт вдоль X на z=c; axis 'x': идёт вдоль Z на x=c.
+  function wallLine(axis, c, a1, a2, gaps = []) {
+    const seg = (a, b) => axis === 'z'
+      ? box(wallMaterial, b - a, 3.2, 0.5, (a + b) / 2, 1.6, c, true)
+      : box(wallMaterial, 0.5, 3.2, b - a, c, 1.6, (a + b) / 2, true);
+    let cur = a1;
+    gaps.forEach(([g1, g2]) => {
+      if (g1 > cur) seg(cur, g1);
+      cur = g2;
+      const mid = (g1 + g2) / 2, len = g2 - g1; // перемычка над проёмом (не твёрдая)
+      axis === 'z' ? box(wallMaterial, len, 0.8, 0.5, mid, 2.8, c) : box(wallMaterial, 0.5, 0.8, len, c, 2.8, mid);
     });
+    if (a2 > cur) seg(cur, a2);
+  }
+
+  function addPointLight(x, z, color = 0xffa040, y = 2.8) {
+    const light = new THREE.PointLight(color, 1.8, 15);
+    light.position.set(x, y, z); world.add(light);
+    box(new THREE.MeshBasicMaterial({ color: 0xffeeaa }), 0.8, 0.1, 0.3, x, 3.1, z);
+  }
+
+  const mkTable = (x, z) => {
+    box(tableMaterial, 2.4, 0.1, 1.2, x, 0.75, z, true);
+    [[-1.1, -0.5], [1.1, -0.5], [-1.1, 0.5], [1.1, 0.5]].forEach(([dx, dz]) =>
+      box(tableMaterial, 0.1, 0.75, 0.1, x + dx, 0.375, z + dz));
   };
+
+  const addStatue = (x, z, faceX) => { // «статуя» в духе SCP-173
+    const g = new THREE.Group();
+    const part = (w, h, d, px, py, pz) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMaterial);
+      m.position.set(px, py, pz); g.add(m);
+    };
+    part(0.5, 1.0, 0.3, 0, 1.1, 0); part(0.3, 0.3, 0.3, 0, 1.8, 0);
+    part(0.12, 0.9, 0.12, -0.35, 1.0, 0); part(0.12, 0.9, 0.12, 0.35, 1.0, 0);
+    part(0.14, 0.7, 0.14, -0.15, 0.35, 0); part(0.14, 0.7, 0.14, 0.15, 0.35, 0);
+    g.position.set(x, 0, z); g.rotation.y = faceX > 0 ? Math.PI / 2 : -Math.PI / 2;
+    world.add(g);
+  };
+
+  // --- Стены и проёмы ---
+  wallLine('z', -10, -4, 4);                         // Шлюз D-12
+  wallLine('x', -4, -10, 2); wallLine('x', 4, -10, 2);
+  wallLine('z', 2, -5, 5, [[-1.5, 1.5]]);            // шлюз -> холл
+  wallLine('x', -5, 2, 24, [[8, 12]]);               // холл (проём в Администрацию)
+  wallLine('x', 5, 2, 24, [[8, 12]]);                // холл (проём в Медпункт)
+  wallLine('z', 24, -5, 5, [[-1, 1]]);               // дверь L-1
+  wallLine('z', 4, -15, -5); wallLine('z', 16, -15, -5); wallLine('x', -15, 4, 16); // Администрация
+  wallLine('z', 4, 5, 15); wallLine('z', 16, 5, 15); wallLine('x', 15, 4, 16);      // Медпункт
+  wallLine('x', -5, 24, 44); wallLine('x', 5, 24, 44);                              // Узел данных
+  wallLine('z', 44, -16, 16, [[-1.5, 1.5]]);         // узел -> зал содержания
+  wallLine('x', -16, 44, 60); wallLine('x', 16, 44, 60);
+  wallLine('z', 60, -16, 16, [[-1, 1]]);             // дверь L-2
+  wallLine('x', -4, 60, 80); wallLine('x', 4, 60, 80);
+  wallLine('z', 80, -4, 4, [[-1, 1]]);               // выходная дверь
+
+  // --- Освещение: у каждой зоны свой цвет ---
+  addPointLight(0, -4);                    // шлюз, жёлтый
+  addPointLight(0, 13, 0xff3322);          // холл, аварийный красный
+  addPointLight(-10, 10, 0x40a0ff);        // администрация
+  addPointLight(10, 10, 0xaaffcc);         // медпункт
+  addPointLight(0, 34, 0x40ffee);          // узел данных
+  addPointLight(0, 52, 0xff3322);          // зал содержания
+  addPointLight(0, 70);                    // эвакуация
+
+  // --- Двери с табличками и индикаторами ---
+  const makeDoor = (z, lines) => {
+    const m = box(doorMaterial, 2.0, 2.8, 0.2, 0, 1.4, z, true);
+    addSign(lines, 0, 0.5, -0.12, Math.PI, '#ff5555', 0.9, m);
+    m.userData.lamp = box(redMat(), 0.3, 0.1, 0.1, 0, 3.05, z - 0.25);
+    hazardStripe(0, z - 1.2);
+    return m;
+  };
+  doors.doorL1 = makeDoor(24, ['ДОПУСК L-1', 'УЗЕЛ ДАННЫХ']);
+  doors.doorL2 = makeDoor(60, ['ДОПУСК L-2', 'ЭВАКУАЦИЯ']);
+  doors.doorExit = makeDoor(80, ['ВЫХОД', 'НА ПОВЕРХНОСТЬ']);
+
+  // --- Таблички зон ---
+  addSign(['ФОНД SCP', 'ШЛЮЗ D-12'], 0, 2.75, 1.72);
+  addSign(['АДМИНИСТРАЦИЯ', 'СЕКТОРА D-12'], -4.72, 2.75, 10, Math.PI / 2);
+  addSign(['МЕДПУНКТ', 'ТОЛЬКО ПЕРСОНАЛ'], 4.72, 2.75, 10, -Math.PI / 2, '#66ffaa');
+  addSign(['ЗАЛ СОДЕРЖАНИЯ', 'ПРОТОКОЛ: KETER'], 0, 2.75, 43.72, Math.PI, '#ff5555');
+
+  // --- Главный холл: трубы, ящики ---
+  [-4.5, 4.5].forEach(x => {
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 20, 8), cabMat);
+    p.rotation.x = Math.PI / 2; p.position.set(x, 3.0, 13); world.add(p);
+  });
+  box(cabMat, 1, 1, 1, -3.9, 0.5, 19, true);
+  box(cabMat, 1, 1, 1, 3.8, 0.5, 17.5, true);
+
+  // --- Администрация: стол с терминалом, шкафы ---
   mkTable(-10, 12);
-
-  // Серверные стойки
-  const mkRack = (x, z) => {
-    const rack = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.4, 0.8), serverMaterial);
-    rack.position.set(x, 1.2, z); addSolid(rack);
-    const led = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshBasicMaterial({ color: 0x00ff66 }));
-    led.position.set(x + 0.61, 1.8, z); world.add(led);
-  };
-  mkRack(-4, 32); mkRack(-4, 35);
-
+  addSign(['ЛОКДАУН', 'ДВЕРИ ЗАБЛОКИРОВАНЫ'], -10, 1.1, 12.45, Math.PI, '#00ff66', 0.35);
+  for (let i = 0; i < 6; i++) box(cabMat, 0.5, 1.8, 0.9, -14.4, 0.9, 5.5 + i * 1.5, true);
   spawnKeycard(-10, 0.82, 12, '1', '#00aaff', 'keycardL1');
-  spawnKeycard(-4, 0.82, 35, '2', '#aa00ff', 'keycardL2');
-  spawnBattery(12, 0.3, 12);
+
+  // --- Медпункт: койки, ящики, батарея ---
+  [6.5, 9.5, 13].forEach(z => box(bedMat, 0.9, 0.5, 2, 13.8, 0.35, z, true));
+  box(tableMaterial, 1, 1, 1, 7, 0.5, 14.5, true);
+  spawnBattery(7, 1.15, 14.5);
+
+  // --- Узел данных: стойки по обе стороны, стол с картой L-2 ---
+  [-1, 1].forEach(s => [28, 31, 34, 37].forEach(z => {
+    box(serverMaterial, 1.2, 2.4, 0.8, s * 4.1, 1.2, z, true);
+    const led = [0x00ff66, 0xff2222, 0xffaa00][Math.floor(Math.random() * 3)];
+    box(new THREE.MeshBasicMaterial({ color: led }), 0.05, 0.05, 0.05, s * 3.48, 1.8, z);
+  }));
+  mkTable(2, 40);
+  spawnKeycard(2, 0.82, 40, '2', '#aa00ff', 'keycardL2');
+
+  // --- Зал содержания: камеры по обеим сторонам ---
+  const zs = [44, 49, 54, 60];
+  [-1, 1].forEach(s => {
+    const types = s < 0 ? ['statue', 'breach', 'keter'] : ['empty', 'keter', 'statue'];
+    [49, 54].forEach(z => box(wallMaterial, 5, 3.2, 0.3, s * 13.5, 1.6, z, true));
+    types.forEach((type, i) => {
+      const z1 = zs[i], z2 = zs[i + 1], mid = (z1 + z2) / 2;
+      if (type !== 'breach') box(glassMat, 0.1, 2.8, z2 - z1, s * 11, 1.4, mid, true);
+      const label = {
+        statue: ['SCP-173', 'EUCLID'], breach: ['КАМЕРА ПУСТА', 'НАРУШЕНИЕ'],
+        keter: ['SCP-████', 'KETER'], empty: ['КАМЕРА СВОБОДНА', 'СТАТУС: РЕЗЕРВ']
+      }[type];
+      const col = type === 'keter' ? '#ff4444' : type === 'breach' ? '#ffaa33' : '#ffd34d';
+      addSign(label, s * 10.85, 2.4, mid, -s * Math.PI / 2, col);
+      if (type === 'statue') addStatue(s * 13.5, mid, -s);
+      if (type === 'breach') for (let k = 0; k < 4; k++)
+        box(glassMat, 0.3, 0.02, 0.3, s * (10 + Math.random() * 1.2), 0.02, z1 + 1 + k * 1.1);
+      if (type === 'keter') {
+        box(darkMat, 1.2, 2.2, 1.2, s * 14.2, 1.1, mid);
+        box(redMat(), 0.06, 0.06, 0.06, s * 13.58, 1.7, mid - 0.2);
+        box(redMat(), 0.06, 0.06, 0.06, s * 13.58, 1.7, mid + 0.2);
+        if (s < 0) { const l = new THREE.PointLight(0xff2200, 2, 9); l.position.set(s * 13, 2.2, mid); world.add(l); }
+      }
+    });
+  });
 }
 
 function spawnKeycard(x, y, z, level, colorHex, type) {
@@ -367,7 +485,7 @@ function interact3D() {
     return true;
   };
 
-  tryDoor(doors.doorL1, 'keycardL1', "Нужна ключ-карта L-1 (стол в офисе)") ||
+  tryDoor(doors.doorL1, 'keycardL1', "Нужна ключ-карта L-1 (кабинет администрации)") ||
   tryDoor(doors.doorL2, 'keycardL2', "Нужна ключ-карта L-2 (серверная)") ||
   tryDoor(doors.doorExit, 'keycardL2', "Выход заблокирован: нужна карта L-2", () => {
     document.exitPointerLock();
@@ -379,6 +497,7 @@ function interact3D() {
 
 function openDoor(mesh) {
   playSound('door');
+  if (mesh.userData.lamp) mesh.userData.lamp.material.color.set(0x00ff66); // индикатор: зелёный
   walls = walls.filter(w => w.mesh !== mesh); // проход свободен сразу
   openingDoors.push({ mesh, targetY: mesh.position.y + 3.0 });
 }
