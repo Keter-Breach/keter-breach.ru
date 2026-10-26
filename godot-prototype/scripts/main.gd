@@ -1,7 +1,7 @@
 extends Node3D
 
 const PlayerScript = preload("res://scripts/player.gd")
-const FacilityLayout = preload("res://scripts/facility_layout.gd")
+const FACILITY_LAYOUT_PATH := "res://scripts/facility_layout.gd"
 const EnhancementsScript = preload("res://scripts/game_enhancements.gd")
 const FacilityAmbienceScript = preload("res://scripts/facility_ambience.gd")
 var player_ref: CharacterBody3D
@@ -186,9 +186,16 @@ func _box(parent: Node3D, name: String, size: Vector3, pos: Vector3, material: M
 	return body
 
 func _build_facility() -> void:
+	# Load the facility script at runtime so a missing/invalid resource reports
+	# its own path instead of surfacing as a misleading preload error at the top.
+	var layout_script := load(FACILITY_LAYOUT_PATH) as Script
+	if layout_script == null:
+		push_error("Keter Breach: не удалось загрузить скрипт планировки: " + FACILITY_LAYOUT_PATH)
+		_show_status("ОШИБКА ЗАГРУЗКИ: не найден или содержит ошибку scripts/facility_layout.gd.")
+		return
 	var facility := Node3D.new()
 	facility.name = "FacilityD12"
-	facility.set_script(FacilityLayout)
+	facility.set_script(layout_script)
 	add_child(facility)
 	facility_ref = facility
 
