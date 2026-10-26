@@ -726,6 +726,7 @@ function init3DMode() {
   build10ZonesMap();
 
   battery = 100; flashlightOn = true; flashlight.intensity = 5.0;
+  if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0.3;
   velocity.set(0, 0, 0); openingDoors = [];
   camera.position.set(0, 0.72, -8);
   camera.rotation.set(0.22, Math.PI, 0); // приходит в себя на полу лифта, затем поднимает голову
@@ -764,6 +765,9 @@ function toggleFlashlight() {
   if (battery <= 0) { playSound('deny'); showToast("Батарея разряжена"); return; }
   flashlightOn = !flashlightOn;
   flashlight.intensity = flashlightOn ? 5.0 : 0;
+  if (firstPersonRig && firstPersonRig.userData.torchLens) {
+    firstPersonRig.userData.torchLens.material.emissiveIntensity = flashlightOn ? 0.3 : 0;
+  }
   playSound('click');
 }
 
@@ -1287,6 +1291,7 @@ function animate3D() {
       if (battery <= 0) {
         flashlightOn = false;
         flashlight.intensity = 0;
+        if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0;
         showToast("Фонарь погас");
       } else if (battery < 15) {
         flashlight.intensity = Math.random() < 0.08 ? 1.0 : 5.0; // мерцание
