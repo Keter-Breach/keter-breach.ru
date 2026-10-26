@@ -90,6 +90,55 @@
 <path d="M0 775L582 680V704L0 806Z" fill="#b18a42" opacity=".13"/>
 <path d="M1920 775L1338 680V704L1920 806Z" fill="#b18a42" opacity=".12"/>
 <g stroke="#b8a16c" stroke-opacity=".16" stroke-width="8"><path d="M60 775L112 767M148 760L200 751M236 746L288 737M1540 716L1590 724M1640 732L1690 740M1740 748L1790 756"/></g>
+<!-- photorealism pass: layered mineral stains, damp concrete, oxidized steel and lens haze -->
+<defs>
+ <filter id="wallPatina" x="-10%" y="-10%" width="120%" height="120%">
+  <feTurbulence type="fractalNoise" baseFrequency="0.018 0.09" numOctaves="4" seed="27" result="noise"/>
+  <feColorMatrix in="noise" type="saturate" values="0" result="mono"/>
+  <feComponentTransfer in="mono" result="contrast"><feFuncR type="gamma" amplitude="1.7" exponent="1.5" offset="-.25"/><feFuncG type="gamma" amplitude="1.7" exponent="1.5" offset="-.25"/><feFuncB type="gamma" amplitude="1.7" exponent="1.5" offset="-.25"/></feComponentTransfer>
+  <feBlend in="SourceGraphic" in2="contrast" mode="soft-light"/>
+ </filter>
+ <filter id="microNoise">
+  <feTurbulence type="fractalNoise" baseFrequency=".42" numOctaves="2" seed="81" stitchTiles="stitch" result="n"/>
+  <feColorMatrix in="n" type="saturate" values="0" result="g"/>
+  <feComponentTransfer in="g"><feFuncA type="table" tableValues="0 .18"/></feComponentTransfer>
+ </filter>
+ <linearGradient id="wetFloor" x1="0" y1="0" x2=".15" y2="1"><stop stop-color="#a8b7b1" stop-opacity=".13"/><stop offset=".35" stop-color="#64716e" stop-opacity=".04"/><stop offset="1" stop-color="#030405" stop-opacity="0"/></linearGradient>
+ <radialGradient id="lensMist"><stop stop-color="#b9c9c1" stop-opacity=".10"/><stop offset="1" stop-color="#b9c9c1" stop-opacity="0"/></radialGradient>
+</defs>
+<!-- broad irregular damp marks and concrete pores follow the perspective planes -->
+<g opacity=".24" filter="url(#wallPatina)">
+ <path d="M0 90L582 326V786L0 1080Z" fill="#89918e"/>
+ <path d="M1920 35L1338 326V786L1920 1080Z" fill="#747e7b"/>
+</g>
+<g fill="none" stroke-linecap="round">
+ <path d="M35 188l34 15 -7 42 21 18 -4 38M125 365l-14 38 19 22 -8 40M350 490l-19 22 5 36M1780 180l-28 31 6 26 -17 22M1650 390l19 18 -9 37" stroke="#020404" stroke-width="20" opacity=".34"/>
+ <path d="M35 188l34 15 -7 42M125 365l-14 38M1780 180l-28 31" stroke="#7c8580" stroke-width="3" opacity=".18"/>
+ <path d="M605 352H1315M600 368H1320M600 756H1320" stroke="#030505" stroke-width="5" opacity=".5"/>
+</g>
+<!-- door leaf machining, scratches, grime around the seal -->
+<g fill="none" stroke-linecap="round">
+ <path d="M770 447l120 7M780 453l67 4M1000 462l120 -9M1040 468l82 -6M780 690l95 -5M1040 684l110 8" stroke="#a6b0aa" stroke-width="2" opacity=".16"/>
+ <path d="M750 430V704M1170 430V704M945 430V704M978 430V704" stroke="#020303" stroke-width="7" opacity=".42"/>
+ <path d="M751 434V700M1169 434V700" stroke="#929b95" stroke-width="2" opacity=".13"/>
+ <path d="M812 477l28 -2M830 484l18 -1M1080 520l34 -3M1060 530l20 -2M840 650l43 -2M1035 646l24 2" stroke="#b1b9b2" stroke-width="1.5" opacity=".2"/>
+</g>
+<!-- damp sheen catches only the overhead spill; reflections break across floor seams -->
+<path d="M0 1080L582 786H1338L1920 1080Z" fill="url(#wetFloor)"/>
+<g fill="#a6b9af" opacity=".055">
+ <path d="M260 1080L560 930L655 916L430 1080Z"/>
+ <path d="M1080 1080L1260 900L1320 910L1210 1080Z"/>
+ <path d="M700 1020L840 860L860 860L790 1030Z"/>
+</g>
+<g fill="none" stroke-linecap="round">
+ <path d="M300 1015q80 -22 135 -8M350 1024l44 -4M1280 1010q45 -17 92 -6M1325 1020l36 -3" stroke="#c1ccc4" stroke-width="2" opacity=".13"/>
+ <path d="M40 720l160 -26M220 687l88 -13M1580 690l130 22M1740 718l80 13" stroke="#020303" stroke-width="13" opacity=".3"/>
+</g>
+<!-- fine sensor noise and shallow lens fog, intentionally restrained -->
+<rect width="1920" height="1080" fill="#9eaaa3" opacity=".10" filter="url(#microNoise)"/>
+<ellipse cx="450" cy="500" rx="420" ry="290" fill="url(#lensMist)"/>
+<ellipse cx="1480" cy="600" rx="360" ry="280" fill="url(#lensMist)" opacity=".6"/>
+
 <!-- surveillance artifacts -->
 <rect width="1920" height="1080" fill="url(#vignette)"/>
 <rect width="1920" height="1080" fill="#8aaca0" opacity=".025" filter="url(#grain)"/>
