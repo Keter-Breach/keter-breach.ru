@@ -197,6 +197,7 @@ func _build_props() -> void:
  _table(Vector3(-10,0,12))
  for i in range(6): _box("Administration locker",Vector3(0.5,1.8,0.9),Vector3(-14.4,0.9,5.5+i*1.5),metal_mat)
  _box("L1 card visual",Vector3(0.35,0.035,0.22),Vector3(-10,0.82,12),_mat(Color(0,0.35,0.8)),false)
+ _add_interaction("card_l1",Vector3(-10,0.9,12),Vector3(1.6,1.2,1.6),"Ключ-карта L1")
  for z in [6.5,9.5,13.0]: _box("Medical bed",Vector3(0.9,0.5,2),Vector3(13.8,0.35,z),_mat(Color(0.24,0.26,0.25)))
  _box("Medical supply crate",Vector3(1,1,1),Vector3(7,0.5,14.5),metal_mat)
  _box("Battery visual",Vector3(0.22,0.28,0.16),Vector3(7,1.15,14.5),_mat(Color(0.1,0.55,0.3)),false)
@@ -206,10 +207,13 @@ func _build_props() -> void:
    _box("Server LED",Vector3(0.05,0.05,0.05),Vector3(side*3.48,1.8,z),red_mat,false)
  _table(Vector3(2,0,40))
  _box("L2 card visual",Vector3(0.35,0.035,0.22),Vector3(2,0.82,40),_mat(Color(0.48,0.05,0.7)),false)
+ _add_interaction("card_l2",Vector3(2,0.9,40),Vector3(1.6,1.2,1.6),"Ключ-карта L2")
  for i in range(5): _box("Archive shelf",Vector3(0.55,2.35,0.82),Vector3(-15.4,1.18,24.8+i),metal_mat)
  _table(Vector3(-10.2,0,27.8))
  _box("Archive terminal",Vector3(0.42,0.06,0.3),Vector3(-10.2,0.84,27.8),red_mat,false)
+ _add_interaction("archive_log",Vector3(-10.2,1.1,27.8),Vector3(1.8,1.8,1.8),"Журнал архива")
  _box("Emergency generator",Vector3(1.25,1.55,1),Vector3(-14.8,0.78,32.8),metal_mat)
+ _add_interaction("reactor",Vector3(-14.8,1.1,32.8),Vector3(2.2,2.2,2.2),"Аварийный генератор")
  _box("Sparking panel",Vector3(0.08,0.08,0.08),Vector3(-14.05,1.2,32.55),red_mat,false)
  for x in [-13.2,-12.7,-12.2]: _box("Workshop pipe",Vector3(0.07,0.07,3),Vector3(x,2.85,33),metal_mat,false)
  _box("Isolation bed",Vector3(1,0.42,2.2),Vector3(-14.1,0.28,38.2),_mat(Color(0.22,0.23,0.22)))
@@ -221,9 +225,13 @@ func _build_props() -> void:
  _box("Observation console",Vector3(2,1.1,0.65),Vector3(25,0.55,70),metal_mat)
  _box("Channel 7 terminal",Vector3(1.8,1.25,0.16),Vector3(0,1.35,88.8),metal_mat)
  _box("Channel 7 screen",Vector3(1.52,0.9,0.035),Vector3(0,1.37,88.69),_mat(Color(0.04,0.07,0.16)),false)
+ _add_interaction("comms",Vector3(0,1.4,87.8),Vector3(2.4,2.2,2.2),"Терминал связи: канал 7")
  _box("L1 security door",Vector3(2,2.8,0.2),Vector3(0,1.4,24),door_mat)
+ _add_interaction("door_l1",Vector3(0,1.4,22.8),Vector3(3,2.6,2.2),"Шлюз L1")
  _box("L2 security door",Vector3(2,2.8,0.2),Vector3(0,1.4,60),door_mat)
+ _add_interaction("door_l2",Vector3(0,1.4,58.8),Vector3(3,2.6,2.2),"Шлюз L2")
  _box("Surface exit door",Vector3(2,2.8,0.2),Vector3(0,1.4,80),door_mat)
+ _add_interaction("exit_door",Vector3(0,1.4,78.8),Vector3(3,2.6,2.2),"Эвакуационный шлюз")
 
  # D-class bunks and a spare battery from the original coordinates.
  for z in [-7.0, -4.0, -1.0]:
@@ -297,3 +305,20 @@ func _label(t: String,p: Vector3,c: Color) -> void:
  l.pixel_size=0.008
  l.modulate=c
  add_child(l)
+
+func _add_interaction(interaction_id: String, p: Vector3, size: Vector3, title: String) -> void:
+	var area := Area3D.new()
+	area.name = "Interact_" + interaction_id
+	area.position = p
+	area.collision_layer = 2
+	area.collision_mask = 0
+	area.monitoring = false
+	area.monitorable = true
+	area.set_meta("interaction_id", interaction_id)
+	area.set_meta("interaction_title", title)
+	var shape_node := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size
+	shape_node.shape = shape
+	area.add_child(shape_node)
+	add_child(area)
