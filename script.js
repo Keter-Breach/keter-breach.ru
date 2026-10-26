@@ -1324,18 +1324,48 @@ renderChapter(1);
         position: fixed;
         inset: 0;
         pointer-events: none;
-        opacity: .22;
+        opacity: .3;
         background-image:
-          repeating-linear-gradient(0deg, rgba(210,225,220,.12) 0 1px, transparent 1px 3px),
-          linear-gradient(90deg, transparent 0 48%, rgba(255,30,25,.05) 49%, transparent 50% 100%);
-        background-size: 100% 4px, 100% 100%;
-        animation: keter-vhs-jitter 11s steps(1, end) infinite;
+          repeating-linear-gradient(0deg, rgba(205,224,215,.11) 0 1px, transparent 1px 3px),
+          repeating-linear-gradient(0deg, transparent 0 44%, rgba(220,235,228,.035) 44.2% 44.7%, transparent 45% 100%),
+          linear-gradient(90deg, rgba(255,25,20,.035), transparent 22% 77%, rgba(30,160,255,.025)),
+          linear-gradient(90deg, transparent 0 48%, rgba(255,30,25,.07) 49%, transparent 50% 100%);
+        background-size: 100% 4px, 100% 100%, 100% 100%, 100% 100%;
+        animation: keter-vhs-jitter 9s steps(1, end) infinite, keter-vhs-tracking 13s linear infinite;
         pointer-events: none;
+        mix-blend-mode: screen;
       }
       @keyframes keter-vhs-jitter {
-        0%, 91%, 93%, 100% { opacity: .2; transform: translateX(0); }
-        92% { opacity: .32; transform: translateX(2px); }
+        0%, 76%, 78%, 91%, 93%, 100% { opacity: .24; transform: translateX(0); filter: none; }
+        77% { opacity: .42; transform: translateX(3px); filter: saturate(1.5); }
+        79% { opacity: .16; transform: translateX(-2px); }
+        92% { opacity: .48; transform: translateX(2px); }
         94% { opacity: .12; transform: translateX(-1px); }
+      }
+      @keyframes keter-vhs-tracking {
+        0%, 100% { background-position: 0 0, 0 -120%, 0 0, 0 0; }
+        50% { background-position: 0 0, 0 120%, 0 0, 0 0; }
+      }
+      #keter-overlay {
+        filter: saturate(.82) contrast(1.06);
+      }
+      #keter-overlay .keter-title {
+        position: relative;
+        text-shadow: 2px 0 rgba(255,30,25,.22), -2px 0 rgba(30,190,255,.14), 0 0 24px rgba(230,20,18,.16);
+      }
+      #keter-main-menu .keter-title {
+        animation: keter-title-flicker 8s steps(1, end) infinite;
+      }
+      @keyframes keter-title-flicker {
+        0%, 72%, 74%, 100% { opacity: 1; transform: translateX(0); }
+        73% { opacity: .82; transform: translateX(1px); }
+        75% { opacity: .96; transform: translateX(-1px); }
+      }
+      #keter-overlay::after {
+        text-shadow: 1px 0 rgba(255,30,25,.25), -1px 0 rgba(30,190,255,.18);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #keter-overlay::before, #keter-main-menu .keter-title { animation: none !important; }
       }
       #keter-overlay::after {
         content: "CAM 01 // MAIN ELEVATOR     •     REC 00:00:17     •     INTERNAL USE ONLY";
@@ -2218,6 +2248,19 @@ renderChapter(1);
   // --------------------------------------------------
 
   function installEvents() {
+    // Browsers block autoplay until a real user gesture. Start the quiet VHS
+    // tape hiss on the first interaction with the menu, then keep it looping.
+    document.addEventListener("pointerdown", () => {
+      if (!isPointerLocked() && settings.volume > 0) startVhsAmbient();
+    }, { passive: true });
+
+    document.addEventListener("keydown", event => {
+      if ((event.code === "Enter" || event.code === "Space") &&
+          !isPointerLocked() && settings.volume > 0) {
+        startVhsAmbient();
+      }
+    });
+
     document.addEventListener("pointerlockchange", () => {
       if (isPointerLocked()) {
         pauseRequested = false;
