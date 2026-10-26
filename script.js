@@ -702,11 +702,11 @@ function init3DMode() {
 
   // Однократная инициализация: рендерер, слушатели, фонарик — не дублируются при рестарте
   if (!initialized) {
-    container.style.filter = "contrast(1.07) brightness(0.94) sepia(0.04) saturate(0.82)";
+    container.style.filter = "contrast(1.07) brightness(1.02) sepia(0.04) saturate(0.82)";
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050708);
-    scene.fog = new THREE.FogExp2(0x070a0b, 0.052);
+    scene.fog = new THREE.FogExp2(0x070a0b, 0.034);
 
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ'; // yaw отдельно от pitch: взгляд вверх не замедляет ходьбу
@@ -714,7 +714,7 @@ function init3DMode() {
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.78;
+    renderer.toneMappingExposure = 0.98;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.physicallyCorrectLights = true;
@@ -723,7 +723,7 @@ function init3DMode() {
 
     buildMaterials();
 
-    flashlight = new THREE.SpotLight(0xddeeff, 260, 32, Math.PI / 4.2, 0.58, 1.7);
+    flashlight = new THREE.SpotLight(0xddeeff, 110, 32, Math.PI / 4.2, 0.58, 1.7);
     flashlight.position.set(0, 0, 0);
     flashlight.castShadow = true;
     flashlight.shadow.mapSize.set(1024, 1024);
@@ -735,8 +735,8 @@ function init3DMode() {
     firstPersonRig = createFirstPersonRig();
     flashlight.position.set(0.38, -0.48, -1.28);
     flashlight.target.position.set(0.38, -0.44, -5.5);
-    scene.add(new THREE.HemisphereLight(0x71818b, 0x100f0d, 0.42));
-    scene.add(new THREE.AmbientLight(0x6d777b, 0.12));
+    scene.add(new THREE.HemisphereLight(0x71818b, 0x100f0d, 0.62));
+    scene.add(new THREE.AmbientLight(0x6d777b, 0.28));
 
     // Подсказки поверх игры (вместо alert, который ломал pointer lock)
     const base = "position:absolute;left:50%;transform:translateX(-50%);padding:10px 18px;" +
@@ -751,7 +751,28 @@ function init3DMode() {
      fx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 32%,rgba(0,0,0,.22) 100%),repeating-linear-gradient(0deg,rgba(0,0,0,.025) 0 1px,transparent 1px 4px);';
      container.append(fx);
 
-    container.addEventListener('click', () => document.body.requestPointerLock());
+    container.addEventListener('click', () => {
+      // Захват мыши может быть запрещён системой/окном. Не оставляем игрока
+      // с безмолвной подсказкой поверх неподвижного экрана.
+      try {
+        const request = document.body.requestPointerLock();
+        if (request && typeof request.catch === "function") {
+          request.catch(() => {
+            hintEl.textContent = "Не удалось захватить мышь. Кликните по окну игры ещё раз.";
+            hintEl.style.display = "block";
+          });
+        }
+      } catch (error) {
+        hintEl.textContent = "Не удалось захватить мышь. Кликните по окну игры ещё раз.";
+        hintEl.style.display = "block";
+      }
+    });
+    document.addEventListener("pointerlockerror", () => {
+      if (hintEl) {
+        hintEl.textContent = "Управление мышью недоступно. Кликните по окну игры ещё раз.";
+        hintEl.style.display = "block";
+      }
+    });
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('keydown', (e) => {
       // Не повторяем одноразовые действия, пока клавиша удерживается.
@@ -810,7 +831,7 @@ function init3DMode() {
 
   createDistantApparition();
 
-  battery = 100; flashlightOn = true; flashlight.intensity = 5.0;
+  battery = 100; flashlightOn = true; flashlight.intensity = 110;
   if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0.3;
   velocity.set(0, 0, 0); openingDoors = [];
   camera.position.set(0, 0.72, -8);
@@ -1631,7 +1652,7 @@ function animate3D() {
         if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0;
         showToast("Фонарь погас");
       } else if (battery < 15) {
-        flashlight.intensity = Math.random() < 0.08 ? 1.0 : 5.0; // мерцание
+        flashlight.intensity = Math.random() < 0.08 ? 18.0 : 75.0; // мерцание
         if (!lowBatteryStaticPlayed) {
           lowBatteryStaticPlayed = true;
           try {
@@ -2582,9 +2603,9 @@ renderChapter(1);
       if (container) {
         // Связываем ползунок экспозиции и с постобработочным фильтром,
         // чтобы настройка была заметна даже в затемнённой VHS-сцене.
-        const displayBrightness = clamp(settings.brightness / 0.95 * 0.78, 0.55, 1.25);
+        const displayBrightness = clamp(settings.brightness / 0.95 * 0.98, 0.78, 1.35);
         container.style.filter =
-          `contrast(1.16) brightness(${displayBrightness.toFixed(2)}) sepia(0.18) saturate(0.58)`;
+          `contrast(1.12) brightness(${displayBrightness.toFixed(2)}) sepia(0.10) saturate(0.72)`;
       }
     } catch (error) {
       console.warn("[KETER] Не удалось применить графику:", error);
