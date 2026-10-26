@@ -17,6 +17,7 @@ var reactor_disabled: bool = false
 var comms_restored: bool = false
 var opened_doors: Dictionary = {}
 var loop_count: int = 0
+var triggered_events: Dictionary = {}
 
 func _ready() -> void:
 	_build_environment()
@@ -77,8 +78,47 @@ func _process(_delta: float) -> void:
 		interaction_hint.text = "[E]  " + str(target.get_meta("interaction_title", "Взаимодействовать")) if target != null else ""
 	if battery_label:
 		battery_label.text = "ФОНАРЬ: %d%%" % roundi(float(player_ref.get("flashlight_charge")))
+	_check_story_triggers()
 	if opened_doors.has("Surface exit door") and player_ref.global_position.z > 125.0:
 		_trigger_mirror_loop()
+
+func _check_story_triggers() -> void:
+	if player_ref == null:
+		return
+	var p := player_ref.global_position
+	var events := [
+		{"id":"radio_intercept","position":Vector3(0,0,18.5),"radius":2.5,"message":"РАДИОПЕРЕХВАТ: «…эвакуация отменена. Персонал не покидал комплекс. Повторяю: персонал не покидал…»"},
+		{"id":"archive_04","position":Vector3(-11,0,27),"radius":2.8,"message":"АРХИВ 04: терминал печатает отчёт сам по себе. В записи указано: «НЕ СМОТРЕТЬ В КАМЕРУ 6»."},
+		{"id":"workshop_arc","position":Vector3(-11,0,33),"radius":2.8,"message":"МАСТЕРСКАЯ: щиток выбивает дугой. На секунду лампы гаснут — в темноте кто-то проходит за спиной."},
+		{"id":"isolation_bangs","position":Vector3(-11,0,39.5),"radius":2.8,"message":"ИЗОЛЯТОР: за дверью слышны три удара. Затем кто-то шепчет ваше имя по внутренней связи."},
+		{"id":"keter_motion","position":Vector3(0,0,51.5),"radius":3.0,"message":"ПРОТОКОЛ KETER: датчик фиксирует движение внутри пустой камеры. Свет в секторе гаснет на секунду."}
+	]
+	for event in events:
+		var event_id: String = event["id"]
+		if triggered_events.has(event_id):
+			continue
+		var event_pos: Vector3 = event["position"]
+		if Vector2(p.x, p.z).distance_to(Vector2(event_pos.x, event_pos.z)) <= float(event["radius"]):
+			triggered_events[event_id] = true
+			_show_status(str(event["message"]))
+			if event_id == "workshop_arc" or event_id == "keter_motion":
+				_flash_alarm()
+
+func _flash_alarm() -> void:
+	var layer := get_node_or_null("HUD") as CanvasLayer
+	if layer == null:
+		return
+	var flash := ColorRect.new()
+	flash.name = "AlarmFlash"
+	flash.color = Color(0.65, 0.015, 0.01, 0.0)
+	flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flash.z_index = 100
+	layer.add_child(flash)
+	var tween := create_tween()
+	tween.tween_property(flash, "color:a", 0.28, 0.07)
+	tween.tween_property(flash, "color:a", 0.0, 0.24)
+	tween.tween_callback(flash.queue_free)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
