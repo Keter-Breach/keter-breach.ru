@@ -1,10 +1,11 @@
 extends Node3D
 
 const PlayerScript = preload("res://scripts/player.gd")
+const FacilityLayout = preload("res://scripts/facility_layout.gd")
 
 func _ready() -> void:
 	_build_environment()
-	_build_corridor()
+	_build_facility()
 	_build_player()
 	_build_hud()
 
@@ -41,6 +42,12 @@ func _box(parent: Node3D, name: String, size: Vector3, pos: Vector3, material: M
 		visual.material_override = material
 	parent.add_child(body)
 	return body
+
+func _build_facility() -> void:
+	var facility := Node3D.new()
+	facility.name = "FacilityD12"
+	facility.set_script(FacilityLayout)
+	add_child(facility)
 
 func _build_environment() -> void:
 	var world := WorldEnvironment.new()
@@ -122,7 +129,8 @@ func _build_player() -> void:
 	shape.shape = capsule
 	shape.position.y = 0.9
 	player.add_child(shape)
-	player.position = Vector3(0, 0.1, 3.0)
+	player.position = Vector3(0, 0.1, -7.8)
+	player.rotation.y = PI
 	add_child(player)
 
 func _build_hud() -> void:
@@ -143,7 +151,7 @@ func _build_hud() -> void:
 	info.add_theme_color_override("font_color", Color(0.78, 0.78, 0.76, 0.9))
 	layer.add_child(info)
 	var objective := Label.new()
-	objective.text = "ЗАДАЧА: ДОБРАТЬСЯ ДО КОНЦА КОРИДОРА"
+	objective.text = "ЗАДАЧА: ВЫЙТИ ИЗ ЛИФТА И ИССЛЕДОВАТЬ СЕКТОР D-12"
 	objective.anchor_left = 0.5
 	objective.anchor_right = 0.5
 	objective.anchor_top = 1.0
