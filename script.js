@@ -705,8 +705,9 @@ function init3DMode() {
     container.style.filter = "contrast(1.07) brightness(0.94) sepia(0.04) saturate(0.82)";
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x050708);
-    scene.fog = new THREE.FogExp2(0x070a0b, 0.052);
+    // Lift the baseline visibility for integrated laptop GPUs/displays.
+    scene.background = new THREE.Color(0x111719);
+    scene.fog = new THREE.FogExp2(0x111719, 0.034);
 
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ'; // yaw отдельно от pitch: взгляд вверх не замедляет ходьбу
@@ -714,7 +715,7 @@ function init3DMode() {
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.78;
+    renderer.toneMappingExposure = 1.12;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.physicallyCorrectLights = true;
@@ -751,7 +752,31 @@ function init3DMode() {
      fx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 32%,rgba(0,0,0,.22) 100%),repeating-linear-gradient(0deg,rgba(0,0,0,.025) 0 1px,transparent 1px 4px);';
      container.append(fx);
 
-    container.addEventListener('click', () => document.body.requestPointerLock());
+    // Request pointer lock from the actual game surface. Some laptop browsers
+    // reject locking the document body; the canvas is the most reliable target.
+    const requestGamePointerLock = () => {
+      const target = renderer && renderer.domElement ? renderer.domElement : container;
+      try {
+        const result = target.requestPointerLock();
+        if (result && typeof result.catch === "function") {
+          result.catch(error => {
+            console.warn("[KETER] Pointer lock was denied; click the game view again.", error);
+            if (hintEl) {
+              hintEl.textContent = "Кликните по экрану игры ещё раз, чтобы захватить мышь";
+              hintEl.style.display = "block";
+            }
+          });
+        }
+      } catch (error) {
+        console.warn("[KETER] Pointer lock is unavailable.", error);
+        if (hintEl) {
+          hintEl.textContent = "Захват мыши недоступен — попробуйте открыть игру в окне";
+          hintEl.style.display = "block";
+        }
+      }
+    };
+    container.addEventListener("click", requestGamePointerLock);
+    renderer.domElement.addEventListener("click", requestGamePointerLock);
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('keydown', (e) => {
       // Не повторяем одноразовые действия, пока клавиша удерживается.
