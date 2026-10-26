@@ -9,6 +9,7 @@ var facility_ref: Node3D
 var interaction_hint: Label
 var status_label: Label
 var objective_label: Label
+var battery_label: Label
 var has_l1: bool = false
 var has_l2: bool = false
 var archive_read: bool = false
@@ -73,6 +74,8 @@ func _process(_delta: float) -> void:
 	var target := _get_interaction_target()
 	if interaction_hint:
 		interaction_hint.text = "[E]  " + str(target.get_meta("interaction_title", "Взаимодействовать")) if target != null else ""
+	if battery_label:
+		battery_label.text = "ФОНАРЬ: %d%%" % roundi(float(player_ref.get("flashlight_charge")))
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
@@ -148,6 +151,11 @@ func _interact() -> void:
 			comms_restored = true
 			target.queue_free()
 			_show_status("КАНАЛ 7 / ВХОДЯЩЕЕ: «Если слышишь это, не верь двери с табличкой ВЫХОД. Я уже проходил её. Дважды». — Гирс")
+		"battery_pack":
+			var charge := float(player_ref.get("flashlight_charge"))
+			player_ref.set("flashlight_charge", minf(100.0, charge + 40.0))
+			target.queue_free()
+			_show_status("НАЙДЕНА ЗАПАСНАЯ БАТАРЕЯ. Заряд фонаря восстановлен на 40%.")
 		_:
 			_show_status("Объект пока не реагирует.")
 
@@ -285,6 +293,12 @@ func _build_hud() -> void:
 	info.add_theme_font_size_override("font_size", 15)
 	info.add_theme_color_override("font_color", Color(0.78, 0.78, 0.76, 0.9))
 	layer.add_child(info)
+	battery_label = Label.new()
+	battery_label.name = "FlashlightBattery"
+	battery_label.position = Vector2(24, 105)
+	battery_label.add_theme_font_size_override("font_size", 14)
+	battery_label.add_theme_color_override("font_color", Color(0.45, 0.9, 0.58))
+	layer.add_child(battery_label)
 	objective_label = Label.new()
 	objective_label.name = "Objective"
 	objective_label.anchor_left = 0.5
