@@ -2,6 +2,7 @@ extends Node3D
 
 const PlayerScript = preload("res://scripts/player.gd")
 const FacilityLayout = preload("res://scripts/facility_layout.gd")
+const EnhancementsScript = preload("res://scripts/game_enhancements.gd")
 var player_ref: CharacterBody3D
 var map_panel: ColorRect
 var map_dot: ColorRect
@@ -42,6 +43,10 @@ func _ready() -> void:
 	player_ref.set_process(false)
 	_build_menu()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	var enhancements := Node.new()
+	enhancements.name = "GameEnhancements"
+	enhancements.set_script(EnhancementsScript)
+	add_child(enhancements)
 
 func _load_game_state() -> void:
 	var config := ConfigFile.new()
