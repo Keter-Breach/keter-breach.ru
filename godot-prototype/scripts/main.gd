@@ -518,6 +518,7 @@ func _build_menu() -> void:
 	_style_menu_button(continue_button)
 	intro_column.add_child(continue_button)
 	var skip_button := Button.new()
+	skip_button.name = "IntroSkip"
 	skip_button.text = "ПРОПУСТИТЬ ИНТРО"
 	skip_button.custom_minimum_size = Vector2(220, 36)
 	skip_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -584,40 +585,31 @@ func _continue_game() -> void:
 func _show_dossier() -> void:
 	menu_root.visible = false
 	intro_root.visible = true
-	intro_page = 0
 	var header := intro_root.find_child("IntroHeader", true, false) as Label
 	var text_label := intro_root.find_child("IntroText", true, false) as Label
 	var button := intro_root.find_child("IntroContinue", true, false) as Button
+	var skip_button := intro_root.find_child("IntroSkip", true, false) as Button
 	header.text = "ДОСЬЕ ИНЦИДЕНТА // KETER-19"
-	text_label.text = "03:17 — аварийный сигнал зафиксирован в секторе D-12.\n\nДоктор Гирс сообщил о расхождении показаний камер и датчиков движения. Последняя запись смены содержит предупреждение о коридоре, которого нет на плане комплекса.\n\nДоступ к полному досье засекречен.\n\nНажмите «Войти в комплекс», чтобы начать расследование."
+	text_label.text = "03:17 — аварийный сигнал зафиксирован в секторе D-12.\\n\\nДоктор Гирс сообщил о расхождении показаний камер и датчиков движения. Последняя запись смены содержит предупреждение о коридоре, которого нет на плане комплекса.\\n\\nДоступ к полному досье засекречен."
 	button.text = "ВЕРНУТЬСЯ В МЕНЮ"
 	for connection in button.pressed.get_connections():
 		button.pressed.disconnect(connection.callable)
 	button.pressed.connect(_return_to_menu)
-	var skip := intro_root.find_child("IntroContinue", true, false)
-	var skip_button := intro_root.get_child(0)
-	# Keep the dossier as a single readable screen.
-	var column := intro_root.find_child("IntroColumn", true, false) as VBoxContainer
-	if column != null and column.get_child_count() > 4:
-		column.get_child(4).queue_free()
+	if skip_button:
+		skip_button.visible = false
 
 func _return_to_menu() -> void:
 	intro_root.visible = false
 	menu_root.visible = true
 	var button := intro_root.find_child("IntroContinue", true, false) as Button
+	var skip_button := intro_root.find_child("IntroSkip", true, false) as Button
 	if button:
 		for connection in button.pressed.get_connections():
 			button.pressed.disconnect(connection.callable)
 		button.pressed.connect(_advance_intro)
-	var column := intro_root.find_child("IntroColumn", true, false) as VBoxContainer
-	if column != null and column.get_child_count() == 4:
-		var skip_button := Button.new()
-		skip_button.text = "ПРОПУСТИТЬ ИНТРО"
-		skip_button.custom_minimum_size = Vector2(220, 36)
-		skip_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		skip_button.pressed.connect(_enter_game)
-		skip_button.add_theme_font_size_override("font_size", 13)
-		column.add_child(skip_button)
+		button.text = "ДАЛЕЕ  →"
+	if skip_button:
+		skip_button.visible = true
 	_update_intro_page()
 
 func _enter_game() -> void:
