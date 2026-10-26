@@ -40,3 +40,14 @@ await access(new URL("../menu-background.svg", import.meta.url), constants.R_OK)
 
 console.log("PROJECT: KETER smoke checks passed.");
 console.log("Checked: page wiring, game entry points, PBR maps, input fixes, menu backdrop, JavaScript syntax.");
+
+
+// Boot screen and sequential runtime loading must remain wired together.
+assert.match(html, /id="keter-loading"/, "page should show a branded loading overlay during startup");
+assert.match(html, /id="loading-status"/, "loading overlay should expose startup status");
+assert.match(html, /loading-mark/, "loading overlay should include an animated loading icon");
+assert.match(html, /gameScript\.onload = hideLoader/, "loading overlay should disappear after the game script loads");
+assert.match(html, /gameScript\.onerror = showError/, "startup failure should show a readable error");
+assert.match(html, /loadThree\("\.\/node_modules\/three\/build\/three\.min\.js", function \(\)/, "desktop build should prefer the bundled Three.js runtime");
+assert.match(html, /loadThree\("https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.128\.0\/build\/three\.min\.js", showError\)/, "browser build should have a pinned CDN fallback");
+assert.doesNotMatch(html, /<script src="script\.js"><\/script>/, "game script must not be loaded twice");
