@@ -24,6 +24,7 @@ var menu_root: Control
 var intro_root: Control
 var hud_layer: CanvasLayer
 var intro_page: int = 0
+var intro_tween: Tween
 var loading_root: Control
 var loading_progress: ProgressBar
 var loading_status: Label
@@ -209,7 +210,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not game_started:
 		if event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_ENTER or event.keycode == KEY_SPACE):
 			if intro_root != null and intro_root.visible:
-				_advance_intro()
+				_enter_game()
 		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
 		_interact()
@@ -491,7 +492,7 @@ func _build_menu() -> void:
 	var spacer := Control.new()
 	spacer.custom_minimum_size.y = 18
 	column.add_child(spacer)
-	_add_menu_button(column, "НАЧАТЬ • ИНТРО", _start_intro)
+	_add_menu_button(column, "НАЧАТЬ ИГРУ", _start_intro)
 	_add_menu_button(column, "ПРОДОЛЖИТЬ", _continue_game)
 	_add_menu_button(column, "ДОСЬЕ ИНЦИДЕНТА", _show_dossier)
 	var footer := Label.new()
@@ -636,10 +637,27 @@ func _menu_button_style(fill: Color, outline: Color) -> StyleBoxFlat:
 	return style
 
 func _start_intro() -> void:
+	if intro_tween != null and intro_tween.is_running():
+		intro_tween.kill()
 	menu_root.visible = false
 	intro_root.visible = true
 	intro_page = 0
 	_update_intro_page()
+	var button := intro_root.find_child("IntroContinue", true, false) as Button
+	var skip_button := intro_root.find_child("IntroSkip", true, false) as Button
+	if button:
+		for connection in button.pressed.get_connections():
+			button.pressed.disconnect(connection.callable)
+		button.text = "ПРОПУСТИТЬ ИНТРО  →"
+		button.pressed.connect(_enter_game)
+	if skip_button:
+		skip_button.visible = false
+	# Each narrative card plays on its own; no manual input is needed.
+	intro_tween = create_tween()
+	intro_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	for page_index in range(3):
+		intro_tween.tween_interval(5.2)
+		intro_tween.tween_callback(_auto_advance_intro)
 
 func _update_intro_page() -> void:
 	var text_label := intro_root.find_child("IntroText", true, false) as Label
@@ -656,16 +674,26 @@ func _update_intro_page() -> void:
 	button.text = "ВОЙТИ В КОМПЛЕКС  →" if intro_page == pages.size() - 1 else "ДАЛЕЕ  →"
 
 func _advance_intro() -> void:
+	# Kept as a safe fallback for any legacy button connection.
+	_enter_game()
+
+func _auto_advance_intro() -> void:
+	if intro_root == null or not intro_root.visible:
+		return
 	if intro_page < 2:
 		intro_page += 1
 		_update_intro_page()
 	else:
+		intro_tween = null
 		_enter_game()
 
 func _continue_game() -> void:
 	_enter_game()
 
 func _show_dossier() -> void:
+	if intro_tween != null and intro_tween.is_running():
+		intro_tween.kill()
+	intro_tween = null
 	menu_root.visible = false
 	intro_root.visible = true
 	var header := intro_root.find_child("IntroHeader", true, false) as Label
@@ -682,6 +710,9 @@ func _show_dossier() -> void:
 		skip_button.visible = false
 
 func _return_to_menu() -> void:
+	if intro_tween != null and intro_tween.is_running():
+		intro_tween.kill()
+	intro_tween = null
 	intro_root.visible = false
 	menu_root.visible = true
 	var button := intro_root.find_child("IntroContinue", true, false) as Button
@@ -698,6 +729,9 @@ func _return_to_menu() -> void:
 func _enter_game() -> void:
 	if loading_root == null or loading_root.visible:
 		return
+	if intro_tween != null and intro_tween.is_running():
+		intro_tween.kill()
+	intro_tween = null
 	menu_root.visible = false
 	intro_root.visible = false
 	loading_root.visible = true
