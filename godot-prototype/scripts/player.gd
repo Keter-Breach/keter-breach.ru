@@ -7,6 +7,8 @@ var look_pitch: float = 0.0
 var can_look: bool = true
 var camera: Camera3D
 var flashlight: SpotLight3D
+var flashlight_charge: float = 100.0
+var flashlight_drain_rate: float = 2.8
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -46,11 +48,20 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	elif event is InputEventKey and event.pressed and event.keycode == KEY_F:
-		flashlight.visible = not flashlight.visible
+		if flashlight_charge > 0.0:
+			flashlight.visible = not flashlight.visible
+		else:
+			flashlight.visible = false
 	elif event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		rotate_y(-event.relative.x * mouse_sensitivity)
 		look_pitch = clampf(look_pitch - event.relative.y * mouse_sensitivity, deg_to_rad(-82), deg_to_rad(82))
 		camera.rotation.x = look_pitch
+
+func _process(delta: float) -> void:
+	if flashlight != null and flashlight.visible:
+		flashlight_charge = maxf(0.0, flashlight_charge - flashlight_drain_rate * delta)
+		if flashlight_charge <= 0.0:
+			flashlight.visible = false
 
 func _physics_process(delta: float) -> void:
 	if not is_on_floor():
