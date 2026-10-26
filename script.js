@@ -780,7 +780,8 @@ function init3DMode() {
         }
       }
     };
-    container.addEventListener("click", requestGamePointerLock);
+    // Один обработчик на canvas: двойной вызов через bubbling раньше мог
+    // отправлять два конкурирующих запроса Pointer Lock и оставлять управление неактивным.
     renderer.domElement.addEventListener("click", requestGamePointerLock);
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('keydown', (e) => {
