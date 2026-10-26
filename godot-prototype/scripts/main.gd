@@ -36,8 +36,9 @@ func _box(parent: Node3D, name: String, size: Vector3, pos: Vector3, material: M
 		shape.shape = box_shape
 		body.add_child(shape)
 	else:
-		body.mesh = mesh
-		body.material_override = material
+		var visual := body as MeshInstance3D
+		visual.mesh = mesh
+		visual.material_override = material
 	parent.add_child(body)
 	return body
 
