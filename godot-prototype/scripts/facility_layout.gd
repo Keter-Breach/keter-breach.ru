@@ -13,6 +13,13 @@ func _ready() -> void:
  metal_mat = _mat(Color(0.075,0.085,0.09),0.72,0.4)
  door_mat = _mat(Color(0.16,0.17,0.17),0.48,0.56)
  red_mat = _mat(Color(0.55,0.025,0.02),0.18,0.45)
+ var concrete_texture := load("res://assets/textures/keter-concrete.svg") as Texture2D
+ var floor_texture := load("res://assets/textures/keter-industrial-floor.svg") as Texture2D
+ var metal_texture := load("res://assets/textures/keter-painted-metal.svg") as Texture2D
+ if concrete_texture: wall_mat.albedo_texture = concrete_texture
+ if floor_texture: floor_mat.albedo_texture = floor_texture
+ if metal_texture: metal_mat.albedo_texture = metal_texture
+ if metal_texture: door_mat.albedo_texture = metal_texture
  _box("Facility floor",Vector3(180,0.3,240),Vector3(0,-0.18,30),floor_mat)
  _box("Facility ceiling",Vector3(180,0.28,240),Vector3(0,3.34,30),metal_mat)
  _build_elevator()
