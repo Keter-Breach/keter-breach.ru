@@ -1311,12 +1311,12 @@ function build10ZonesMap() {
       const z1 = zs[i], z2 = zs[i + 1], mid = (z1 + z2) / 2;
       if (type !== 'breach') box(glassMat, 0.1, 2.8, z2 - z1, s * 11, 1.4, mid, true);
       const label = {
-        statue: ['SCP-173', 'EUCLID'], breach: ['КАМЕРА ПУСТА', 'НАРУШЕНИЕ'],
-        keter: ['SCP-████', 'KETER'], empty: ['КАМЕРА СВОБОДНА', 'СТАТУС: РЕЗЕРВ']
+        statue: ['ОТСЕК ОПЕЧАТАН', 'ОБЪЕКТ УДАЛЁН'], breach: ['КАМЕРА ПУСТА', 'НАРУШЕНИЕ'],
+        keter: ['АРХИВ ЗАКРЫТ', 'ДОСТУП ЗАПРЕЩЁН'], empty: ['КАМЕРА СВОБОДНА', 'СТАТУС: РЕЗЕРВ']
       }[type];
       const col = type === 'keter' ? '#ff4444' : type === 'breach' ? '#ffaa33' : '#ffd34d';
       addSign(label, s * 10.85, 2.4, mid, -s * Math.PI / 2, col);
-      if (type === 'statue') addStatue(s * 13.5, mid, -s);
+      // Монстры и их модели временно отключены.
       if (type === 'breach') for (let k = 0; k < 4; k++)
         box(glassMat, 0.3, 0.02, 0.3, s * (10 + Math.random() * 1.2), 0.02, z1 + 1 + k * 1.1);
       if (type === 'keter') {
