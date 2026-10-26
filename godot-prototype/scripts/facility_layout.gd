@@ -8,10 +8,10 @@ var door_mat: StandardMaterial3D
 var red_mat: StandardMaterial3D
 
 func _ready() -> void:
- wall_mat = _mat(Color(0.92,0.92,0.90),0.12,0.92)
- floor_mat = _mat(Color(0.92,0.92,0.92),0.22,0.55)
- metal_mat = _mat(Color(0.90,0.92,0.92),0.72,0.4)
- door_mat = _mat(Color(0.96,0.96,0.94),0.48,0.56)
+ wall_mat = _mat(Color(0.76,0.78,0.77),0.08,0.92)
+ floor_mat = _mat(Color(0.68,0.70,0.71),0.18,0.78)
+ metal_mat = _mat(Color(0.73,0.76,0.77),0.58,0.52)
+ door_mat = _mat(Color(0.78,0.79,0.76),0.28,0.62)
  red_mat = _mat(Color(0.55,0.025,0.02),0.18,0.45)
  var concrete_texture := load("res://assets/textures/keter-concrete.svg") as Texture2D
  var floor_texture := load("res://assets/textures/keter-industrial-floor.svg") as Texture2D
@@ -21,14 +21,14 @@ func _ready() -> void:
  if metal_texture: metal_mat.albedo_texture = metal_texture
  if metal_texture: door_mat.albedo_texture = metal_texture
  # Scale the tiling so large architectural surfaces retain visible material detail.
- wall_mat.uv1_scale = Vector3(3.0, 2.0, 1.0)
- floor_mat.uv1_scale = Vector3(18.0, 18.0, 1.0)
- metal_mat.uv1_scale = Vector3(2.5, 2.5, 1.0)
- door_mat.uv1_scale = Vector3(1.2, 1.5, 1.0)
- wall_mat.roughness = 0.96
- floor_mat.roughness = 0.52
- metal_mat.roughness = 0.42
- door_mat.roughness = 0.48
+ wall_mat.uv1_scale = Vector3(5.0, 3.0, 1.0)
+ floor_mat.uv1_scale = Vector3(10.0, 10.0, 1.0)
+ metal_mat.uv1_scale = Vector3(3.5, 3.5, 1.0)
+ door_mat.uv1_scale = Vector3(1.6, 2.0, 1.0)
+ wall_mat.roughness = 0.92
+ floor_mat.roughness = 0.78
+ metal_mat.roughness = 0.52
+ door_mat.roughness = 0.62
  _box("Facility floor",Vector3(180,0.3,240),Vector3(0,-0.18,30),floor_mat)
  _box("Facility ceiling",Vector3(180,0.28,240),Vector3(0,3.34,30),metal_mat)
  _build_elevator()
@@ -268,6 +268,7 @@ func _build_props() -> void:
   _box("Bunk mattress", Vector3(0.8,0.12,1.8), Vector3(-13,1.66,z), _mat(Color(0.28,0.19,0.13)), false)
  _table(Vector3(-8,0,-7))
  _box("D-class spare battery", Vector3(0.22,0.28,0.16), Vector3(-6,0.3,-2), _mat(Color(0.1,0.55,0.3)), false)
+ _add_interaction("battery_pack_start", Vector3(-6,0.72,-2), Vector3(1.4,1.4,1.4), "Запасная батарея")
  # Laboratory benches and sample tanks.
  for z in [30.0,36.0]:
   _box("Lab workbench", Vector3(3,0.9,1), Vector3(8.5,0.45,z), metal_mat)
@@ -383,6 +384,9 @@ func _build_detail_pass() -> void:
   _box("Ceiling service tray", Vector3(0.16, 0.12, 5.4), Vector3(2.35, 3.03, z + 2.6), pipe_mat, false)
   _box("Left service conduit", Vector3(0.09, 0.09, 5.4), Vector3(-2.67, 2.82, z + 2.6), pipe_mat, false)
   _box("Right service conduit", Vector3(0.09, 0.09, 5.4), Vector3(2.67, 2.82, z + 2.6), pipe_mat, false)
+  _box("Left wall skirting", Vector3(0.07, 0.14, 5.4), Vector3(-2.72, 0.14, z + 2.6), panel_mat, false)
+  _box("Right wall skirting", Vector3(0.07, 0.14, 5.4), Vector3(2.72, 0.14, z + 2.6), panel_mat, false)
+  _box("Floor expansion joint", Vector3(5.7, 0.008, 0.025), Vector3(0, 0.012, z + 5.2), panel_mat, false)
   if z >= 4:
    _box("Yellow floor safety dash", Vector3(0.12, 0.018, 1.0), Vector3(-2.42, 0.018, z), hazard_mat, false)
    _box("Yellow floor safety dash", Vector3(0.12, 0.018, 1.0), Vector3(2.42, 0.018, z), hazard_mat, false)
