@@ -1,49 +1,104 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
 <defs>
- <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#171b1c"/><stop offset=".55" stop-color="#090d0f"/><stop offset="1" stop-color="#020304"/></linearGradient>
- <linearGradient id="wall" x2="1" y2=".3"><stop stop-color="#101517"/><stop offset=".5" stop-color="#303537"/><stop offset="1" stop-color="#080b0c"/></linearGradient>
- <linearGradient id="floor" x2="0" y2="1"><stop stop-color="#202527"/><stop offset="1" stop-color="#030405"/></linearGradient>
- <linearGradient id="door" x2="1"><stop stop-color="#161a1b"/><stop offset=".4" stop-color="#424648"/><stop offset=".65" stop-color="#171b1d"/><stop offset="1" stop-color="#080a0b"/></linearGradient>
- <radialGradient id="redGlow"><stop stop-color="#ff2525" stop-opacity=".72"/><stop offset="1" stop-color="#d00b08" stop-opacity="0"/></radialGradient>
- <radialGradient id="vignette"><stop offset=".18" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".88"/></radialGradient>
- <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="table" tableValues="0 .15"/></feComponentTransfer><feBlend in="SourceGraphic" mode="soft-light"/></filter>
- <filter id="blur"><feGaussianBlur stdDeviation="24"/></filter>
- <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="1" fill="#d4e2db" opacity=".075"/></pattern>
+ <linearGradient id="air" x2="0" y2="1"><stop stop-color="#202729"/><stop offset=".42" stop-color="#0b1012"/><stop offset="1" stop-color="#020303"/></linearGradient>
+ <linearGradient id="leftWall" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#080c0d"/><stop offset=".48" stop-color="#272e30"/><stop offset=".82" stop-color="#111719"/><stop offset="1" stop-color="#07090a"/></linearGradient>
+ <linearGradient id="rightWall" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#080b0c"/><stop offset=".42" stop-color="#202729"/><stop offset="1" stop-color="#090c0d"/></linearGradient>
+ <linearGradient id="floor" x2="0" y2="1"><stop stop-color="#252b2c"/><stop offset=".3" stop-color="#151a1b"/><stop offset="1" stop-color="#030405"/></linearGradient>
+ <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#080b0c"/><stop offset=".12" stop-color="#3b4244"/><stop offset=".2" stop-color="#171c1e"/><stop offset=".53" stop-color="#343a3c"/><stop offset=".72" stop-color="#101415"/><stop offset=".9" stop-color="#42494a"/><stop offset="1" stop-color="#080a0b"/></linearGradient>
+ <linearGradient id="doorL" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#080b0c"/><stop offset=".5" stop-color="#42494b"/><stop offset=".58" stop-color="#22282a"/><stop offset="1" stop-color="#080a0b"/></linearGradient>
+ <linearGradient id="doorR" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#090b0c"/><stop offset=".42" stop-color="#303638"/><stop offset=".7" stop-color="#151a1b"/><stop offset="1" stop-color="#050607"/></linearGradient>
+ <radialGradient id="redGlow"><stop stop-color="#ff342b" stop-opacity=".8"/><stop offset=".34" stop-color="#a41412" stop-opacity=".28"/><stop offset="1" stop-color="#a41412" stop-opacity="0"/></radialGradient>
+ <radialGradient id="coldGlow"><stop stop-color="#b9d1c6" stop-opacity=".2"/><stop offset="1" stop-color="#b9d1c6" stop-opacity="0"/></radialGradient>
+ <radialGradient id="vignette"><stop offset=".1" stop-color="#000" stop-opacity="0"/><stop offset=".65" stop-color="#000" stop-opacity=".18"/><stop offset="1" stop-color="#000" stop-opacity=".9"/></radialGradient>
+ <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".62" numOctaves="3" seed="12" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="table" tableValues="0 .12"/></feComponentTransfer><feBlend in="SourceGraphic" mode="soft-light"/></filter>
+ <filter id="soft"><feGaussianBlur stdDeviation="30"/></filter>
+ <filter id="haze"><feGaussianBlur stdDeviation="7"/></filter>
+ <pattern id="concrete" width="120" height="96" patternUnits="userSpaceOnUse"><path d="M0 24H120M22 0V24M82 24V96M0 68H82" fill="none" stroke="#9da7a5" stroke-opacity=".07" stroke-width="2"/><path d="M7 12l18 -3M67 54l13 4M96 82l15 -2" stroke="#b5bdb8" stroke-opacity=".07" stroke-width="1"/></pattern>
+ <pattern id="floorLines" width="160" height="110" patternUnits="userSpaceOnUse"><path d="M0 0H160M0 0V110" stroke="#a4afac" stroke-opacity=".07" stroke-width="2"/></pattern>
+ <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="1" fill="#d8e1dc" opacity=".09"/></pattern>
 </defs>
-<rect width="1600" height="900" fill="url(#bg)"/>
-<!-- corridor receding in perspective -->
-<path d="M0 0H1600L1140 300H510Z" fill="#15191b"/>
-<path d="M0 0L510 300V700L0 900Z" fill="url(#wall)"/>
-<path d="M1600 0L1140 300V700L1600 900Z" fill="#171c1e"/>
-<path d="M510 300H1140V700H510Z" fill="#07090a"/>
-<path d="M0 900L510 700H1140L1600 900Z" fill="url(#floor)"/>
-<g stroke="#667074" stroke-opacity=".23" fill="none" stroke-width="3"><path d="M0 90L510 330M0 200L510 390M0 330L510 455M0 470L510 520M0 620L510 590"/><path d="M1600 90L1140 330M1600 200L1140 390M1600 330L1140 455M1600 470L1140 520M1600 620L1140 590"/><path d="M220 900L670 700M520 900L790 700M1080 900L910 700M1390 900L1030 700"/></g>
-<!-- open elevator -->
-<rect x="800" y="180" width="480" height="580" fill="#050606" stroke="#505658" stroke-width="12"/>
-<rect x="842" y="218" width="398" height="500" fill="#131719" stroke="#242a2c" stroke-width="8"/>
-<path d="M842 218L1010 242V708L842 718Z" fill="url(#door)" stroke="#5b6061" stroke-width="4"/>
-<path d="M1240 218L1085 242V708L1240 718Z" fill="url(#door)" stroke="#4d5355" stroke-width="4"/>
-<path d="M1010 242L1085 242V708L1010 708Z" fill="#020303"/>
-<path d="M1010 242L1085 242M1010 708L1085 708" stroke="#8a2520" stroke-opacity=".6" stroke-width="4"/>
-<ellipse cx="1050" cy="280" rx="190" ry="170" fill="url(#redGlow)" filter="url(#blur)"/>
-<rect x="1024" y="265" width="48" height="13" fill="#ff3931" opacity=".9"/>
-<rect x="1024" y="265" width="48" height="13" fill="#ff2525" opacity=".7" filter="url(#blur)"/>
-<path d="M850 720L1008 705L1087 705L1235 720L1370 900H670Z" fill="#131719" opacity=".85"/>
-<path d="M800 760L1008 720L1087 720L1280 760" fill="none" stroke="#8d2a24" stroke-opacity=".55" stroke-width="5"/>
-<!-- call panel -->
-<rect x="1320" y="375" width="78" height="190" fill="#0a0c0d" stroke="#555b5d" stroke-width="4"/>
-<rect x="1340" y="402" width="38" height="24" fill="#a81816"/><circle cx="1359" cy="466" r="10" fill="#8b1b18"/><circle cx="1359" cy="508" r="10" fill="#172d22"/>
-<!-- weak ceiling light -->
-<path d="M510 85L830 85L865 100L530 100Z" fill="#a5a7a1" opacity=".45"/>
-<path d="M550 100L780 100L820 120L510 120Z" fill="#a9afb0" opacity=".12"/>
-<!-- reflected puddles -->
-<path d="M530 820L735 740L820 747L620 860Z" fill="#a2a9a5" opacity=".12"/>
-<path d="M950 850L1120 730L1160 740L1030 890Z" fill="#d22a21" opacity=".18"/>
-<g stroke="#aeb8b6" stroke-opacity=".1" fill="none"><path d="M30 780L480 670M100 820L520 690M1180 740L1570 820M1100 780L1510 875"/></g>
-<!-- CCTV overlay and interference -->
-<rect x="16" y="16" width="1568" height="868" fill="none" stroke="#7d9187" stroke-opacity=".36" stroke-width="2"/>
-<path d="M16 48H250M16 48V16M1350 16H1584V48M16 852V884H300M1300 884H1584V852" stroke="#8aa59a" stroke-opacity=".4" fill="none" stroke-width="2"/>
-<rect width="1600" height="900" fill="url(#scan)"/>
-<rect width="1600" height="900" fill="#000" opacity=".13" filter="url(#grain)"/>
-<rect width="1600" height="900" fill="url(#vignette)"/>
+<!-- Empty industrial corridor, security-camera still frame -->
+<rect width="1920" height="1080" fill="url(#air)"/>
+<path d="M0 0H1920L1338 326H582Z" fill="#151b1d"/>
+<path d="M0 0L582 326V786L0 1080Z" fill="url(#leftWall)"/>
+<path d="M1920 0L1338 326V786L1920 1080Z" fill="url(#rightWall)"/>
+<path d="M0 0L582 326V786L0 1080Z" fill="url(#concrete)" opacity=".8"/>
+<path d="M1920 0L1338 326V786L1920 1080Z" fill="url(#concrete)" opacity=".62"/>
+<path d="M582 326H1338V786H582Z" fill="#070a0b"/>
+<!-- far wall and sealed access doors -->
+<rect x="710" y="385" width="500" height="355" fill="#111719" stroke="#4b5355" stroke-width="10"/>
+<rect x="732" y="405" width="456" height="317" fill="#080b0c" stroke="#23292b" stroke-width="5"/>
+<path d="M732 405L950 423V708L732 722Z" fill="url(#doorL)" stroke="#555d5f" stroke-width="3"/>
+<path d="M1188 405L970 423V708L1188 722Z" fill="url(#doorR)" stroke="#454d4f" stroke-width="3"/>
+<path d="M950 423L970 423V708L950 708Z" fill="#020303"/>
+<path d="M950 423H970M950 708H970" stroke="#a6b0ab" stroke-opacity=".35" stroke-width="3"/>
+<rect x="957" y="455" width="7" height="220" fill="#030505"/>
+<path d="M710 740H1210" stroke="#7e8584" stroke-opacity=".28" stroke-width="4"/>
+<!-- emergency red lamp and diffuse spill -->
+<ellipse cx="963" cy="390" rx="350" ry="230" fill="url(#redGlow)" filter="url(#soft)"/>
+<rect x="925" y="367" width="78" height="15" rx="2" fill="#ff4339" opacity=".88"/>
+<rect x="917" y="359" width="94" height="30" fill="#fa211b" opacity=".3" filter="url(#haze)"/>
+<path d="M960 383L885 750H1040Z" fill="#8e1b18" opacity=".07"/>
+<!-- ceiling cable trays, pipes and fluorescent light -->
+<path d="M0 96H1920M0 130H1920" stroke="#020404" stroke-width="16" opacity=".85"/>
+<path d="M0 93H1920M0 127H1920" stroke="#535c5c" stroke-opacity=".35" stroke-width="3"/>
+<path d="M170 0L582 326M1740 0L1338 326" stroke="#040606" stroke-width="24"/>
+<path d="M170 0L582 326M1740 0L1338 326" stroke="#626a69" stroke-opacity=".26" stroke-width="3"/>
+<path d="M150 145L410 145L520 170L235 170Z" fill="#a8b5ad" opacity=".3"/>
+<path d="M235 170L520 170L535 181L250 181Z" fill="#d8e0d8" opacity=".08"/>
+<ellipse cx="330" cy="185" rx="210" ry="115" fill="url(#coldGlow)" filter="url(#soft)"/>
+<!-- wall seams, damaged paint and cable runs -->
+<g fill="none" stroke="#8b9593" stroke-opacity=".2" stroke-width="3">
+ <path d="M0 150L582 370M0 300L582 440M0 465L582 520M0 650L582 612M0 830L582 710"/>
+ <path d="M1920 150L1338 370M1920 300L1338 440M1920 465L1338 520M1920 650L1338 612M1920 830L1338 710"/>
+ <path d="M90 215L120 208L136 226L165 222M180 610L205 602L220 620M1500 245L1530 252L1550 240M1650 560L1680 568L1690 553"/>
+</g>
+<g fill="none" stroke="#030505" stroke-width="12" opacity=".8">
+ <path d="M70 0V280L160 315V480M1850 0V260L1740 305V420"/>
+ <path d="M65 278L160 313M1854 258L1740 303"/>
+</g>
+<!-- floor perspective, worn tiles and oily reflections -->
+<path d="M0 1080L582 786H1338L1920 1080Z" fill="url(#floor)"/>
+<path d="M0 1080L582 786H1338L1920 1080Z" fill="url(#floorLines)" opacity=".9"/>
+<g stroke="#687271" stroke-opacity=".2" fill="none" stroke-width="3">
+ <path d="M0 890L582 805H1338L1920 890"/>
+ <path d="M0 980L582 830H1338L1920 980"/>
+ <path d="M210 1080L720 786M520 1080L840 786M850 1080L930 786M1250 1080L1050 786M1640 1080L1200 786"/>
+</g>
+<path d="M310 1000L590 875L720 870L500 1030Z" fill="#aab4ae" opacity=".09"/>
+<path d="M1180 1040L1350 850L1410 860L1300 1080Z" fill="#b7c1b9" opacity=".07"/>
+<path d="M855 1080L940 805L1000 805L1015 1080Z" fill="#b21d19" opacity=".13"/>
+<path d="M815 1040L920 820L938 820L885 1050Z" fill="#d83b31" opacity=".09"/>
+<!-- small dirty puddles and boot scuffs -->
+<g fill="#9da8a1" opacity=".11">
+ <path d="M420 955q62 -28 125 -6t-20 23t-105 -2t0 -15Z"/>
+ <path d="M1390 970q48 -32 100 -5t-28 24t-72 -4t0 -15Z"/>
+ <path d="M760 895q22 -10 49 0t-10 11t-39 -11Z"/>
+</g>
+<g stroke="#050708" stroke-width="9" stroke-linecap="round" opacity=".55"><path d="M430 950l48 -8M460 965l55 -7M1400 964l42 -9M1430 981l49 -7"/></g>
+<!-- wall-mounted containment access panel -->
+<g transform="translate(1450 430)">
+ <rect width="115" height="240" fill="#080b0c" stroke="#50585a" stroke-width="5"/>
+ <rect x="12" y="15" width="91" height="53" fill="#141a1b" stroke="#2d3537" stroke-width="2"/>
+ <rect x="22" y="26" width="70" height="9" fill="#8b211d"/>
+ <path d="M22 45H90" stroke="#4c5555" stroke-width="3"/>
+ <circle cx="57" cy="112" r="13" fill="#6e1715" stroke="#9a2b25" stroke-width="3"/>
+ <circle cx="57" cy="159" r="9" fill="#14241b" stroke="#34483a" stroke-width="3"/>
+ <path d="M20 199H95M20 211H70" stroke="#66706c" stroke-opacity=".4" stroke-width="3"/>
+</g>
+<!-- chipped paint / old warning stripe near floor -->
+<path d="M0 775L582 680V704L0 806Z" fill="#b18a42" opacity=".13"/>
+<path d="M1920 775L1338 680V704L1920 806Z" fill="#b18a42" opacity=".12"/>
+<g stroke="#b8a16c" stroke-opacity=".16" stroke-width="8"><path d="M60 775L112 767M148 760L200 751M236 746L288 737M1540 716L1590 724M1640 732L1690 740M1740 748L1790 756"/></g>
+<!-- surveillance artifacts -->
+<rect width="1920" height="1080" fill="url(#vignette)"/>
+<rect width="1920" height="1080" fill="#8aaca0" opacity=".025" filter="url(#grain)"/>
+<rect width="1920" height="1080" fill="url(#scan)" opacity=".25"/>
+<g font-family="monospace" fill="#a8b8ae" opacity=".42" font-size="18" letter-spacing="3">
+ <text x="58" y="60">FACILITY D-12 / CAM 01</text><text x="58" y="88" font-size="13">SIGNAL: UNSTABLE</text>
+ <text x="1860" y="60" text-anchor="end">REC ● 00:17:42</text><text x="1860" y="88" text-anchor="end" font-size="13">NIGHT SHIFT / 03</text>
+ <text x="58" y="1025" font-size="13">AUTHORIZED PERSONNEL ONLY</text><text x="1860" y="1025" text-anchor="end" font-size="13">ARCHIVE COPY // DO NOT DISTRIBUTE</text>
+</g>
+<g fill="none" stroke="#a8b8ae" stroke-opacity=".22" stroke-width="2"><path d="M40 112V40H112M1808 40H1880V112M40 968V1040H112M1808 1040H1880V968"/></g>
+<rect width="1920" height="1080" fill="none" stroke="#000" stroke-width="80" opacity=".38"/>
 </svg>
