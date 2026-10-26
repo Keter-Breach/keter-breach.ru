@@ -479,3 +479,109 @@ func _add_interaction(interaction_id: String, p: Vector3, size: Vector3, title: 
  shape_node.shape = shape
  area.add_child(shape_node)
  add_child(area)
+
+func _build_surface_detail() -> void:
+	# Surface layers add grime, moisture, cable infrastructure and camera silhouettes.
+	var grime := _mat(Color(0.075, 0.062, 0.055), 0.0, 0.98)
+	var wet := _mat(Color(0.035, 0.055, 0.06, 0.78), 0.22, 0.18)
+	var rust := _mat(Color(0.24, 0.075, 0.035), 0.28, 0.82)
+	var pale := _mat(Color(0.37, 0.39, 0.37), 0.18, 0.9)
+	var cable_mat := _mat(Color(0.025, 0.03, 0.034), 0.22, 0.7)
+	for stain in [
+		[Vector3(-1.7, 0.012, 8.8), Vector3(1.05, 0.012, 0.68), -0.2],
+		[Vector3(1.45, 0.013, 20.2), Vector3(0.7, 0.012, 1.15), 0.34],
+		[Vector3(-1.2, 0.013, 47.8), Vector3(1.35, 0.012, 0.5), -0.42],
+		[Vector3(1.55, 0.013, 54.5), Vector3(0.8, 0.012, 1.1), 0.18],
+		[Vector3(-1.1, 0.013, 89.5), Vector3(1.2, 0.012, 0.58), 0.6],
+		[Vector3(0.85, 0.013, 118.5), Vector3(1.15, 0.012, 0.48), -0.28]
+	]:
+		var stain_mesh := _box("Floor oil and moisture stain", stain[1], stain[0], wet if randf() > 0.45 else grime, false)
+		stain_mesh.rotation.y = float(stain[2])
+	for p in [Vector3(-2.69, 2.24, 18.0), Vector3(2.69, 1.94, 36.5), Vector3(-2.69, 2.05, 63.5), Vector3(2.69, 2.12, 94.0)]:
+		_box("Wall rust streak", Vector3(0.018, 0.62, 0.17), p, rust, false)
+		_box("Paint chipped edge", Vector3(0.022, 0.045, 0.42), p + Vector3(0, -0.34, 0.13), pale, false)
+	for z in [17.0, 41.0, 62.0, 86.0, 103.0]:
+		_cylinder("Overhead cable trunk", 0.075, 5.1, Vector3(-1.85, 2.82, z), cable_mat, false)
+		for dz in [-1.8, 0.0, 1.8]:
+			_box("Cable trunk clamp", Vector3(0.2, 0.045, 0.08), Vector3(-1.85, 2.82, z + dz), metal_mat, false)
+	var lens_mat := _mat(Color(0.025, 0.12, 0.16), 0.65, 0.18)
+	lens_mat.emission_enabled = true
+	lens_mat.emission = Color(0.01, 0.16, 0.22)
+	lens_mat.emission_energy_multiplier = 0.65
+	for cam in [Vector3(-2.55, 2.45, 15.5), Vector3(2.55, 2.45, 42.5), Vector3(-2.55, 2.45, 67.0), Vector3(2.55, 2.45, 90.0)]:
+		_box("Security camera housing", Vector3(0.38, 0.19, 0.22), cam, metal_mat, false)
+		_box("Security camera lens", Vector3(0.07, 0.07, 0.025), cam + Vector3(0.0, -0.015, 0.115), lens_mat, false)
+
+func _build_physics_props() -> void:
+	var crate_mat := _mat(Color(0.19, 0.22, 0.22), 0.48, 0.72)
+	var can_mat := _mat(Color(0.34, 0.37, 0.37), 0.74, 0.36)
+	_add_rigid_crate(Vector3(-12.1, 0.62, 29.0), crate_mat, 0.75)
+	_add_rigid_crate(Vector3(-8.4, 0.48, 35.8), crate_mat, 0.55)
+	_add_rigid_can(Vector3(-13.7, 0.22, 37.0), can_mat)
+	_add_rigid_can(Vector3(2.0, 0.22, 68.0), can_mat)
+	_add_rigid_crate(Vector3(-28.8, 0.52, 86.5), crate_mat, 0.6)
+
+func _add_rigid_crate(p: Vector3, mat: Material, scale_factor: float) -> void:
+	var body := RigidBody3D.new()
+	body.name = "Physics movable supply crate"
+	body.position = p
+	body.mass = 12.0 * scale_factor
+	body.linear_damp = 0.65
+	body.angular_damp = 1.8
+	body.continuous_cd = true
+	var size := Vector3(0.72, 0.72, 0.72) * scale_factor
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var visual := MeshInstance3D.new()
+	visual.mesh = mesh
+	visual.material_override = mat
+	body.add_child(visual)
+	var bevel_edge := _mat(Color(0.085, 0.1, 0.105), 0.62, 0.45)
+	for y in [-1.0, 1.0]:
+		var band := MeshInstance3D.new()
+		var band_mesh := BoxMesh.new()
+		band_mesh.size = Vector3(size.x * 1.015, 0.045 * scale_factor, size.z * 1.015)
+		band.mesh = band_mesh
+		band.material_override = bevel_edge
+		band.position.y = y * size.y * 0.34
+		body.add_child(band)
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size
+	collision.shape = shape
+	body.add_child(collision)
+	add_child(body)
+
+func _add_rigid_can(p: Vector3, mat: Material) -> void:
+	var body := RigidBody3D.new()
+	body.name = "Physics rolling metal canister"
+	body.position = p
+	body.mass = 1.4
+	body.linear_damp = 0.18
+	body.angular_damp = 0.22
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = 0.14
+	mesh.bottom_radius = 0.14
+	mesh.height = 0.38
+	var visual := MeshInstance3D.new()
+	visual.mesh = mesh
+	visual.material_override = mat
+	body.add_child(visual)
+	var rim_mat := _mat(Color(0.08, 0.09, 0.09), 0.8, 0.25)
+	for y in [-0.15, 0.15]:
+		var rim := MeshInstance3D.new()
+		var rim_mesh := CylinderMesh.new()
+		rim_mesh.top_radius = 0.145
+		rim_mesh.bottom_radius = 0.145
+		rim_mesh.height = 0.025
+		rim.mesh = rim_mesh
+		rim.material_override = rim_mat
+		rim.position.y = y
+		body.add_child(rim)
+	var collision := CollisionShape3D.new()
+	var shape := CylinderShape3D.new()
+	shape.radius = 0.14
+	shape.height = 0.38
+	collision.shape = shape
+	body.add_child(collision)
+	add_child(body)
