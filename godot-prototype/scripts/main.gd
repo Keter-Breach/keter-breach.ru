@@ -208,7 +208,7 @@ func _process(_delta: float) -> void:
 	if inventory_label:
 		var access_l1 := "L1 ✓" if has_l1 else "L1 —"
 		var access_l2 := "L2 ✓" if has_l2 else "L2 —"
-		inventory_label.text = "КАРТЫ: %s   %s     БАТАРЕИ: %d/2" % [access_l1, access_l2, battery_packs_found.size()]
+		inventory_label.text = "КАРТЫ: %s   %s     БАТАРЕИ: %d/2   УЛИКИ: %d/3" % [access_l1, access_l2, battery_packs_found.size(), evidence_found.size()]
 	_check_story_triggers()
 	if opened_doors.has("Surface exit door") and player_ref.global_position.z > 125.0:
 		_trigger_mirror_loop()
@@ -321,7 +321,10 @@ func _interact() -> void:
 			else:
 				_open_door("Surface exit door")
 				target.queue_free()
-				_show_status("ШЛЮЗ ОТКРЫТ. За ним коридор повторяется… ПРОТОКОЛ «ЗЕРКАЛО» АКТИВЕН.")
+				if evidence_found.size() >= 3:
+					_show_status("ДОСЬЕ KETER-19 ПОЛНОЕ: все три улики подтверждают пространственную аномалию. ШЛЮЗ ОТКРЫТ — ПРОТОКОЛ «ЗЕРКАЛО» АКТИВЕН. Ты знаешь, что произошло, но коридор всё равно повторяется…")
+				else:
+					_show_status("ШЛЮЗ ОТКРЫТ. За ним коридор повторяется… ПРОТОКОЛ «ЗЕРКАЛО» АКТИВЕН. В досье не хватает улик: %d/3." % evidence_found.size())
 		"archive_log":
 			archive_read = true
 			target.queue_free()
@@ -408,8 +411,10 @@ func _refresh_objective() -> void:
 		objective_label.text = "ЗАДАЧА: ОТКЛЮЧИТЬ АВАРИЙНЫЙ ГЕНЕРАТОР В МАСТЕРСКОЙ"
 	elif not comms_restored:
 		objective_label.text = "ЗАДАЧА: ВОССТАНОВИТЬ СВЯЗЬ НА КАНАЛЕ 7"
+	elif evidence_found.size() < 3:
+		objective_label.text = "ЗАДАЧА: ОТКРЫТЬ ШЛЮЗ  •  ДОП. ЦЕЛЬ: СОБРАТЬ УЛИКИ %d/3" % evidence_found.size()
 	else:
-		objective_label.text = "ЗАДАЧА: ОТКРЫТЬ ЭВАКУАЦИОННЫЙ ШЛЮЗ"
+		objective_label.text = "ЗАДАЧА: ОТКРЫТЬ ЭВАКУАЦИОННЫЙ ШЛЮЗ — ДОСЬЕ ПОЛНОЕ"
 
 func _build_environment() -> void:
 	var world := WorldEnvironment.new()
