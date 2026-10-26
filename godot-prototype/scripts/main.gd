@@ -5,6 +5,15 @@ const FacilityLayout = preload("res://scripts/facility_layout.gd")
 var player_ref: CharacterBody3D
 var map_panel: ColorRect
 var map_dot: ColorRect
+var facility_ref: Node3D
+var interaction_hint: Label
+var status_label: Label
+var has_l1: bool = false
+var has_l2: bool = false
+var archive_read: bool = false
+var reactor_disabled: bool = false
+var comms_restored: bool = false
+var opened_doors: Dictionary = {}
 
 func _ready() -> void:
 	_build_environment()
@@ -51,6 +60,7 @@ func _build_facility() -> void:
 	facility.name = "FacilityD12"
 	facility.set_script(FacilityLayout)
 	add_child(facility)
+	facility_ref = facility
 
 func _process(_delta: float) -> void:
 	if player_ref == null or map_panel == null or map_dot == null:
@@ -59,6 +69,99 @@ func _process(_delta: float) -> void:
 	var px := 8.0 + clampf((p.x + 40.0) / 80.0, 0.0, 1.0) * (map_panel.size.x - 16.0)
 	var py := 25.0 + clampf((p.z + 10.0) / 110.0, 0.0, 1.0) * (map_panel.size.y - 34.0)
 	map_dot.position = Vector2(px - map_dot.size.x * 0.5, py - map_dot.size.y * 0.5)
+	var target := _get_interaction_target()
+	if interaction_hint:
+		interaction_hint.text = "[E]  " + str(target.get_meta("interaction_title", "Взаимодействовать")) if target != null else ""
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
+		_interact()
+
+func _get_interaction_target() -> Area3D:
+	if player_ref == null or not is_instance_valid(player_ref):
+		return null
+	var camera := player_ref.get_node_or_null("PlayerCamera") as Camera3D
+	if camera == null:
+		return null
+	var origin := camera.global_position
+	var finish := origin + (-camera.global_transform.basis.z * 3.2)
+	var query := PhysicsRayQueryParameters3D.create(origin, finish, 2)
+	query.collide_with_areas = true
+	query.collide_with_bodies = false
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return null
+	var collider = hit.get("collider")
+	if collider is Area3D and collider.has_meta("interaction_id"):
+		return collider as Area3D
+	return null
+
+func _interact() -> void:
+	var target := _get_interaction_target()
+	if target == null:
+		_show_status("Нет доступных объектов для взаимодействия.")
+		return
+	var interaction_id := str(target.get_meta("interaction_id", ""))
+	match interaction_id:
+		"card_l1":
+			has_l1 = true
+			target.queue_free()
+			_show_status("ПОЛУЧЕНА КАРТА L1. Доступ к первому шлюзу разрешён.")
+		"card_l2":
+			has_l2 = true
+			target.queue_free()
+			_show_status("ПОЛУЧЕНА КАРТА L2. Доступ к эвакуационному уровню разрешён.")
+		"door_l1":
+			if has_l1:
+				_open_door("L1 security door")
+				_show_status("ШЛЮЗ L1 ОТКРЫТ. Впереди узел данных и лаборатория.")
+			else:
+				_show_status("ОТКАЗ ДОСТУПА: требуется ключ-карта L1. Проверь администрацию.")
+		"door_l2":
+			if has_l2:
+				_open_door("L2 security door")
+				_show_status("ШЛЮЗ L2 ОТКРЫТ. Эвакуационный маршрут активен.")
+			else:
+				_show_status("ОТКАЗ ДОСТУПА: требуется ключ-карта L2.")
+		"exit_door":
+			if not has_l2:
+				_show_status("ЭВАКУАЦИЯ ЗАБЛОКИРОВАНА: отсутствует карта L2.")
+			elif not reactor_disabled:
+				_show_status("ПРОТОКОЛ «ЗЕРКАЛО»: сначала отключи аварийный генератор в мастерской.")
+			elif not comms_restored:
+				_show_status("Канал 7 молчит. Проверь терминал связи перед выходом.")
+			else:
+				_open_door("Surface exit door")
+				_show_status("ШЛЮЗ ОТКРЫТ. За ним коридор повторяется… ЦИКЛ 01 ЗАВЕРШЁН.")
+		"archive_log":
+			archive_read = true
+			target.queue_free()
+			_show_status("ЖУРНАЛ СМЕНЫ / 03:17 — камеры пусты, датчики фиксируют движение. Доктор Гирс приказал не открывать камеру KETER-19. Последняя запись: «коридор за воротами не совпадает с планом».")
+		"reactor":
+			reactor_disabled = true
+			target.queue_free()
+			_show_status("ГЕНЕРАТОР ОТКЛЮЧЁН. Аварийное питание снято; в секторе стало подозрительно тихо.")
+		"comms":
+			comms_restored = true
+			target.queue_free()
+			_show_status("КАНАЛ 7 / ВХОДЯЩЕЕ: «Если слышишь это, не верь двери с табличкой ВЫХОД. Я уже проходил её. Дважды». — Гирс")
+		_:
+			_show_status("Объект пока не реагирует.")
+
+func _open_door(door_name: String) -> void:
+	if opened_doors.has(door_name):
+		return
+	opened_doors[door_name] = true
+	var door := facility_ref.find_child(door_name, true, false) as Node3D
+	if door:
+		door.visible = false
+		var shape := door.find_child("CollisionShape3D", true, false) as CollisionShape3D
+		if shape:
+			shape.disabled = true
+
+func _show_status(message: String) -> void:
+	if status_label:
+		status_label.text = message
 
 func _build_environment() -> void:
 	var world := WorldEnvironment.new()
@@ -208,3 +311,26 @@ func _build_hud() -> void:
 	map_dot.color = Color(0.2, 1.0, 0.55)
 	map_dot.size = Vector2(8, 8)
 	map_panel.add_child(map_dot)
+	interaction_hint = Label.new()
+	interaction_hint.name = "InteractionHint"
+	interaction_hint.anchor_left = 0.5
+	interaction_hint.anchor_right = 0.5
+	interaction_hint.anchor_top = 1.0
+	interaction_hint.anchor_bottom = 1.0
+	interaction_hint.offset_left = -210
+	interaction_hint.offset_right = 210
+	interaction_hint.offset_top = -88
+	interaction_hint.offset_bottom = -60
+	interaction_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	interaction_hint.add_theme_font_size_override("font_size", 17)
+	interaction_hint.add_theme_color_override("font_color", Color(0.95, 0.72, 0.3))
+	layer.add_child(interaction_hint)
+	status_label = Label.new()
+	status_label.name = "StoryStatus"
+	status_label.position = Vector2(24, 130)
+	status_label.size = Vector2(700, 110)
+	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status_label.add_theme_font_size_override("font_size", 14)
+	status_label.add_theme_color_override("font_color", Color(0.9, 0.78, 0.63))
+	layer.add_child(status_label)
+	_show_status("03:17 — грузовой лифт остановился. Последние 47 минут отсутствуют в памяти. Найди карту L1 в администрации.")
