@@ -6,6 +6,27 @@ var floor_mat: StandardMaterial3D
 var metal_mat: StandardMaterial3D
 var door_mat: StandardMaterial3D
 var red_mat: StandardMaterial3D
+var unstable_lights: Array[OmniLight3D] = []
+var flicker_clock: float = 0.2
+var flicker_active_until: float = 0.0
+var flicker_target: OmniLight3D
+var flicker_target_energy: float = 0.0
+
+func _process(delta: float) -> void:
+	flicker_clock -= delta
+	if flicker_target != null:
+		flicker_active_until -= delta
+		if flicker_active_until <= 0.0:
+			if is_instance_valid(flicker_target):
+				flicker_target.light_energy = flicker_target_energy
+			flicker_target = null
+	if flicker_clock <= 0.0:
+		flicker_clock = randf_range(0.18, 0.62)
+		if flicker_target == null and not unstable_lights.is_empty() and randf() < 0.24:
+			flicker_target = unstable_lights[randi_range(0, unstable_lights.size() - 1)]
+			flicker_target_energy = flicker_target.light_energy
+			flicker_target.light_energy = 0.025
+			flicker_active_until = randf_range(0.045, 0.14)
 
 func _ready() -> void:
  wall_mat = _mat(Color(0.76,0.78,0.77),0.08,0.92)
