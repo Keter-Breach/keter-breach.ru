@@ -559,3 +559,93 @@ p#description {
   .keter-loading::before, .menu-atmosphere::before, .dust { animation: none !important; }
   .loading-track span { width: 60%; }
 }
+
+
+/* === VHS SIGNAL: единый стиль заставки и игрового изображения === */
+#three-container {
+  isolation: isolate;
+  background: #020304;
+}
+#three-container canvas {
+  display: block;
+  position: relative;
+  z-index: 0;
+}
+#three-container .keter-vhs-overlay,
+#three-container::before,
+#three-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+#three-container .keter-vhs-overlay {
+  z-index: 1;
+  opacity: .24;
+  background:
+    repeating-linear-gradient(0deg, rgba(190,220,211,.16) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(0deg, transparent 0 43%, rgba(230,245,239,.07) 43.2% 43.8%, transparent 44.2% 100%),
+    linear-gradient(90deg, rgba(255,20,24,.055), transparent 18% 82%, rgba(30,160,255,.045)),
+    radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,.34) 100%);
+  background-size: 100% 4px, 100% 100%, 100% 100%, 100% 100%;
+  mix-blend-mode: screen;
+  animation: keter-game-vhs-jitter 8.5s steps(1,end) infinite,
+             keter-game-vhs-track 12s linear infinite;
+}
+#three-container::before {
+  z-index: 1;
+  opacity: .075;
+  background: repeating-radial-gradient(ellipse at 40% 60%, rgba(255,255,255,.12) 0 1px, transparent 1px 3px);
+  background-size: 7px 5px;
+  mix-blend-mode: overlay;
+  animation: keter-game-grain .22s steps(2,end) infinite;
+}
+#three-container::after {
+  z-index: 1;
+  opacity: .22;
+  background: linear-gradient(90deg, rgba(255,0,0,.045), transparent 3% 97%, rgba(0,130,255,.04));
+  box-shadow: inset 0 0 90px rgba(0,0,0,.32);
+}
+#three-container #hud,
+#three-container #inventory-hud,
+#three-container #minimap-canvas,
+#three-container .crosshair,
+#three-container > div:not(.keter-vhs-overlay):not(.crosshair) {
+  z-index: 2;
+}
+@keyframes keter-game-vhs-jitter {
+  0%, 73%, 75%, 90%, 92%, 100% { opacity: .22; transform: translateX(0); filter: none; }
+  74% { opacity: .4; transform: translateX(2px); filter: saturate(1.35); }
+  76% { opacity: .14; transform: translateX(-2px); }
+  91% { opacity: .42; transform: translateX(1px); }
+  93% { opacity: .12; transform: translateX(-1px); }
+}
+@keyframes keter-game-vhs-track {
+  0%, 100% { background-position: 0 0, 0 -120%, 0 0, 0 0; }
+  50% { background-position: 0 0, 0 120%, 0 0, 0 0; }
+}
+@keyframes keter-game-grain {
+  0% { transform: translate(0,0); }
+  25% { transform: translate(1%,-1%); }
+  50% { transform: translate(-1%,1%); }
+  75% { transform: translate(1%,1%); }
+}
+.keter-loading {
+  background:
+    radial-gradient(ellipse at 50% 48%, rgba(85,15,15,.12), transparent 38%),
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(180,205,195,.045) 4px, transparent 5px),
+    #000 !important;
+}
+.keter-loading .loading-brand,
+.keter-loading .loading-status,
+.keter-loading .loading-foot {
+  text-shadow: 0 0 12px rgba(195,55,45,.2);
+}
+#text-game .card::before {
+  text-shadow: 1px 0 rgba(255,40,30,.28), -1px 0 rgba(35,160,255,.18);
+}
+@media (prefers-reduced-motion: reduce) {
+  #three-container .keter-vhs-overlay,
+  #three-container::before,
+  .keter-loading::before { animation: none !important; }
+}
