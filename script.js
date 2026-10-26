@@ -54,7 +54,7 @@ function playSound(name) {
 }
 
 // === 2. СЮЖЕТ И СОСТОЯНИЕ ===
-const freshState = () => ({ keycardL1: false, keycardL2: false });
+const freshState = () => ({ keycardL1: false, keycardL2: false, logsFound: [], reactorDisabled: false, anomalySeen: false });
 window.playerState = freshState();
 let loopCount = 1;
 
@@ -80,7 +80,7 @@ const storyData = {
   1: {
     title: "ГЛАВА 1: НАРУШЕНИЕ СОДЕРЖАНИЯ",
     location: "Сектор D-12",
-    desc: "Аварийные сирены ревут. Комплекс погрузился во тьму. Найдите пропускные карты, восстановите питание шлюзов и выберитесь на поверхность, пока не поздно.",
+    desc: "ИНЦИДЕНТ KETER-19 · 03:17. В секторе D-12 сорван протокол содержания. Связь с персоналом потеряна, камеры показывают пустые коридоры — даже там, где датчики фиксируют движение. Вы очнулись в грузовом лифте без воспоминаний о последних 47 минутах. Найдите карты доступа, исследуйте лаборатории, архив и технические уровни. Не доверяйте голосу по громкой связи: запись с вашим позывным датирована завтрашним днём.",
     choices: [
       { text: "Войти в комплекс (3D)", nextChapter: 2 },
       { text: "Открыть досье ключевых сотрудников Фонда", nextChapter: "PERSONNEL_DOSSIER" }
@@ -88,9 +88,9 @@ const storyData = {
   },
   2: { title: "3D КОМПЛЕКС", is3D: true },
   3: {
-    title: "ПОБЕГ УСПЕШЕН",
-    location: "Поверхность",
-    desc: "Вы преодолели все отсеки сдерживания! Команда эвакуации забирает вас.",
+    title: "ЭВАКУАЦИЯ · ПРОТОКОЛ «ЗЕРКАЛО»",
+    location: "Внешний периметр / неизвестно",
+    desc: "Ворота открываются, но снаружи нет ни леса, ни эвакуационной группы — только копия вашего коридора, уходящая в темноту. По внутренней связи доктор Гирс сообщает, что вас не было в списках персонала, а камеры наблюдения показывают, как вы входите в лифт ещё до начала аварии. Последняя строка журнала: «Субъект успешно покинул комплекс. Начать следующий цикл».",
     choices: [{ text: "Начать заново", nextChapter: 'RESET' }]
   }
 };
@@ -810,11 +810,11 @@ function init3DMode() {
   if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0.3;
   velocity.set(0, 0, 0); openingDoors = [];
   camera.position.set(0, 0.72, -8);
-  camera.rotation.set(0.22, Math.PI, 0); // приходит в себя на полу лифта, затем поднимает голову
-  if (firstPersonRig) firstPersonRig.visible = true;
+  camera.rotation.set(0.22, Math.PI, 0); // first-person: без видимой модели тела/рук персонажа
+  if (firstPersonRig) firstPersonRig.visible = false;
   wakeupProgress = 0;
   wakeupActive = true;
-  showToast("Вы приходите в себя в остановившемся лифте...", 4200);
+  showToast("ИНЦИДЕНТ KETER-19: лифт остановлен. Найдите карту L-1 и проверьте архивные терминалы.", 5200);
   const batteryHUD = document.getElementById("battery-level");
   batteryHUD.textContent = "100%";
   batteryHUD.classList.remove("battery-low", "battery-critical");
@@ -980,9 +980,9 @@ function build10ZonesMap() {
   const glassMat = MAT.glass;
   const redMat = () => new THREE.MeshBasicMaterial({ color: 0xff2222 });
 
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 160), floorMaterial);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(180, 240), floorMaterial);
   floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 30); floor.receiveShadow = true; world.add(floor);
-  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(120, 160), ceilingMat);
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(180, 240), ceilingMat);
   ceiling.rotation.x = Math.PI / 2; ceiling.position.set(0, 3.2, 30); world.add(ceiling);
 
   const box = (mat, w, h, d, x, y, z, solid) => {
@@ -1322,6 +1322,36 @@ function build10ZonesMap() {
       }
     });
   });
+
+  // Дополнительные крылья комплекса: архив, медблок и технический уровень.
+  const roomFloor = new THREE.MeshStandardMaterial({ color: 0x303638, roughness: 0.94 });
+  const room = (cx, cz, w, d, title, subtitle, lightColor = 0x8aa8a0) => {
+    const rf = new THREE.Mesh(new THREE.PlaneGeometry(w, d), roomFloor);
+    rf.rotation.x = -Math.PI / 2; rf.position.set(cx, 0.012, cz); world.add(rf);
+    const rc = new THREE.Mesh(new THREE.PlaneGeometry(w, d), ceilingMat);
+    rc.rotation.x = Math.PI / 2; rc.position.set(cx, 3.18, cz); world.add(rc);
+    box(wallMaterial, 0.45, 3.2, d, cx - w / 2, 1.6, cz, true);
+    box(wallMaterial, 0.45, 3.2, d, cx + w / 2, 1.6, cz, true);
+    box(wallMaterial, w, 3.2, 0.45, cx, 1.6, cz + d / 2, true);
+    addPointLight(cx, cz, lightColor, 2.65);
+    addSign([title, subtitle], cx, 2.65, cz - d / 2 + 0.35, 0, '#9dffcb');
+  };
+  room(-25, 18, 18, 18, 'АРХИВ-09', 'ЗАПИСИ ИНЦИДЕНТА', 0x5c9b87);
+  room(25, 38, 18, 20, 'МЕДБЛОК', 'КАРАНТИН УРОВНЯ 4', 0x7b9dba);
+  room(-25, 62, 18, 20, 'ТЕХНИЧЕСКИЙ УРОВЕНЬ', 'РЕАКТОР / НЕ ВХОДИТЬ', 0xff5533);
+  for (let z = 11; z <= 25; z += 4) {
+    box(MAT.cab, 0.7, 2.25, 2.6, -31.8, 1.125, z, true);
+    box(MAT.cab, 0.7, 2.25, 2.6, -18.2, 1.125, z, true);
+  }
+  for (let z = 32; z <= 44; z += 4) {
+    box(MAT.bed, 2.5, 0.35, 0.9, 22.2, 0.35, z, true);
+    box(MAT.cab, 0.18, 1.1, 0.18, 21.2, 0.55, z - 0.3, true);
+    box(MAT.cab, 0.18, 1.1, 0.18, 23.2, 0.55, z - 0.3, true);
+  }
+  for (let z = 55; z <= 70; z += 3) {
+    box(MAT.keter, 1.2, 2.5, 1.1, -30.5, 1.25, z, true);
+    box(new THREE.MeshBasicMaterial({ color: 0xff3322 }), 0.08, 0.08, 0.08, -29.85, 1.7, z, false);
+  }
 }
 
 function spawnKeycard(x, y, z, level, colorHex, type) {
