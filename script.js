@@ -1691,7 +1691,7 @@ function build10ZonesMap() {
     world.add(stripe);
     for (let k = -3; k <= 3; k++) box(new THREE.MeshBasicMaterial({ color: 0x171b1c, toneMapped: false }),
       0.14, 0.012, 0.28, k * 0.28, 0.033, z, false);
-  }
+  });
 
   for (let x = -34; x <= 34; x += 17) {
     box(trimMat, 5.2, 0.07, 0.08, x, 2.92, 53, false);
