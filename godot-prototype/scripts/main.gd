@@ -448,7 +448,7 @@ func _build_menu() -> void:
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	menu_root.add_child(background)
 	var shade := ColorRect.new()
-	shade.color = Color(0.008, 0.012, 0.018, 0.72)
+	shade.color = Color(0.008, 0.012, 0.018, 0.56)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	menu_root.add_child(shade)
@@ -458,8 +458,8 @@ func _build_menu() -> void:
 	menu_panel.position = Vector2(-340, -300)
 	menu_panel.size = Vector2(680, 600)
 	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.008, 0.013, 0.017, 0.88)
-	panel_style.border_color = Color(0.34, 0.075, 0.065, 0.9)
+	panel_style.bg_color = Color(0.008, 0.013, 0.017, 0.82)
+	panel_style.border_color = Color(0.58, 0.10, 0.075, 0.98)
 	panel_style.set_border_width_all(1)
 	panel_style.set_content_margin_all(24)
 	menu_panel.add_theme_stylebox_override("panel", panel_style)
@@ -480,9 +480,15 @@ func _build_menu() -> void:
 	var title := Label.new()
 	title.text = "KETER BREACH"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 48)
+	title.add_theme_font_size_override("font_size", 54)
 	title.add_theme_color_override("font_color", Color(0.91, 0.9, 0.86))
 	column.add_child(title)
+	var title_rule := ColorRect.new()
+	title_rule.name = "TitleRule"
+	title_rule.color = Color(0.72, 0.075, 0.055, 0.95)
+	title_rule.custom_minimum_size = Vector2(160, 2)
+	title_rule.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	column.add_child(title_rule)
 	var subtitle := Label.new()
 	subtitle.text = "ОБЪЕКТ KETER-19  //  ИНЦИДЕНТ 03:17"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -496,7 +502,7 @@ func _build_menu() -> void:
 	_add_menu_button(column, "ПРОДОЛЖИТЬ", _continue_game)
 	_add_menu_button(column, "ДОСЬЕ ИНЦИДЕНТА", _show_dossier)
 	var footer := Label.new()
-	footer.text = "WASD — ДВИЖЕНИЕ   •   F — ФОНАРЬ   •   E — ВЗАИМОДЕЙСТВИЕ"
+	footer.text = "WASD — ДВИЖЕНИЕ   •   F — ФОНАРЬ   •   E — ВЗАИМОДЕЙСТВИЕ\nСИСТЕМА D-12  //  ДОСТУП ОГРАНИЧЕН"
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	footer.add_theme_font_size_override("font_size", 12)
 	footer.add_theme_color_override("font_color", Color(0.52, 0.55, 0.57))
