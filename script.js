@@ -949,7 +949,16 @@ function init3DMode() {
 }
 
 function onMouseMove(e) {
-  if (!isLocked()) return;
+  // Pointer Lock is preferred, but some Electron/laptop configurations reject it.
+  // In that case allow mouse-look while the pointer is over the visible game.
+  const container = document.getElementById("three-container");
+  if (!isLocked() && (
+    !container ||
+    container.classList.contains("hidden") ||
+    window.__keterPaused ||
+    !container.contains(e.target)
+  )) return;
+  if (!camera) return;
   camera.rotation.y -= e.movementX * 0.002;
   camera.rotation.x -= e.movementY * 0.002;
   camera.rotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, camera.rotation.x));
@@ -1648,7 +1657,9 @@ function animate3D() {
     if (wakeupProgress >= 1) wakeupActive = false;
   }
 
-  if (locked) {
+  // Не блокируем WASD, если Pointer Lock недоступен (часто бывает в Electron).
+  // Пока 3D-сцена активна, клавиатура и мышь над игровым окном продолжают работать.
+  if (!window.__keterPaused) {
     // Батарея
     if (flashlightOn && battery > 0) {
       battery -= delta * (isSprinting ? 0.3 : 0.08);
