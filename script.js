@@ -717,13 +717,15 @@ function init3DMode() {
     renderer.toneMappingExposure = 0.98;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.physicallyCorrectLights = true;
+    // Standard Three.js light units are more reliable across older laptop GPUs.
+    // Physical units made the starting lift nearly black on some integrated graphics.
+    renderer.physicallyCorrectLights = false;
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
 
     buildMaterials();
 
-    flashlight = new THREE.SpotLight(0xddeeff, 110, 32, Math.PI / 4.2, 0.58, 1.7);
+    flashlight = new THREE.SpotLight(0xddeeff, 8, 32, Math.PI / 4.2, 0.58, 1.7);
     flashlight.position.set(0, 0, 0);
     flashlight.castShadow = true;
     flashlight.shadow.mapSize.set(1024, 1024);
@@ -735,8 +737,8 @@ function init3DMode() {
     firstPersonRig = createFirstPersonRig();
     flashlight.position.set(0.38, -0.48, -1.28);
     flashlight.target.position.set(0.38, -0.44, -5.5);
-    scene.add(new THREE.HemisphereLight(0x71818b, 0x100f0d, 0.62));
-    scene.add(new THREE.AmbientLight(0x6d777b, 0.28));
+    scene.add(new THREE.HemisphereLight(0x9baeb7, 0x24211d, 0.95));
+    scene.add(new THREE.AmbientLight(0x9ba5a8, 0.55));
 
     // Подсказки поверх игры (вместо alert, который ломал pointer lock)
     const base = "position:absolute;left:50%;transform:translateX(-50%);padding:10px 18px;" +
@@ -831,7 +833,7 @@ function init3DMode() {
 
   createDistantApparition();
 
-  battery = 100; flashlightOn = true; flashlight.intensity = 110;
+  battery = 100; flashlightOn = true; flashlight.intensity = 8;
   if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0.3;
   velocity.set(0, 0, 0); openingDoors = [];
   camera.position.set(0, 0.72, -8);
@@ -1537,28 +1539,60 @@ function openDoor(mesh) {
 function drawMinimap() {
   const canvas = document.getElementById("minimap-canvas");
   const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, 120, 120);
-  const scale = 1.2, cx = 60, cy = 14;
+  if (!ctx || !camera) return;
 
-  ctx.fillStyle = 'rgba(0,255,102,0.25)';
+  const width = canvas.width, height = canvas.height;
+  const cx = width / 2, cy = height / 2;
+  const scale = 1.35;
+
+  // Радиолокатор следует за игроком: маркер всегда остаётся в центре,
+  // а стены и двери показываются относительно текущего положения камеры.
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "rgba(0, 10, 5, 0.94)";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.strokeStyle = "rgba(0,255,102,0.16)";
+  ctx.lineWidth = 1;
+  for (let r = 20; r < Math.min(width, height) / 2; r += 20) {
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, height); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(width, cy); ctx.stroke();
+
+  const mapX = x => cx + (x - camera.position.x) * scale;
+  const mapY = z => cy + (z - camera.position.z) * scale;
+
+  ctx.fillStyle = "rgba(0,255,102,0.42)";
   walls.forEach(({ box }) => {
-    if (box.max.y - box.min.y < 3) return; // только стены, без мебели
-    ctx.fillRect(cx + box.min.x * scale, cy + box.min.z * scale,
-      (box.max.x - box.min.x) * scale, (box.max.z - box.min.z) * scale);
+    if (box.max.y - box.min.y < 3) return;
+    const x1 = mapX(box.min.x), x2 = mapX(box.max.x);
+    const y1 = mapY(box.min.z), y2 = mapY(box.max.z);
+    if (x2 < 0 || x1 > width || y2 < 0 || y1 > height) return;
+    ctx.fillRect(x1, y1, Math.max(1, x2 - x1), Math.max(1, y2 - y1));
   });
 
-  ctx.fillStyle = '#ffaa00';
+  ctx.fillStyle = "#ffaa00";
   Object.values(doors).forEach(d => {
-    if (d.position.y < 2.0) ctx.fillRect(cx + d.position.x * scale - 4, cy + d.position.z * scale, 8, 2);
+    if (d.position.y < 2.0) {
+      const x = mapX(d.position.x), y = mapY(d.position.z);
+      if (x >= -5 && x <= width + 5 && y >= -5 && y <= height + 5) {
+        ctx.fillRect(x - 4, y - 2, 8, 4);
+      }
+    }
   });
 
-  const px = cx + camera.position.x * scale, pz = cy + camera.position.z * scale;
+  // Игрок — отчётливый зелёный маркер в центре, с направлением взгляда.
   const yaw = camera.rotation.y;
-  ctx.strokeStyle = '#00ff66';
-  ctx.beginPath(); ctx.moveTo(px, pz);
-  ctx.lineTo(px - Math.sin(yaw) * 9, pz - Math.cos(yaw) * 9); ctx.stroke();
-  ctx.fillStyle = '#00ff66';
-  ctx.beginPath(); ctx.arc(px, pz, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = "#00ff66";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx - Math.sin(yaw) * 12, cy - Math.cos(yaw) * 12);
+  ctx.stroke();
+  ctx.fillStyle = "#00ff66";
+  ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = "rgba(0,255,102,0.85)";
+  ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.stroke();
 }
 
 // === 7. ИГРОВОЙ ЦИКЛ ===
