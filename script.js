@@ -684,6 +684,9 @@ function init3DMode() {
     flashlight.target.position.set(0, 0, -1); // камера смотрит в -Z
     camera.add(flashlight, flashlight.target);
     scene.add(camera);
+    firstPersonRig = createFirstPersonRig();
+    flashlight.position.set(0.38, -0.48, -1.28);
+    flashlight.target.position.set(0.38, -0.44, -5.5);
     scene.add(new THREE.AmbientLight(0x090d12, 0.16));
 
     // Подсказки поверх игры (вместо alert, который ломал pointer lock)
@@ -725,7 +728,8 @@ function init3DMode() {
   battery = 100; flashlightOn = true; flashlight.intensity = 5.0;
   velocity.set(0, 0, 0); openingDoors = [];
   camera.position.set(0, 0.72, -8);
-  camera.rotation.set(0.22, Math.PI, 0); // приходит в себя на полу лифта, затем поднимает голову\n  if (firstPersonRig) firstPersonRig.visible = true;
+  camera.rotation.set(0.22, Math.PI, 0); // приходит в себя на полу лифта, затем поднимает голову
+  if (firstPersonRig) firstPersonRig.visible = true;
   wakeupProgress = 0;
   wakeupActive = true;
   showToast("Вы приходите в себя в остановившемся лифте...", 4200);
@@ -1353,6 +1357,15 @@ function animate3D() {
     const d = openingDoors[i];
     d.mesh.position.y += (d.targetY - d.mesh.position.y) * Math.min(1, delta * 4);
     if (Math.abs(d.targetY - d.mesh.position.y) < 0.02) { d.mesh.position.y = d.targetY; openingDoors.splice(i, 1); }
+  }
+
+  // Лёгкое покачивание рук и фонаря синхронно с шагами.
+  if (firstPersonRig) {
+    const moving = locked && (moveForward || moveBackward || moveLeft || moveRight);
+    const bob = moving ? Math.sin(headBobTimer * 0.5) : 0;
+    firstPersonRig.position.y = moving ? Math.abs(bob) * 0.018 : 0;
+    firstPersonRig.position.x = moving ? Math.sin(headBobTimer * 0.25) * 0.012 : 0;
+    firstPersonRig.rotation.z = moving ? Math.sin(headBobTimer * 0.25) * 0.012 : 0;
   }
 
   // Пленочный дрифт камеры (не накапливается)
