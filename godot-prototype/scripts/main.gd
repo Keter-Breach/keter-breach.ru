@@ -590,7 +590,7 @@ func _show_dossier() -> void:
 	var button := intro_root.find_child("IntroContinue", true, false) as Button
 	var skip_button := intro_root.find_child("IntroSkip", true, false) as Button
 	header.text = "ДОСЬЕ ИНЦИДЕНТА // KETER-19"
-	text_label.text = "03:17 — аварийный сигнал зафиксирован в секторе D-12.\\n\\nДоктор Гирс сообщил о расхождении показаний камер и датчиков движения. Последняя запись смены содержит предупреждение о коридоре, которого нет на плане комплекса.\\n\\nДоступ к полному досье засекречен."
+	text_label.text = "03:17 — аварийный сигнал зафиксирован в секторе D-12.\n\nДоктор Гирс сообщил о расхождении показаний камер и датчиков движения. Последняя запись смены содержит предупреждение о коридоре, которого нет на плане комплекса.\n\nДоступ к полному досье засекречен."
 	button.text = "ВЕРНУТЬСЯ В МЕНЮ"
 	for connection in button.pressed.get_connections():
 		button.pressed.disconnect(connection.callable)
