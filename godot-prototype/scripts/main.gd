@@ -18,6 +18,7 @@ var comms_restored: bool = false
 var opened_doors: Dictionary = {}
 var loop_count: int = 0
 var triggered_events: Dictionary = {}
+var evidence_found: Dictionary = {}
 var game_started: bool = false
 var menu_layer: CanvasLayer
 var menu_root: Control
@@ -54,6 +55,7 @@ func _load_game_state() -> void:
 	loop_count = int(config.get_value("progress", "loop_count", 0))
 	opened_doors = config.get_value("progress", "opened_doors", {}) as Dictionary
 	triggered_events = config.get_value("events", "triggered", {}) as Dictionary
+	evidence_found = config.get_value("evidence", "found", {}) as Dictionary
 
 func _save_game_state() -> void:
 	var config := ConfigFile.new()
@@ -65,6 +67,7 @@ func _save_game_state() -> void:
 	config.set_value("progress", "loop_count", loop_count)
 	config.set_value("progress", "opened_doors", opened_doors)
 	config.set_value("events", "triggered", triggered_events)
+	config.set_value("evidence", "found", evidence_found)
 	if player_ref != null:
 		config.set_value("player", "flashlight_charge", float(player_ref.get("flashlight_charge")))
 	config.save("user://keter_breach_save.cfg")
@@ -80,6 +83,12 @@ func _apply_loaded_state() -> void:
 		_remove_saved_item("reactor", "Emergency generator")
 	if comms_restored:
 		_remove_saved_item("comms", "Channel 7 terminal")
+	if evidence_found.has("incident_memo"):
+		_remove_saved_item("incident_memo", "Incident memo paper")
+	if evidence_found.has("camera_tape"):
+		_remove_saved_item("camera_tape", "Channel 7 recovered tape")
+	if evidence_found.has("sample_label"):
+		_remove_saved_item("sample_label", "KETER-19 sample label")
 	if opened_doors.has("L1 security door"):
 		_set_door_open("L1 security door")
 	if opened_doors.has("L2 security door"):
@@ -291,6 +300,18 @@ func _interact() -> void:
 			player_ref.set("flashlight_charge", minf(100.0, charge + 40.0))
 			target.queue_free()
 			_show_status("НАЙДЕНА ЗАПАСНАЯ БАТАРЕЯ. Заряд фонаря восстановлен на 40%.")
+		"incident_memo":
+			evidence_found["incident_memo"] = true
+			target.queue_free()
+			_show_status("ДОКАЗАТЕЛЬСТВО / СЛУЖЕБНАЯ ЗАПИСКА: «В 03:17 наблюдение показало коридор на 12 метров длиннее чертежа. При повторном замере длина вернулась к норме. Запись удалить по приказу Гирса»." )
+		"camera_tape":
+			evidence_found["camera_tape"] = true
+			target.queue_free()
+			_show_status("КАССЕТА №6: на записи пустой коридор. На последнем кадре отражение оператора поворачивает голову раньше самого оператора." )
+		"sample_label":
+			evidence_found["sample_label"] = true
+			target.queue_free()
+			_show_status("МАРКИРОВКА KETER-19: «Образец не должен отражать свет. Если отражение появилось — немедленно закрыть контейнер»." )
 		_:
 			_show_status("Объект пока не реагирует.")
 	_save_game_state()
