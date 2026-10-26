@@ -5,10 +5,9 @@ on:
     branches: [main, feat/windows-desktop-build]
   push:
     branches: [feat/windows-desktop-build, fix/offline-exe-build]
-  workflow_dispatch:
-  push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: read
