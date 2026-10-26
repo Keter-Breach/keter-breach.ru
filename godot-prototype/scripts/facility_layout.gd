@@ -290,6 +290,11 @@ func _build_room_dressing() -> void:
  var paper_mat := _mat(Color(0.62, 0.59, 0.48), 0.0, 0.96)
  var dark_mat := _mat(Color(0.055, 0.065, 0.07), 0.2, 0.72)
  var glass_mat := _mat(Color(0.18, 0.36, 0.38, 0.72), 0.22, 0.2)
+ var screen_mat := _mat(Color(0.035, 0.20, 0.18), 0.15, 0.28)
+ var lamp_mat := _mat(Color(0.72, 0.84, 0.88), 0.08, 0.22)
+ lamp_mat.emission_enabled = true
+ lamp_mat.emission = Color(0.35, 0.62, 0.78)
+ lamp_mat.emission_energy_multiplier = 0.8
  var amber_mat := _mat(Color(0.95, 0.42, 0.045), 0.08, 0.4)
  # Administration: paperwork, desk terminal and a wall ventilation grille.
  for i in range(4):
