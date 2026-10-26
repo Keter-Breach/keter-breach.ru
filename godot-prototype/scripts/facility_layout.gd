@@ -41,6 +41,19 @@ func _ready() -> void:
  if floor_texture: floor_mat.albedo_texture = floor_texture
  if metal_texture: metal_mat.albedo_texture = metal_texture
  if metal_texture: door_mat.albedo_texture = metal_texture
+ var concrete_normal := load("res://assets/textures/keter-concrete-normal.svg") as Texture2D
+ var metal_normal := load("res://assets/textures/keter-metal-normal.svg") as Texture2D
+ if concrete_normal:
+  wall_mat.normal_enabled = true
+  wall_mat.normal_texture = concrete_normal
+  wall_mat.normal_scale = 0.32
+ if metal_normal:
+  metal_mat.normal_enabled = true
+  metal_mat.normal_texture = metal_normal
+  metal_mat.normal_scale = 0.26
+  door_mat.normal_enabled = true
+  door_mat.normal_texture = metal_normal
+  door_mat.normal_scale = 0.34
  # Scale the tiling so large architectural surfaces retain visible material detail.
  wall_mat.uv1_scale = Vector3(5.0, 3.0, 1.0)
  floor_mat.uv1_scale = Vector3(10.0, 10.0, 1.0)
@@ -57,6 +70,8 @@ func _ready() -> void:
  _build_props()
  _build_detail_pass()
  _build_room_dressing()
+ _build_door_details()
+ _build_ambient_audio()
  _build_lights()
  _build_labels()
 
@@ -606,3 +621,68 @@ func _add_rigid_can(p: Vector3, mat: Material) -> void:
 	collision.shape = shape
 	body.add_child(collision)
 	add_child(body)
+
+func _build_door_details() -> void:
+	var rib_mat := _mat(Color(0.12, 0.15, 0.16), 0.72, 0.38)
+	var stripe_mat := _mat(Color(0.78, 0.38, 0.035), 0.18, 0.58)
+	var status_mat := _mat(Color(0.025, 0.26, 0.12), 0.3, 0.3)
+	status_mat.emission_enabled = true
+	status_mat.emission = Color(0.02, 0.32, 0.1)
+	status_mat.emission_energy_multiplier = 0.75
+	for door_name in ["L1 security door", "L2 security door", "Surface exit door"]:
+		var door := find_child(door_name, true, false) as StaticBody3D
+		if door == null:
+			continue
+		# All details are children of the door body, so they travel with its collision.
+		for x in [-0.72, -0.36, 0.36, 0.72]:
+			var rib := MeshInstance3D.new()
+			var rib_mesh := BoxMesh.new()
+			rib_mesh.size = Vector3(0.035, 2.38, 0.035)
+			rib.mesh = rib_mesh
+			rib.material_override = rib_mat
+			rib.position = Vector3(x, 0.0, -0.112)
+			door.add_child(rib)
+		var top_strip := MeshInstance3D.new()
+		var top_mesh := BoxMesh.new()
+		top_mesh.size = Vector3(1.88, 0.075, 0.035)
+		top_strip.mesh = top_mesh
+		top_strip.material_override = stripe_mat
+		top_strip.position = Vector3(0, 1.18, -0.115)
+		door.add_child(top_strip)
+		var center_panel := MeshInstance3D.new()
+		var panel_mesh := BoxMesh.new()
+		panel_mesh.size = Vector3(0.34, 0.5, 0.035)
+		center_panel.mesh = panel_mesh
+		center_panel.material_override = rib_mat
+		center_panel.position = Vector3(0, 0.0, -0.12)
+		door.add_child(center_panel)
+		var indicator := MeshInstance3D.new()
+		var indicator_mesh := BoxMesh.new()
+		indicator_mesh.size = Vector3(0.12, 0.045, 0.035)
+		indicator.mesh = indicator_mesh
+		indicator.material_override = status_mat
+		indicator.position = Vector3(0, 0.82, -0.13)
+		door.add_child(indicator)
+
+func _build_ambient_audio() -> void:
+	# Procedural low-frequency facility hum. Separate 3D emitters make it spatial, not a flat UI sound.
+	for item in [
+		[Vector3(0, 2.0, 13.0), 0.78, 0.92],
+		[Vector3(-11, 1.8, 33.0), 0.55, 0.78],
+		[Vector3(0, 2.0, 52.0), 0.66, 0.72],
+		[Vector3(0, 2.0, 89.0), 0.48, 1.08]
+	]:
+		var emitter := AudioStreamPlayer3D.new()
+		emitter.name = "SpatialFacilityHum"
+		emitter.position = item[0]
+		emitter.unit_size = 8.0
+		emitter.max_distance = 38.0
+		emitter.volume_db = -13.0
+		emitter.pitch_scale = float(item[2])
+		var generator := AudioStreamGenerator.new()
+		generator.mix_rate = 22050.0
+		generator.buffer_length = 0.35
+		emitter.stream = generator
+		emitter.set_script(load("res://scripts/ambient_hum.gd"))
+		add_child(emitter)
+		emitter.set("hum_gain", float(item[1]))
