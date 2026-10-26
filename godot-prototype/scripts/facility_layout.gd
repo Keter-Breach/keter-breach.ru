@@ -237,6 +237,11 @@ func _build_props() -> void:
  _box("Surface exit door",Vector3(2,2.8,0.2),Vector3(0,1.4,80),door_mat)
  _add_interaction("exit_door",Vector3(0,1.4,78.8),Vector3(3,2.6,2.2),"Эвакуационный шлюз")
 
+ # Repeating red floor marks make the Mirror corridor feel like a corrupted copy.
+ for z in [84.0,88.0,92.0,96.0]:
+  _box("Mirror floor warning stripe",Vector3(2.2,0.015,0.08),Vector3(0,0.015,z),red_mat,false)
+  _box("Mirror wall marker",Vector3(0.06,0.22,0.5),Vector3(-3.68,2.45,z),red_mat,false)
+  _box("Mirror wall marker",Vector3(0.06,0.22,0.5),Vector3(3.68,2.45,z),red_mat,false)
  # D-class bunks and a spare battery from the original coordinates.
  for z in [-7.0, -4.0, -1.0]:
   _box("D-class bunk", Vector3(0.9,1.6,2.0), Vector3(-13,0.8,z), metal_mat)
