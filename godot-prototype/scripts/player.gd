@@ -9,6 +9,11 @@ var camera: Camera3D
 var flashlight: SpotLight3D
 var flashlight_charge: float = 100.0
 var flashlight_drain_rate: float = 0.16
+var stamina: float = 100.0
+var exhausted: bool = false
+var base_fov: float = 75.0
+var stamina_drain_rate: float = 27.0
+var stamina_recovery_rate: float = 19.0
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -16,6 +21,7 @@ func _ready() -> void:
 	camera.name = "PlayerCamera"
 	camera.position = Vector3(0, 1.62, 0)
 	camera.current = true
+	camera.fov = base_fov
 	add_child(camera)
 	flashlight = SpotLight3D.new()
 	flashlight.name = "PlayerFlashlight"
@@ -46,8 +52,6 @@ func _add_action(action: String, keycode: Key) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	elif event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	elif event is InputEventKey and event.pressed and event.keycode == KEY_F:
 		if flashlight_charge > 0.0:
 			flashlight.visible = not flashlight.visible
@@ -73,7 +77,17 @@ func _physics_process(delta: float) -> void:
 	input_dir.y = float(Input.is_action_pressed("move_back")) - float(Input.is_action_pressed("move_forward"))
 	input_dir.x = float(Input.is_action_pressed("move_right")) - float(Input.is_action_pressed("move_left"))
 	input_dir = input_dir.normalized()
-	var speed := walk_speed * (1.65 if Input.is_action_pressed("sprint") else 1.0)
+	var moving := input_dir.length_squared() > 0.01
+	var sprinting := Input.is_action_pressed("sprint") and moving and stamina > 0.0 and not exhausted
+	if sprinting:
+		stamina = maxf(0.0, stamina - stamina_drain_rate * delta)
+		if stamina <= 0.0:
+			exhausted = true
+	else:
+		stamina = minf(100.0, stamina + stamina_recovery_rate * delta)
+		if exhausted and stamina >= 22.0:
+			exhausted = false
+	var speed := walk_speed * (1.65 if sprinting else 1.0)
 	var direction := (global_transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 	if direction:
 		velocity.x = direction.x * speed
@@ -81,4 +95,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, speed * 5.0 * delta)
 		velocity.z = move_toward(velocity.z, 0.0, speed * 5.0 * delta)
+	if camera != null:
+		var target_fov := base_fov + (5.0 if sprinting else 0.0)
+		camera.fov = lerpf(camera.fov, target_fov, minf(1.0, delta * 5.0))
 	move_and_slide()
