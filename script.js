@@ -359,6 +359,7 @@ const TEX = {
       const x = rnd() * s; g.beginPath(); g.moveTo(x, 0); g.bezierCurveTo(x + rnd() * 14 - 7, s / 3, x + rnd() * 14 - 7, 2 * s / 3, x, s); g.stroke();
     }
     speckle(g, s, 1500, 0.25);
+    distressSurface(g, s, 'concrete');
   }),
   rack: () => canvasTex(256, (g, s) => {
     fillBg(g, s, '#1f2327');
