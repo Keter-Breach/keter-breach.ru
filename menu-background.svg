@@ -221,4 +221,90 @@
 </g>
 <g fill="none" stroke="#a8b8ae" stroke-opacity=".22" stroke-width="2"><path d="M40 112V40H112M1808 40H1880V112M40 968V1040H112M1808 1040H1880V968"/></g>
 <rect width="1920" height="1080" fill="none" stroke="#000" stroke-width="80" opacity=".38"/>
+
+<!-- Realism pass v2: layered service infrastructure, practical light, airborne dust -->
+<defs>
+ <linearGradient id="steelEdge" x1="0" y1="0" x2="0" y2="1">
+  <stop stop-color="#7d8985" stop-opacity=".42"/><stop offset=".16" stop-color="#222a2b" stop-opacity=".22"/><stop offset=".8" stop-color="#030506" stop-opacity=".72"/><stop offset="1" stop-color="#64706b" stop-opacity=".18"/>
+ </linearGradient>
+ <radialGradient id="lampSpill">
+  <stop stop-color="#d5dfd4" stop-opacity=".34"/><stop offset=".18" stop-color="#a8b9ad" stop-opacity=".12"/><stop offset="1" stop-color="#9fb3a8" stop-opacity="0"/>
+ </radialGradient>
+ <linearGradient id="redBounce" x1="0" y1="0" x2="0" y2="1">
+  <stop stop-color="#f23a30" stop-opacity=".42"/><stop offset="1" stop-color="#a31411" stop-opacity="0"/>
+ </linearGradient>
+ <filter id="dustBlur"><feGaussianBlur stdDeviation="2.8"/></filter>
+ <filter id="beamBlur"><feGaussianBlur stdDeviation="18"/></filter>
+ <pattern id="fineSteel" width="48" height="64" patternUnits="userSpaceOnUse">
+  <path d="M7 0V64M9 0V64M34 0V64" stroke="#d4dbd4" stroke-opacity=".035" stroke-width="1"/>
+  <path d="M0 21H48M0 52H48" stroke="#000" stroke-opacity=".12" stroke-width="2"/>
+ </pattern>
+</defs>
+<!-- Recessed service channels and structural ribs on the side walls -->
+<g fill="none">
+ <path d="M28 0L588 324M1892 0L1332 324" stroke="#020404" stroke-width="36" opacity=".8"/>
+ <path d="M28 0L588 324M1892 0L1332 324" stroke="url(#steelEdge)" stroke-width="21" opacity=".82"/>
+ <path d="M64 0L594 322M1856 0L1326 322" stroke="#87928b" stroke-width="2" stroke-opacity=".18"/>
+ <path d="M80 0L80 245L174 286L174 420M1840 0L1840 245L1746 286L1746 420" stroke="#080b0c" stroke-width="19"/>
+ <path d="M87 0L87 241L181 282L181 412M1833 0L1833 241L1739 282L1739 412" stroke="#69736e" stroke-width="3" stroke-opacity=".2"/>
+</g>
+<!-- Ceiling fluorescent fixture, aged diffuser and a weak cold spill -->
+<ellipse cx="350" cy="188" rx="320" ry="175" fill="url(#lampSpill)" filter="url(#beamBlur)"/>
+<g transform="translate(205 143)">
+ <path d="M-40 0L210 0L260 27L10 27Z" fill="#020404" opacity=".85"/>
+ <path d="M-28 2L205 2L239 20L7 20Z" fill="#48524e" opacity=".6" stroke="#7b8780" stroke-opacity=".3" stroke-width="2"/>
+ <path d="M-12 7L199 7L222 16L11 16Z" fill="#c3d0c6" opacity=".26"/>
+ <path d="M8 22L238 22" stroke="#020303" stroke-width="5"/>
+ <path d="M24 3L34 18M76 3L86 18M128 3L138 18M180 3L190 18" stroke="#121817" stroke-width="2" opacity=".7"/>
+</g>
+<!-- Maintenance conduits with clamps and shadowed joints -->
+<g fill="none" stroke-linecap="square">
+ <path d="M0 215H198Q213 215 213 231V282H310M1920 190H1732Q1718 190 1718 206V260H1638" stroke="#020303" stroke-width="22" opacity=".88"/>
+ <path d="M0 210H198Q208 210 208 228V276H310M1920 185H1732Q1723 185 1723 203V254H1638" stroke="#68736d" stroke-opacity=".28" stroke-width="4"/>
+ <path d="M160 203V221M183 203V221M1750 178V196M1774 178V196" stroke="#8a948e" stroke-opacity=".2" stroke-width="5"/>
+ <path d="M300 269V285M320 269V285M1600 247V263M1620 247V263" stroke="#030505" stroke-width="8"/>
+</g>
+<!-- More convincing blast-door gasket, bolts, inspection windows and floor track -->
+<g>
+ <rect x="700" y="376" width="520" height="376" fill="none" stroke="#050708" stroke-width="15"/>
+ <rect x="704" y="379" width="512" height="367" fill="none" stroke="#75807a" stroke-opacity=".19" stroke-width="2"/>
+ <path d="M718 390H1202M718 731H1202" stroke="#020303" stroke-width="9"/>
+ <path d="M718 392H1202M718 729H1202" stroke="#a6b0a8" stroke-opacity=".14" stroke-width="2"/>
+ <g fill="#080b0c" stroke="#929c94" stroke-opacity=".25" stroke-width="2">
+  <circle cx="720" cy="398" r="5"/><circle cx="1200" cy="398" r="5"/>
+  <circle cx="720" cy="727" r="5"/><circle cx="1200" cy="727" r="5"/>
+  <circle cx="742" cy="557" r="4"/><circle cx="1178" cy="557" r="4"/>
+ </g>
+ <rect x="935" y="431" width="13" height="278" fill="#030404" opacity=".85"/>
+ <rect x="976" y="431" width="13" height="278" fill="#030404" opacity=".85"/>
+ <path d="M942 438V702M982 438V702" stroke="#aeb8b0" stroke-opacity=".1" stroke-width="2"/>
+ <path d="M690 758H1230L1210 771H710Z" fill="#030405" stroke="#4a5350" stroke-opacity=".45" stroke-width="2"/>
+ <path d="M730 765H1190" stroke="#aeb8b0" stroke-opacity=".15" stroke-width="2"/>
+</g>
+<!-- Faded service stencil, worn paint and small bolts on the right-side access cabinet -->
+<g transform="translate(1450 430)" opacity=".65">
+ <rect x="6" y="7" width="103" height="226" fill="url(#fineSteel)" opacity=".75"/>
+ <path d="M8 76H107M8 181H107" stroke="#020303" stroke-width="5"/>
+ <g fill="#8a9690" opacity=".55"><circle cx="7" cy="8" r="2"/><circle cx="108" cy="8" r="2"/><circle cx="7" cy="232" r="2"/><circle cx="108" cy="232" r="2"/></g>
+ <path d="M18 87H95M18 94H70" stroke="#8a9690" stroke-opacity=".3" stroke-width="2"/>
+ <path d="M18 218l20 -2M54 215l30 -3" stroke="#b0b8b0" stroke-opacity=".22" stroke-width="2"/>
+</g>
+<!-- Broken red beacon spill reflects diffusely across the damp concrete -->
+<ellipse cx="960" cy="820" rx="150" ry="38" fill="#c42a22" opacity=".055" filter="url(#beamBlur)"/>
+<path d="M900 786L945 786L830 1080H735Z" fill="url(#redBounce)" opacity=".55"/>
+<path d="M985 786L1020 786L1170 1080H1090Z" fill="url(#redBounce)" opacity=".38"/>
+<!-- Subtle airborne dust: tiny, irregular particles rather than decorative stars -->
+<g fill="#c4cec5" opacity=".22">
+ <circle cx="252" cy="354" r="1.2"/><circle cx="410" cy="285" r=".9"/><circle cx="534" cy="612" r="1.1"/>
+ <circle cx="670" cy="480" r=".8"/><circle cx="742" cy="330" r="1.1"/><circle cx="1140" cy="365" r=".8"/>
+ <circle cx="1275" cy="525" r="1.1"/><circle cx="1388" cy="300" r=".8"/><circle cx="1542" cy="475" r="1.2"/>
+ <circle cx="1682" cy="392" r=".8"/><circle cx="1760" cy="622" r="1.1"/><circle cx="1180" cy="660" r=".7"/>
+</g>
+<!-- Thin moisture streaks catch the distant emergency lamp -->
+<g fill="none" stroke-linecap="round" opacity=".1">
+ <path d="M278 340l-5 48M291 348l-3 24M1580 296l-7 52M1595 302l-4 31M430 565l-4 27M1460 535l-3 38" stroke="#aab7ae" stroke-width="2"/>
+</g>
+<!-- Fine metal grain only on the steel surfaces, preserving deep shadows -->
+<path d="M710 385H1210V740H710Z" fill="url(#fineSteel)" opacity=".36"/>
+
 </svg>
