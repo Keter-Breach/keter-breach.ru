@@ -1398,6 +1398,45 @@ function build10ZonesMap() {
   box(MAT.bed, 0.7, 0.08, 0.95, -27.4, 0.42, 89, false);
   box(MAT.bed, 0.7, 0.08, 0.95, -22.8, 0.42, 85.5, false);
   addSign(['ЖУРНАЛ СМЕНЫ', 'ПОСЛЕДНЯЯ ЗАПИСЬ: 03:17'], -25, 2.55, 80.5, 0, '#b5c0bd');
+
+  // Первая сюжетная улика: терминал дежурной смены, который можно изучить.
+  const loreScreenMat = new THREE.MeshStandardMaterial({
+    color: 0x172522, roughness: 0.38, metalness: 0.22,
+    emissive: 0x164b3a, emissiveIntensity: 0.7
+  });
+  const loreFrameMat = new THREE.MeshStandardMaterial({ color: 0x252d2f, roughness: 0.76, metalness: 0.4 });
+  const shiftTerminal = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.72, 0.12), loreFrameMat);
+  shiftTerminal.position.set(-25, 1.55, 81.25);
+  shiftTerminal.userData = { type: 'loreShift' };
+  world.add(shiftTerminal);
+  interactiveItems.push(shiftTerminal);
+  const shiftScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.78, 0.48), loreScreenMat);
+  shiftScreen.position.set(-25, 1.58, 81.17);
+  world.add(shiftScreen);
+  // Оставленные стулья и раскрытая папка намекают, что сотрудники ушли посреди работы.
+  box(MAT.cab, 0.52, 0.08, 0.52, -27.6, 0.48, 82.4, false);
+  box(trimMat, 0.42, 0.035, 0.56, -23.3, 0.91, 83.2, false);
+  box(MAT.bed, 0.025, 0.012, 0.48, -23.3, 0.935, 83.2, false);
+
+  // Узел связи: стойка с аварийным терминалом и панелью, показывающей временную рассинхронизацию.
+  const commsFrame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.25, 0.16), loreFrameMat);
+  commsFrame.position.set(0, 1.35, 88.8);
+  commsFrame.userData = { type: 'loreChannel7' };
+  world.add(commsFrame);
+  interactiveItems.push(commsFrame);
+  const commsScreen = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.52, 0.9),
+    new THREE.MeshStandardMaterial({
+      color: 0x1a202c, roughness: 0.3, metalness: 0.15,
+      emissive: 0x1b2c65, emissiveIntensity: 0.8
+    })
+  );
+  commsScreen.position.set(0, 1.37, 88.705);
+  world.add(commsScreen);
+  for (let x = -1.05; x <= 1.05; x += 0.35) {
+    box(trimMat, 0.055, 0.055, 0.18, x, 0.62, 89, false);
+  }
+
   for (let x = -34; x <= 34; x += 17) {
     box(trimMat, 5.2, 0.07, 0.08, x, 2.92, 53, false);
     box(panelMat, 1.3, 2.3, 0.12, x, 1.15, 52.2, false);
@@ -1438,6 +1477,12 @@ function interact3D() {
       if (t === 'keycardL1') { window.playerState.keycardL1 = true; showToast("Получена карта L-1"); }
       else if (t === 'keycardL2') { window.playerState.keycardL2 = true; showToast("Получена карта L-2"); }
       else if (t === 'battery') { battery = Math.min(100, battery + 50); showToast("Батарея фонаря +50%"); }
+      else if (t === 'loreShift') {
+        showToast("ЖУРНАЛ СМЕНЫ · 03:17 — «Смена завершена. Нас шестеро в комнате, но в отражении монитора — семеро. Гирс приказал не смотреть на камеры. Если запись найдут: НЕ ВЫХОДИТЕ ЧЕРЕЗ ЛИФТ».", 9000);
+      }
+      else if (t === 'loreChannel7') {
+        showToast("КАНАЛ 7 · ВХОДЯЩЕЕ СООБЩЕНИЕ — «Не включайте резервное питание. Вы уже сделали это завтра. Когда услышите собственный голос — не отвечайте». ВРЕМЯ ПАКЕТА: ЗАВТРА, 03:17.", 9000);
+      }
       world.remove(item); interactiveItems.splice(i, 1);
       updateInventoryHUD();
       return;
