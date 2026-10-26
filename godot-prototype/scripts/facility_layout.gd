@@ -307,18 +307,18 @@ func _label(t: String,p: Vector3,c: Color) -> void:
  add_child(l)
 
 func _add_interaction(interaction_id: String, p: Vector3, size: Vector3, title: String) -> void:
-	var area := Area3D.new()
-	area.name = "Interact_" + interaction_id
-	area.position = p
-	area.collision_layer = 2
-	area.collision_mask = 0
-	area.monitoring = false
-	area.monitorable = true
-	area.set_meta("interaction_id", interaction_id)
-	area.set_meta("interaction_title", title)
-	var shape_node := CollisionShape3D.new()
-	var shape := BoxShape3D.new()
-	shape.size = size
-	shape_node.shape = shape
-	area.add_child(shape_node)
-	add_child(area)
+ var area := Area3D.new()
+ area.name = "Interact_" + interaction_id
+ area.position = p
+ area.collision_layer = 2
+ area.collision_mask = 0
+ area.monitoring = false
+ area.monitorable = true
+ area.set_meta("interaction_id", interaction_id)
+ area.set_meta("interaction_title", title)
+ var shape_node := CollisionShape3D.new()
+ var shape := BoxShape3D.new()
+ shape.size = size
+ shape_node.shape = shape
+ area.add_child(shape_node)
+ add_child(area)
