@@ -31,6 +31,14 @@ try {
   const startButton = page.locator("#keter-main-menu button").first();
   await startButton.waitFor({ state: "visible", timeout: 15000 });
   await startButton.click();
+
+  // The first menu action opens the story prologue. Follow its explicit
+  // "enter the facility" choice before expecting the 3D container to appear.
+  const enterFacility = page.locator("#buttons-container button").filter({
+    hasText: "Войти в комплекс (3D)"
+  });
+  await enterFacility.waitFor({ state: "visible", timeout: 10000 });
+  await enterFacility.click();
   await page.locator("#three-container").waitFor({ state: "visible", timeout: 15000 });
   await page.waitForFunction(() => {
     const canvas = document.querySelector("#three-container canvas");
