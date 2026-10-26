@@ -707,7 +707,7 @@ function init3DMode() {
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050708);
-    scene.fog = new THREE.FogExp2(0x070a0b, 0.034);
+    scene.fog = new THREE.FogExp2(0x070a0b, 0.024);
 
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ'; // yaw отдельно от pitch: взгляд вверх не замедляет ходьбу
@@ -980,9 +980,54 @@ function toggleFlashlight() {
 // Шлюз D-12 -> Главный холл (Администрация / Медпункт) -> [L-1] Узел данных -> Зал содержания -> [L-2] Эвакуация -> [выход]
 let hazardTex = null;
 
-function addSign() {
-  // Таблички отключены для более реалистичного, менее игрового окружения.
-  return null;
+function addSign(lines, x, y, z, rotation = 0, accent = '#9dffcb', scale = 1) {
+  // Небольшие физические таблички с локальной canvas-текстурой: работают офлайн
+  // и дают игроку ориентиры без внешних картинок и тяжёлых моделей.
+  const labelLines = Array.isArray(lines) ? lines : [String(lines || 'СЕКТОР D-12')];
+  const width = 2.25 * Math.max(0.4, scale || 1);
+  const height = 0.56 * Math.max(0.4, scale || 1);
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#101719';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#202b2e';
+  ctx.fillRect(8, 8, 496, 112);
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(8, 8, 496, 112);
+  ctx.fillStyle = accent;
+  ctx.fillRect(18, 18, 5, 92);
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 29px "Courier New", monospace';
+  ctx.fillStyle = '#e2ece8';
+  ctx.fillText(String(labelLines[0] || '').toUpperCase().slice(0, 30), 38, labelLines[1] ? 48 : 64, 450);
+  if (labelLines[1]) {
+    ctx.font = 'bold 17px "Courier New", monospace';
+    ctx.fillStyle = accent;
+    ctx.fillText(String(labelLines[1]).toUpperCase().slice(0, 42), 38, 84, 450);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.encoding = THREE.sRGBEncoding;
+  texture.anisotropy = 2;
+  const group = new THREE.Group();
+  const backing = new THREE.Mesh(
+    new THREE.BoxGeometry(width + 0.08, height + 0.08, 0.075),
+    new THREE.MeshStandardMaterial({ color: 0x20282a, roughness: 0.78, metalness: 0.38 })
+  );
+  group.add(backing);
+  const face = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, height),
+    new THREE.MeshBasicMaterial({ map: texture, toneMapped: false })
+  );
+  face.position.z = 0.041;
+  group.add(face);
+  group.position.set(x, y, z);
+  group.rotation.y = rotation;
+  group.traverse(obj => { if (obj.isMesh) { obj.castShadow = false; obj.receiveShadow = false; } });
+  world.add(group);
+  return group;
 }
 
 function hazardStripe(x, z) {
@@ -1045,11 +1090,18 @@ function build10ZonesMap() {
     if (a2 > cur) seg(cur, a2);
   }
 
+  const fixtureHousingMat = new THREE.MeshStandardMaterial({ color: 0x202729, roughness: 0.74, metalness: 0.52 });
   function addPointLight(x, z, color = 0xffa040, y = 2.8) {
     const light = new THREE.PointLight(color, 0.42, 8);
-    light.position.set(x, y, z); world.add(light);
+    light.position.set(x, y, z);
+    world.add(light);
     if (color === 0xff3322 || color === 0x40ffee) flickers.push({ light, base: 0.42 });
-    box(new THREE.MeshBasicMaterial({ color: color === 0xff3322 ? 0x4d0b0b : 0x554a2c }), 0.8, 0.1, 0.3, x, 3.1, z);
+    // Visible recessed ceiling fixture, not just an invisible point light.
+    box(fixtureHousingMat, 0.94, 0.09, 0.34, x, 3.075, z, false);
+    const diffuser = new THREE.MeshBasicMaterial({ color, toneMapped: false });
+    box(diffuser, 0.72, 0.018, 0.19, x, 3.025, z, false);
+    box(new THREE.MeshStandardMaterial({ color: 0x343b3d, roughness: 0.8, metalness: 0.4 }), 0.035, 0.025, 0.26, x - 0.39, 3.02, z, false);
+    box(new THREE.MeshStandardMaterial({ color: 0x343b3d, roughness: 0.8, metalness: 0.4 }), 0.035, 0.025, 0.26, x + 0.39, 3.02, z, false);
   }
 
   const mkTable = (x, z) => {
@@ -1540,6 +1592,105 @@ function build10ZonesMap() {
   world.add(commsScreen);
   for (let x = -1.05; x <= 1.05; x += 0.35) {
     box(trimMat, 0.055, 0.055, 0.18, x, 0.62, 89, false);
+  }
+
+  // --- Визуальный проход: потолочные световые панели, маркировка и уникальные детали зон ---
+  // Световые панели над главной осью делают потолок читаемым и не требуют дорогих эффектов.
+  const lampHousing = new THREE.MeshStandardMaterial({ color: 0x202729, roughness: 0.82, metalness: 0.42 });
+  const lampGlow = new THREE.MeshBasicMaterial({ color: 0xb8c9c5, toneMapped: false });
+  for (let z = 4; z <= 80; z += 8) {
+    box(lampHousing, 1.55, 0.09, 0.42, 0, 3.04, z, false);
+    box(lampGlow, 1.28, 0.018, 0.25, 0, 2.988, z, false);
+    box(trimMat, 0.05, 0.035, 0.34, -0.69, 2.98, z, false);
+    box(trimMat, 0.05, 0.035, 0.34, 0.69, 2.98, z, false);
+  }
+
+  // Archive: file boxes, shelf rails and scattered folders.
+  const paperMat = new THREE.MeshStandardMaterial({ color: 0x8a8978, roughness: 0.96 });
+  const folderMat = new THREE.MeshStandardMaterial({ color: 0x5b655f, roughness: 0.91 });
+  [-32.8, -28.2, -23.6, -19.2].forEach((x, row) => {
+    for (let tier = 0; tier < 3; tier++) {
+      box(trimMat, 0.11, 0.055, 12.5, x, 0.45 + tier * 0.72, 18, false);
+      for (let n = 0; n < 7; n++) {
+        const z = 12.8 + n * 1.7;
+        box(n % 3 === 0 ? paperMat : folderMat, 0.24, 0.42, 0.82, x + (row % 2 ? 0.08 : -0.08), 0.7 + tier * 0.72, z, false);
+      }
+    }
+  });
+  // Small red evidence marker beside the archive terminal.
+  box(warningMat, 0.045, 0.42, 0.045, -24.45, 1.32, 18.5, false);
+
+  // Medical block: privacy curtain rail, curtain panels, supply cart and task lighting.
+  box(trimMat, 9.2, 0.06, 0.06, 25, 2.72, 37.5, false);
+  const curtainMat = new THREE.MeshStandardMaterial({ color: 0x637a7d, roughness: 0.98, transparent: true, opacity: 0.78, side: THREE.DoubleSide });
+  [23.8, 27.8].forEach(x => {
+    const curtain = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.75), curtainMat);
+    curtain.position.set(x, 1.7, 37.5);
+    curtain.rotation.y = (x < 25 ? 0.04 : -0.04);
+    curtain.castShadow = false; curtain.receiveShadow = false;
+    world.add(curtain);
+    for (let k = 0; k < 5; k++) box(trimMat, 0.035, 0.04, 0.035, x - 0.85 + k * 0.42, 2.62, 37.5, false);
+  });
+  box(panelMat, 0.62, 0.82, 0.52, 30.8, 1.0, 34.2, false);
+  box(new THREE.MeshBasicMaterial({ color: 0x4db8bd, toneMapped: false }), 0.025, 0.24, 0.34, 30.47, 1.2, 34.2, false);
+  box(paperMat, 0.72, 0.035, 0.52, 29.5, 0.84, 41.5, false);
+
+  // Technical level: insulated pipes and a compact warning/control cabinet.
+  const pipeMat = new THREE.MeshStandardMaterial({ color: 0x343d40, roughness: 0.58, metalness: 0.66 });
+  const pipeRedMat = new THREE.MeshStandardMaterial({ color: 0x582522, roughness: 0.62, metalness: 0.42, emissive: 0x210503, emissiveIntensity: 0.6 });
+  [-1, 1].forEach(side => {
+    const x = -25 + side * 9.2;
+    [-0.0, 0.24, 0.48].forEach((offset, idx) => {
+      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.055 - idx * 0.008, 0.055 - idx * 0.008, 18, 8), idx === 2 ? pipeRedMat : pipeMat);
+      pipe.rotation.x = Math.PI / 2;
+      pipe.position.set(x + offset, 2.68 - idx * 0.2, 62);
+      pipe.castShadow = false; pipe.receiveShadow = false;
+      world.add(pipe);
+    });
+  });
+  box(panelMat, 1.4, 1.65, 0.18, -21.8, 1.05, 71.4, false);
+  box(new THREE.MeshBasicMaterial({ color: 0xff493b, toneMapped: false }), 0.08, 0.08, 0.025, -21.35, 1.62, 71.28, false);
+  box(new THREE.MeshBasicMaterial({ color: 0xe0a94b, toneMapped: false }), 0.08, 0.08, 0.025, -21.35, 1.42, 71.28, false);
+
+  // Observation gallery: a reinforced viewing frame and two small consoles.
+  [65, 73].forEach(z => {
+    box(trimMat, 0.12, 2.15, 0.12, 20.4, 1.12, z, false);
+    box(trimMat, 0.12, 0.12, 3.0, 20.4, 2.22, z + 1.5, false);
+  });
+  [27.5, 32].forEach(x => {
+    box(panelMat, 1.15, 0.78, 0.58, x, 0.72, 76.5, false);
+    box(new THREE.MeshBasicMaterial({ color: 0x2f8292, toneMapped: false }), 0.72, 0.38, 0.025, x, 1.1, 76.19, false);
+    for (let k = 0; k < 3; k++) box(warningMat, 0.08, 0.025, 0.025, x - 0.25 + k * 0.25, 0.81, 76.17, false);
+  });
+
+  // Staff room: abandoned chairs, tipped document trays and a desk lamp.
+  const chairMat = new THREE.MeshStandardMaterial({ color: 0x252b2d, roughness: 0.86, metalness: 0.18 });
+  [-28.4, -21.6].forEach((x, i) => {
+    box(chairMat, 0.68, 0.12, 0.68, x, 0.48, i ? 86.3 : 89.4, false);
+    box(chairMat, 0.12, 0.65, 0.12, x, 0.25, i ? 86.3 : 89.4, false);
+    box(chairMat, 0.62, 0.62, 0.12, x, 0.83, i ? 86.0 : 89.1, false);
+  });
+  box(paperMat, 0.58, 0.025, 0.4, -24.2, 0.91, 87.1, false);
+  box(folderMat, 0.34, 0.035, 0.27, -25.0, 0.94, 87.25, false);
+
+  // Comms node: bundled ceiling cables, console indicators and a cool-blue signal glow.
+  [-1, 1].forEach(side => {
+    box(trimMat, 0.12, 0.12, 16, side * 11.6, 2.91, 94, false);
+    box(pipeMat, 0.045, 0.045, 15, side * 11.2, 2.79, 94, false);
+  });
+  for (let i = 0; i < 6; i++) {
+    box(new THREE.MeshBasicMaterial({ color: i === 3 ? 0xff493b : 0x48a8bc, toneMapped: false }),
+      0.07, 0.045, 0.035, -1.1 + i * 0.44, 0.66, 89.15, false);
+  }
+  // Subtle yellow-black threshold marks help distinguish restricted doors.
+  [38, 62, 80].forEach(z => {
+    const stripe = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.28), new THREE.MeshBasicMaterial({ color: 0x8c7028, toneMapped: false }));
+    stripe.rotation.x = -Math.PI / 2;
+    stripe.position.set(0, 0.026, z);
+    stripe.scale.set(1, 1, 1);
+    world.add(stripe);
+    for (let k = -3; k <= 3; k++) box(new THREE.MeshBasicMaterial({ color: 0x171b1c, toneMapped: false }),
+      0.14, 0.012, 0.28, k * 0.28, 0.033, z, false);
   }
 
   for (let x = -34; x <= 34; x += 17) {
