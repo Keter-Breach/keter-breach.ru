@@ -9,10 +9,10 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --paper: #d9e5da;
-    --ink: #dce8dd;
-    --red: #ff765e;
-    --steel: #070b08;
+    --paper: #d9dcd7;
+    --ink: #16181a;
+    --red: #b3201a;
+    --steel: #101213;
     --mono: 'IBM Plex Mono', 'Courier New', monospace;
     --head: 'Oswald', 'Arial Narrow', Impact, sans-serif;
   }
@@ -44,9 +44,9 @@
     padding: 20px;
     overflow-y: auto;
     background:
-      radial-gradient(ellipse at center, rgba(0,20,8,.04) 15%, rgba(0,0,0,.78) 100%),
-      repeating-linear-gradient(0deg, rgba(80,255,130,.025) 0 1px, transparent 1px 4px),
-      linear-gradient(135deg, #111a14, #050706);
+      radial-gradient(ellipse at center, rgba(0,0,0,0) 40%, rgba(0,0,0,0.7) 100%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 7px),
+      linear-gradient(#1a1c1e, #0d0e0f);
   }
 
   .card {
@@ -54,11 +54,9 @@
     width: 100%;
     max-width: 680px;
     margin: auto;
-    background: linear-gradient(145deg, rgba(19,29,22,.98), rgba(9,14,11,.99));
+    background: linear-gradient(#dcdfda, #d2d5d0);
     color: var(--ink);
-    border: 1px solid #3d5b45;
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.72), 0 0 38px rgba(0,255,102,.05);
-    overflow: hidden;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7), 0 2px 0 rgba(255, 255, 255, 0.25) inset;
     text-align: left;
   }
 
@@ -67,9 +65,8 @@
     justify-content: space-between;
     gap: 12px;
     padding: 10px clamp(18px, 5vw, 32px);
-    background: #0a100c;
-    color: #9db5a2;
-    border-bottom: 1px solid #2b4532;
+    background: var(--ink);
+    color: var(--paper);
     font: 500 13px/1 var(--head);
     letter-spacing: 0.12em;
   }
@@ -79,11 +76,11 @@
     display: inline-block;
     margin: 18px clamp(18px, 5vw, 32px) 0;
     padding: 4px 10px;
-    border: 2px solid var(--red);
+    border: 3px solid var(--red);
     color: var(--red);
     font: 700 17px/1.1 var(--head);
     letter-spacing: 0.08em;
-    mix-blend-mode: screen;
+    mix-blend-mode: multiply;
     transform: rotate(-6deg);
     animation: slam 0.5s 0.35s both;
   }
@@ -98,11 +95,11 @@
 
   h1 {
     font: 700 clamp(24px, 6vw, 32px)/1.1 var(--head);
-    color: #eef8ef;
-    letter-spacing: 0.025em;
+    color: var(--ink);
+    letter-spacing: 0.02em;
     padding-bottom: 12px;
     margin-bottom: 14px;
-    border-bottom: 2px solid #41634a;
+    border-bottom: 4px solid var(--ink);
   }
 
   .meta {
@@ -110,28 +107,23 @@
     gap: 6px;
     margin-bottom: 22px;
     font-size: 13px;
-    color: #a0b3a5;
+    color: #3a3f43;
   }
 
   .meta span.value {
-    color: #e6f4e8;
+    color: var(--ink);
     font-weight: 600;
-    border-bottom: 1px dotted #6c8972;
+    border-bottom: 1px dotted var(--ink);
   }
 
   .meta .redact { background: var(--ink); color: var(--ink); border-bottom: none; padding: 0 6px; }
 
   p#description {
-    font-size: 14px;
-    line-height: 1.65;
-    color: #dce8dd;
-    white-space: pre-line;
-    margin-bottom: 24px;
-    max-width: 78ch;
-    max-height: min(48vh, 520px);
-    overflow-y: auto;
-    padding-right: 8px;
-    scrollbar-color: #45644c #0a100c;
+    font-size: 15px;
+    line-height: 1.75;
+    color: #22262a;
+    margin-bottom: 28px;
+    max-width: 62ch;
   }
 
   #buttons-container {
@@ -146,9 +138,9 @@
     gap: 14px;
     width: 100%;
     padding: 14px 16px;
-    background: rgba(0,0,0,.12);
-    color: #dce8dd;
-    border: 1px solid #45644c;
+    background: transparent;
+    color: var(--ink);
+    border: 2px solid var(--ink);
     border-radius: 0;
     font: 600 15px/1.3 var(--mono);
     text-align: left;
@@ -166,8 +158,8 @@
 
   #buttons-container button:hover,
   #buttons-container button:focus-visible {
-    background: #173321;
-    color: #a5ffb8;
+    background: var(--ink);
+    color: var(--paper);
     outline: none;
   }
 
@@ -182,9 +174,9 @@
   .attempt {
     margin-top: 22px;
     padding-top: 10px;
-    border-top: 1px solid rgba(125, 169, 135, 0.28);
+    border-top: 1px solid rgba(22, 24, 26, 0.35);
     font-size: 12px;
-    color: #8ba291;
+    color: #4a5055;
     text-align: right;
   }
 
@@ -197,106 +189,166 @@
     .stamp { animation: none; opacity: 0.85; }
   }
 
-  /* === 3D ЭКРАН И ИНТЕРФЕЙС === */
-  #three-container {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
+  /* === МЕНЮ: ЗАГОЛОВОК, ТРЕВОГА, УПРАВЛЕНИЕ === */
+  .menu-wrap { width: 100%; max-width: 680px; margin: auto; }
+  .game-title { text-align: center; margin-bottom: 22px; }
+  .game-title h2 {
+    font: 700 clamp(40px, 10vw, 76px)/1 var(--head);
+    letter-spacing: 0.16em; color: var(--paper);
+    text-shadow: 3px 0 rgba(179,32,26,0.8), -3px 0 rgba(60,200,220,0.35);
+    animation: glitch 7s infinite;
+  }
+  .game-title h2 span { color: var(--red); text-shadow: none; }
+  .game-title p { margin-top: 10px; font-size: 12px; letter-spacing: 0.3em; color: #8a8f92; }
+  .game-title p::before { content: '● '; color: var(--red); animation: blink 1.2s steps(2) infinite; }
+  @keyframes glitch {
+    0%, 92%, 100% { transform: none; }
+    93% { transform: translate(-3px, 1px) skewX(-4deg); }
+    95% { transform: translate(3px, -1px); }
+    97% { transform: translate(-2px, 0) skewX(3deg); }
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .alarm {
+    position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 120%, rgba(179,32,26,0.35), transparent 60%);
+    animation: alarm 3s ease-in-out infinite;
+  }
+  @keyframes alarm { 50% { opacity: 0.25; } }
+  #description.typing::after { content: '▌'; margin-left: 2px; animation: blink 0.8s steps(2) infinite; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 22px; font-size: 11px; color: #4a5055; }
+  kbd {
+    display: inline-block; min-width: 22px; padding: 2px 6px; margin-right: 4px;
+    border: 1px solid var(--ink); border-bottom-width: 3px; background: #e8ebe6;
+    color: var(--ink); font: 600 11px var(--mono); text-align: center;
+  }
+
+  /* === 3D ИНТЕРФЕЙС === */
+  #three-container { position: relative; width: 100vw; height: 100vh; font-family: var(--mono); color: var(--paper); }
+
+  .grain {
+    position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: 0.22; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    animation: grain 0.5s steps(4) infinite;
+  }
+  @keyframes grain {
+    0% { background-position: 0 0; } 25% { background-position: -40px 30px; }
+    50% { background-position: 30px -50px; } 75% { background-position: -20px -30px; } 100% { background-position: 0 0; }
   }
 
   .crosshair {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 4px;
-    height: 4px;
-    background: #00ff66;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    box-shadow: 0 0 4px #00ff66;
-    z-index: 2;
+    position: absolute; top: 50%; left: 50%; width: 6px; height: 6px;
+    border: 1px solid rgba(217,220,215,0.8); border-radius: 50%;
+    transform: translate(-50%, -50%); transition: all 0.15s; pointer-events: none; z-index: 2;
   }
+  .crosshair.active { width: 18px; height: 18px; border-color: var(--red); box-shadow: 0 0 8px rgba(179,32,26,0.7); }
 
-  #hud {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    padding: 15px 20px;
-    background: rgba(5, 5, 8, 0.85);
-    border: 1px solid rgba(0, 255, 102, 0.4);
-    color: #00ff66;
-    font-size: 13px;
-    pointer-events: none;
-    border-radius: 4px;
-    z-index: 2;
+  #prompt {
+    position: absolute; top: 58%; left: 50%; transform: translateX(-50%);
+    padding: 6px 14px; background: rgba(5,5,8,0.75); border: 1px solid rgba(217,220,215,0.5);
+    font-size: 13px; letter-spacing: 0.05em; pointer-events: none; z-index: 2; opacity: 0; transition: opacity 0.12s;
   }
+  #prompt.show { opacity: 1; }
 
-  #inventory-hud {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    padding: 12px 18px;
-    background: rgba(5, 5, 8, 0.85);
-    border: 1px solid rgba(0, 255, 102, 0.4);
-    font-size: 12px;
-    pointer-events: none;
-    z-index: 2;
+  .panel { background: rgba(8,9,10,0.78); border: 1px solid rgba(217,220,215,0.28); box-shadow: 0 0 0 3px rgba(0,0,0,0.35); pointer-events: none; z-index: 2; }
+  .hud-label { display: flex; justify-content: space-between; font: 500 10px var(--head); letter-spacing: 0.22em; color: #8a8f92; }
+
+  #hud { position: absolute; top: 20px; left: 20px; width: 230px; padding: 12px 14px; display: grid; gap: 6px; }
+  #zone-name { font: 700 20px/1.1 var(--head); letter-spacing: 0.04em; margin-bottom: 6px; color: var(--paper); }
+  #battery-level { color: var(--paper); }
+  .bar { height: 6px; background: rgba(217,220,215,0.15); }
+  .bar i { display: block; height: 100%; width: 100%; background: var(--paper); transition: width 0.3s; }
+
+  #inventory-hud { position: absolute; bottom: 20px; left: 20px; padding: 10px 14px; display: grid; gap: 8px; }
+  .slots { display: flex; gap: 8px; }
+  .slot {
+    width: 58px; height: 66px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    border: 1px dashed rgba(217,220,215,0.25); color: rgba(217,220,215,0.4); font-size: 10px;
   }
+  .slot i { opacity: 0.2; }
+  .slot.has { border: 1px solid var(--c); color: var(--c); background: rgba(255,255,255,0.04); box-shadow: 0 0 10px -2px var(--c); }
+  .slot.has i { opacity: 1; }
+  .slot.new { animation: pop 0.6s; }
+  @keyframes pop { 0% { transform: scale(1.35); box-shadow: 0 0 22px var(--c); } 100% { transform: none; } }
+  .card-ico { position: relative; width: 32px; height: 20px; border-radius: 2px; background: var(--c); }
+  .card-ico::before { content: ''; position: absolute; left: 0; right: 0; top: 4px; height: 5px; background: #111; }
+  .torch-ico { position: relative; width: 10px; height: 26px; border-radius: 2px; background: var(--c); }
+  .torch-ico::before { content: ''; position: absolute; left: -3px; top: -4px; width: 16px; height: 8px; background: var(--c); border-radius: 2px; }
 
-  #minimap-canvas {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    border: 1px solid #00ff66;
-    background: rgba(0, 10, 5, 0.8);
-    border-radius: 4px;
-    z-index: 2;
+  #radar { position: absolute; top: 20px; right: 20px; padding: 8px 10px 10px; }
+  #radar canvas { display: block; margin-top: 6px; background: rgba(0,0,0,0.45); }
+
+  #keys { position: absolute; bottom: 20px; right: 20px; max-width: 420px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 14px; font-size: 11px; color: #9a9fa2; pointer-events: none; z-index: 2; }
+  #keys kbd { background: rgba(5,5,8,0.6); color: var(--paper); border-color: rgba(217,220,215,0.5); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .alarm, .game-title h2, .grain, .game-title p::before { animation: none; }
   }
 </style>
-<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="text-game">
-  <div class="card">
-    <div class="dossier-bar"><span>ФОНД SCP: ОТДЕЛ KETER</span><span>ДОСЬЕ ИНЦИДЕНТА</span></div>
-    <div class="stamp">СОВЕРШЕННО СЕКРЕТНО</div>
-    <div class="card-body">
-      <h1 id="chapter-title">ГЛАВА 1: НАРУШЕНИЕ СОДЕРЖАНИЯ</h1>
-      <div class="meta">
-        <div>Локация: <span class="value" id="current-location">Сектор D-12</span></div>
-        <div>Испытуемый: <span class="value">D-<span class="redact">█████</span></span></div>
+  <div class="alarm"></div>
+  <div class="menu-wrap">
+    <header class="game-title">
+      <h2>KETER <span>BREACH</span></h2>
+      <p>ПОЛНЫЙ ПРОРЫВ СОДЕРЖАНИЯ</p>
+    </header>
+    <div class="card">
+      <div class="dossier-bar"><span>ФОНД SCP: ОТДЕЛ KETER</span><span>ДОСЬЕ ИНЦИДЕНТА</span></div>
+      <div class="stamp">СОВЕРШЕННО СЕКРЕТНО</div>
+      <div class="card-body">
+        <h1 id="chapter-title">ГЛАВА 1: НАРУШЕНИЕ СОДЕРЖАНИЯ</h1>
+        <div class="meta">
+          <div>Локация: <span class="value" id="current-location">Сектор D-12</span></div>
+          <div>Испытуемый: <span class="value">D-<span class="redact">█████</span></span></div>
+        </div>
+        <p id="description">Загрузка данных...</p>
+        <div id="buttons-container"></div>
+        <div class="controls">
+          <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>ход</span>
+          <span><kbd>Shift</kbd>бег</span>
+          <span><kbd>F</kbd>фонарь</span>
+          <span><kbd>E</kbd>действие</span>
+          <span><kbd>Мышь</kbd>обзор</span>
+        </div>
+        <div class="attempt">Попытка <span id="loop-count">#1</span></div>
       </div>
-      <p id="description">Загрузка данных...</p>
-      <div id="buttons-container"></div>
-      <div class="attempt">Попытка <span id="loop-count">#1</span></div>
     </div>
   </div>
 </div>
 
 <div id="three-container" class="hidden">
-  <div class="crosshair"></div>
+  <div class="grain"></div>
+  <div class="crosshair" id="crosshair"></div>
+  <div id="prompt"></div>
 
-  <div id="hud">
-    <div style="font-weight:bold; color:#fff; margin-bottom:5px;">СЕКТОР D-12 [10 ЗОН]</div>
-    <div>ЗАРЯД ФОНАРЯ: <span id="battery-level" style="color:#fff;">100%</span></div>
-    <div style="font-size: 11px; margin-top: 8px; color: #aaa; line-height: 1.4;">
-      [W,A,S,D] — Шаг | [Shift] — Бег<br>
-      [F] — Фонарик | [E] — Взаимодействие
-    </div>
+  <div id="hud" class="panel">
+    <div class="hud-label">ЛОКАЦИЯ</div>
+    <div id="zone-name">Шлюз D-12</div>
+    <div class="hud-label"><span>ЗАРЯД ФОНАРЯ</span><span id="battery-level">100%</span></div>
+    <div class="bar"><i id="battery-bar"></i></div>
   </div>
 
-  <div id="inventory-hud">
-    <div style="color:#aaa; margin-bottom:3px;">ИНВЕНТАРЬ:</div>
-    <div id="inv-items">Пусто</div>
+  <div id="inventory-hud" class="panel">
+    <div class="hud-label">ИНВЕНТАРЬ</div>
+    <div id="inv-items" class="slots"></div>
   </div>
 
-  <!-- Радар / Мини-карта -->
-  <canvas id="minimap-canvas" width="120" height="120"></canvas>
+  <div id="radar" class="panel">
+    <div class="hud-label">РАДАР</div>
+    <canvas id="minimap-canvas" width="120" height="120"></canvas>
+  </div>
+
+  <div id="keys">
+    <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>ход</span>
+    <span><kbd>Shift</kbd>бег</span>
+    <span><kbd>F</kbd>фонарь</span>
+    <span><kbd>E</kbd>действие</span>
+  </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';}else{document.getElementById('description').textContent='ОШИБКА: не удалось загрузить 3D-движок. Проверьте соединение и обновите страницу (Ctrl+F5).';}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="script.js"></script>
 
 </body>
