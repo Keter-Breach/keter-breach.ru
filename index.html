@@ -255,6 +255,23 @@
 </head>
 <body>
 
+<div id="keter-loading" class="keter-loading" role="status" aria-live="polite">
+  <div class="loading-mark" aria-hidden="true">
+    <span></span><span></span><span></span><span></span>
+  </div>
+  <div class="loading-brand">PROJECT: <strong>KETER</strong></div>
+  <div class="loading-status" id="loading-status">ИНИЦИАЛИЗАЦИЯ СИСТЕМЫ D-12</div>
+  <div class="loading-track"><span></span></div>
+  <div class="loading-foot">ПРОВЕРКА КОНТУРА СОДЕРЖАНИЯ <i>●</i></div>
+  <button id="loading-retry" type="button" hidden>ПОВТОРИТЬ ЗАПУСК</button>
+</div>
+
+<div class="menu-atmosphere" aria-hidden="true">
+  <span class="dust dust-one"></span><span class="dust dust-two"></span>
+  <span class="dust dust-three"></span><span class="dust dust-four"></span>
+  <span class="dust dust-five"></span><span class="dust dust-six"></span>
+</div>
+
 <div id="text-game">
   <div class="card">
     <div class="keter-brand"><span>PROJECT:</span><strong>KETER</strong><i>SECURITY INCIDENT // D-12</i></div>
@@ -296,35 +313,57 @@
 
 <script>
   (function loadThreeRuntime() {
-    const showError = function () {
-      const description = document.getElementById("description");
-      if (description) {
-        description.textContent = "ОШИБКА: не удалось загрузить 3D-движок. Проверьте подключение к интернету и обновите страницу.";
-        description.style.color = "#ff765e";
-      }
-    };
+    const overlay = document.getElementById("keter-loading");
+    const status = document.getElementById("loading-status");
+    const retry = document.getElementById("loading-retry");
+    let failed = false;
 
-    const loadGame = function () {
+    function setStatus(message) {
+      if (status) status.textContent = message;
+    }
+
+    function hideLoader() {
+      if (failed || !overlay) return;
+      overlay.classList.add("is-ready");
+      window.setTimeout(function () {
+        overlay.hidden = true;
+      }, 520);
+    }
+
+    function showError() {
+      failed = true;
+      if (overlay) overlay.classList.add("has-error");
+      setStatus("ОШИБКА ЗАПУСКА. ПРОВЕРЬТЕ ФАЙЛЫ И ПОДКЛЮЧЕНИЕ.");
+      if (retry) {
+        retry.hidden = false;
+        retry.onclick = function () { window.location.reload(); };
+      }
+    }
+
+    function loadGame() {
+      setStatus("ЗАПУСК ИГРОВОГО МОДУЛЯ");
       const gameScript = document.createElement("script");
       gameScript.src = "./script.js";
+      gameScript.onload = hideLoader;
       gameScript.onerror = showError;
       document.body.appendChild(gameScript);
-    };
+    }
 
-    const loadThree = function (src, onError) {
+    function loadThree(src, onError) {
       const threeScript = document.createElement("script");
       threeScript.src = src;
       threeScript.onload = loadGame;
       threeScript.onerror = onError;
       document.head.appendChild(threeScript);
-    };
+    }
 
+    setStatus("ЗАГРУЗКА 3D-ДВИЖКА");
     loadThree("./node_modules/three/build/three.min.js", function () {
+      setStatus("РЕЗЕРВНЫЙ КАНАЛ: ПОДКЛЮЧЕНИЕ К 3D-ДВИЖКУ");
       loadThree("https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js", showError);
     });
   })();
 </script>
-<script src="script.js"></script>
 
 </body>
 </html>
