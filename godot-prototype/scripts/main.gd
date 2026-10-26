@@ -24,6 +24,9 @@ var menu_root: Control
 var intro_root: Control
 var hud_layer: CanvasLayer
 var intro_page: int = 0
+var loading_root: Control
+var loading_progress: ProgressBar
+var loading_status: Label
 
 func _ready() -> void:
 	_build_environment()
@@ -91,13 +94,20 @@ func _remove_saved_item(interaction_id: String, visual_name: String) -> void:
 	if visual:
 		visual.visible = false
 
-func _set_door_open(door_name: String) -> void:
-	var door := facility_ref.find_child(door_name, true, false) as Node3D
-	if door:
-		door.visible = false
-		var shape := door.find_child("CollisionShape3D", true, false) as CollisionShape3D
-		if shape:
-			shape.disabled = true
+func _set_door_open(door_name: String, animate: bool = false) -> void:
+	var door := facility_ref.find_child(door_name, true, false) as StaticBody3D
+	if door == null:
+		return
+	# The door is a StaticBody3D: its mesh and collision shape move together vertically.
+	door.visible = true
+	var target_y := 3.65
+	if animate:
+		var tween := create_tween()
+		tween.set_trans(Tween.TRANS_QUART)
+		tween.set_ease(Tween.EASE_IN_OUT)
+		tween.tween_property(door, "position:y", target_y, 1.15)
+	else:
+		door.position.y = target_y
 
 func _material(color: Color, metallic: float = 0.0, roughness: float = 0.82) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -288,7 +298,7 @@ func _open_door(door_name: String) -> void:
 	if opened_doors.has(door_name):
 		return
 	opened_doors[door_name] = true
-	_set_door_open(door_name)
+	_set_door_open(door_name, true)
 	_save_game_state()
 
 func _show_status(message: String) -> void:
@@ -526,6 +536,56 @@ func _build_menu() -> void:
 	skip_button.add_theme_font_size_override("font_size", 13)
 	intro_column.add_child(skip_button)
 
+	loading_root = Control.new()
+	loading_root.name = "LoadingRoot"
+	loading_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	loading_root.visible = false
+	menu_layer.add_child(loading_root)
+	var loading_bg := ColorRect.new()
+	loading_bg.color = Color(0.006, 0.009, 0.012, 1.0)
+	loading_bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	loading_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	loading_root.add_child(loading_bg)
+	var loading_column := VBoxContainer.new()
+	loading_column.name = "LoadingColumn"
+	loading_column.set_anchors_preset(Control.PRESET_CENTER)
+	loading_column.position = Vector2(-360, -115)
+	loading_column.size = Vector2(720, 230)
+	loading_column.add_theme_constant_override("separation", 18)
+	loading_root.add_child(loading_column)
+	var loading_tag := Label.new()
+	loading_tag.text = "ФОНД • СИСТЕМА АВАРИЙНОГО ДОСТУПА"
+	loading_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	loading_tag.add_theme_font_size_override("font_size", 14)
+	loading_tag.add_theme_color_override("font_color", Color(0.8, 0.13, 0.1))
+	loading_column.add_child(loading_tag)
+	var loading_title := Label.new()
+	loading_title.text = "ПОДКЛЮЧЕНИЕ К СЕКТОРУ D-12"
+	loading_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	loading_title.add_theme_font_size_override("font_size", 28)
+	loading_title.add_theme_color_override("font_color", Color(0.88, 0.89, 0.86))
+	loading_column.add_child(loading_title)
+	loading_status = Label.new()
+	loading_status.text = "Проверка шлюзов и состояния комплекса..."
+	loading_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	loading_status.add_theme_font_size_override("font_size", 15)
+	loading_status.add_theme_color_override("font_color", Color(0.58, 0.62, 0.63))
+	loading_column.add_child(loading_status)
+	loading_progress = ProgressBar.new()
+	loading_progress.min_value = 0.0
+	loading_progress.max_value = 100.0
+	loading_progress.value = 0.0
+	loading_progress.show_percentage = false
+	loading_progress.custom_minimum_size = Vector2(620, 12)
+	loading_progress.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	loading_column.add_child(loading_progress)
+	var loading_footer := Label.new()
+	loading_footer.text = "KETER-19  //  СТАТУС ПЕРСОНАЛА: НЕИЗВЕСТЕН"
+	loading_footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	loading_footer.add_theme_font_size_override("font_size", 12)
+	loading_footer.add_theme_color_override("font_color", Color(0.42, 0.45, 0.46))
+	loading_column.add_child(loading_footer)
+
 func _add_menu_button(parent: VBoxContainer, label_text: String, callback: Callable) -> void:
 	var button := Button.new()
 	button.text = label_text
@@ -613,9 +673,24 @@ func _return_to_menu() -> void:
 	_update_intro_page()
 
 func _enter_game() -> void:
-	game_started = true
+	if loading_root == null or loading_root.visible:
+		return
 	menu_root.visible = false
 	intro_root.visible = false
+	loading_root.visible = true
+	loading_progress.value = 0.0
+	loading_status.text = "Проверка шлюзов и состояния комплекса..."
+	var tween := create_tween()
+	tween.tween_property(loading_progress, "value", 34.0, 0.65)
+	tween.tween_callback(func(): loading_status.text = "Синхронизация систем наблюдения...")
+	tween.tween_property(loading_progress, "value", 72.0, 0.8)
+	tween.tween_callback(func(): loading_status.text = "Восстановление данных сектора D-12...")
+	tween.tween_property(loading_progress, "value", 100.0, 0.55)
+	tween.tween_callback(_finish_enter_game)
+
+func _finish_enter_game() -> void:
+	game_started = true
+	loading_root.visible = false
 	hud_layer.visible = true
 	player_ref.set_process(true)
 	player_ref.set_physics_process(true)
