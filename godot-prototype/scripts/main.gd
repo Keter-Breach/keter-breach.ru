@@ -451,6 +451,18 @@ func _build_menu() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	menu_root.add_child(shade)
+	var menu_panel := Panel.new()
+	menu_panel.name = "MenuPanel"
+	menu_panel.set_anchors_preset(Control.PRESET_CENTER)
+	menu_panel.position = Vector2(-340, -300)
+	menu_panel.size = Vector2(680, 600)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.008, 0.013, 0.017, 0.88)
+	panel_style.border_color = Color(0.34, 0.075, 0.065, 0.9)
+	panel_style.set_border_width_all(1)
+	panel_style.set_content_margin_all(24)
+	menu_panel.add_theme_stylebox_override("panel", panel_style)
+	menu_root.add_child(menu_panel)
 	var column := VBoxContainer.new()
 	column.name = "MenuColumn"
 	column.set_anchors_preset(Control.PRESET_CENTER)
@@ -581,6 +593,14 @@ func _build_menu() -> void:
 	loading_progress.show_percentage = false
 	loading_progress.custom_minimum_size = Vector2(620, 12)
 	loading_progress.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var progress_bg := StyleBoxFlat.new()
+	progress_bg.bg_color = Color(0.035, 0.045, 0.05, 1.0)
+	progress_bg.border_color = Color(0.22, 0.25, 0.26, 1.0)
+	progress_bg.set_border_width_all(1)
+	loading_progress.add_theme_stylebox_override("background", progress_bg)
+	var progress_fill := StyleBoxFlat.new()
+	progress_fill.bg_color = Color(0.72, 0.055, 0.04, 1.0)
+	loading_progress.add_theme_stylebox_override("fill", progress_fill)
 	loading_column.add_child(loading_progress)
 	var loading_footer := Label.new()
 	loading_footer.text = "KETER-19  //  СТАТУС ПЕРСОНАЛА: НЕИЗВЕСТЕН"
