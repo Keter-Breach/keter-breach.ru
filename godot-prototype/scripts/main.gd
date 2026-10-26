@@ -430,14 +430,19 @@ func _build_environment() -> void:
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.42, 0.45, 0.49)
-	env.ambient_light_energy = 0.95
+	env.ambient_light_energy = 0.72
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.adjustment_enabled = true
+	env.adjustment_brightness = 0.96
+	env.adjustment_contrast = 1.12
+	env.adjustment_saturation = 0.82
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.06, 0.045, 0.05)
-	env.fog_density = 0.0025
+	env.fog_light_color = Color(0.045, 0.035, 0.04)
+	env.fog_density = 0.0038
+	env.fog_sun_scatter = 0.12
 	env.glow_enabled = true
-	env.glow_intensity = 0.22
-	env.glow_bloom = 0.04
+	env.glow_intensity = 0.3
+	env.glow_bloom = 0.055
 	world.environment = env
 	add_child(world)
 	var light := DirectionalLight3D.new()
