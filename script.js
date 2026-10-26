@@ -601,7 +601,8 @@ let doors = {};
 let openingDoors = [];     // двери в процессе анимации
 let wallMaterial, floorMaterial, doorMaterial, tableMaterial, serverMaterial;
 
-const isLocked = () => document.pointerLockElement === document.body;
+let fallbackMouseLook = false;
+const isLocked = () => document.pointerLockElement === document.body || fallbackMouseLook;
 
 function showToast(text, ms = 2500) {
   toastEl.textContent = text;
@@ -760,18 +761,24 @@ function init3DMode() {
         const request = document.body.requestPointerLock();
         if (request && typeof request.catch === "function") {
           request.catch(() => {
-            hintEl.textContent = "Не удалось захватить мышь. Кликните по окну игры ещё раз.";
+            fallbackMouseLook = true;
+            window.__keterPaused = false;
+            hintEl.textContent = "Управление включено без захвата курсора: WASD — движение, мышь — обзор. Кликните ещё раз, чтобы захватить курсор.";
             hintEl.style.display = "block";
           });
         }
       } catch (error) {
-        hintEl.textContent = "Не удалось захватить мышь. Кликните по окну игры ещё раз.";
+        fallbackMouseLook = true;
+        window.__keterPaused = false;
+        hintEl.textContent = "Управление включено без захвата курсора: WASD — движение, мышь — обзор. Кликните ещё раз, чтобы захватить курсор.";
         hintEl.style.display = "block";
       }
     });
     document.addEventListener("pointerlockerror", () => {
+      fallbackMouseLook = true;
+      window.__keterPaused = false;
       if (hintEl) {
-        hintEl.textContent = "Управление мышью недоступно. Кликните по окну игры ещё раз.";
+        hintEl.textContent = "Управление включено без захвата курсора: WASD — движение, мышь — обзор. Кликните ещё раз, чтобы захватить курсор.";
         hintEl.style.display = "block";
       }
     });
@@ -1661,7 +1668,7 @@ function animate3D() {
   prevTime = time;
 
   const locked = isLocked();
-  hintEl.style.display = locked ? 'none' : 'block';
+  hintEl.style.display = locked && !fallbackMouseLook ? 'none' : 'block';
 
   // Медленное пробуждение: взгляд поднимается с пола лифта.
   if (wakeupActive) {
@@ -2896,12 +2903,16 @@ renderChapter(1);
 
     document.addEventListener("pointerlockchange", () => {
       if (isPointerLocked()) {
+        fallbackMouseLook = false;
         pauseRequested = false;
         window.__keterPaused = false;
         startVhsAmbient();
         hideOverlay();
         return;
       }
+
+      // В средах, где Pointer Lock запрещён, продолжаем игру с обычным движением мыши.
+      if (fallbackMouseLook) return;
 
       // Потеря захвата мыши в 3D переводит игру на паузу.
       if (sessionStarted && is3DVisible()) {
