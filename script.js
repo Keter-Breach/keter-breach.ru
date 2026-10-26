@@ -768,6 +768,21 @@ function init3DMode() {
   world = new THREE.Group();
   scene.add(world);
   build10ZonesMap();
+
+  // The following detail props are assembled in init3DMode, outside the map
+  // builder's local helper scope, so give them a small equivalent box helper.
+  const box = (mat, w, h, d, x, y, z, solid = false) => {
+    const geo = new THREE.BoxGeometry(w, h, d);
+    scaleBoxUV(geo, w, h, d);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, y, z);
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    world.add(mesh);
+    if (solid) walls.push({ mesh, box: new THREE.Box3().setFromObject(mesh) });
+    return mesh;
+  };
+
   createDistantApparition();
 
   battery = 100; flashlightOn = true; flashlight.intensity = 5.0;
