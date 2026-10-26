@@ -3,6 +3,7 @@ extends Node3D
 const PlayerScript = preload("res://scripts/player.gd")
 const FacilityLayout = preload("res://scripts/facility_layout.gd")
 const EnhancementsScript = preload("res://scripts/game_enhancements.gd")
+const FacilityAmbienceScript = preload("res://scripts/facility_ambience.gd")
 var player_ref: CharacterBody3D
 var map_panel: ColorRect
 var map_dot: ColorRect
@@ -37,6 +38,10 @@ var menu_alarm_light: OmniLight3D
 
 func _ready() -> void:
 	_build_environment()
+	var ambience := Node.new()
+	ambience.name = "FacilityAmbience"
+	ambience.set_script(FacilityAmbienceScript)
+	add_child(ambience)
 	_build_facility()
 	_load_game_state()
 	_apply_loaded_state()
@@ -376,6 +381,9 @@ func _open_door(door_name: String) -> void:
 	if opened_doors.has(door_name):
 		return
 	opened_doors[door_name] = true
+	var ambience := get_tree().get_first_node_in_group("facility_audio")
+	if ambience and ambience.has_method("trigger_metal_event"):
+		ambience.trigger_metal_event(0.85)
 	_set_door_open(door_name, true)
 	_save_game_state()
 
