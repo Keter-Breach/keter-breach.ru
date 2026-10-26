@@ -253,9 +253,78 @@ function cracks(g, s, n) {
   }
 }
 
+/**
+ * Lightweight procedural grime layer. All maps are generated locally at 256-512px,
+ * so the scene needs no extra downloads and has no third-party texture licensing burden.
+ */
+function distressSurface(g, s, kind) {
+  // Dusty, uneven mottling with no large repeated circular blobs.
+  const grimeCount = kind === 'concrete' ? 48 : 30;
+  for (let i = 0; i < grimeCount; i++) {
+    const x = rnd() * s, y = rnd() * s;
+    const rx = s * (0.012 + rnd() * 0.045), ry = s * (0.008 + rnd() * 0.035);
+    const gr = g.createRadialGradient(x, y, 0, x, y, Math.max(rx, ry));
+    gr.addColorStop(0, kind === 'metal' || kind === 'door'
+      ? 'rgba(65,24,8,0.36)' : 'rgba(8,9,8,0.34)');
+    gr.addColorStop(0.58, kind === 'metal' || kind === 'door'
+      ? 'rgba(83,37,13,0.18)' : 'rgba(10,12,11,0.17)');
+    gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr;
+    g.save(); g.translate(x, y); g.scale(1, ry / Math.max(rx, ry)); g.beginPath();
+    g.arc(0, 0, Math.max(rx, ry), 0, Math.PI * 2); g.fill(); g.restore();
+  }
+
+  // Rust: concentrated near seams and edges on painted/metal surfaces.
+  if (kind === 'metal' || kind === 'door' || kind === 'rack' || kind === 'cab') {
+    for (let i = 0; i < 18; i++) {
+      const x = rnd() * s, y = rnd() * s, len = s * (0.025 + rnd() * 0.14);
+      g.strokeStyle = ['rgba(112,48,15,0.62)','rgba(150,65,20,0.42)','rgba(49,25,13,0.55)'][i % 3];
+      g.lineWidth = 1 + rnd() * (kind === 'metal' ? 5 : 3);
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + (rnd() - 0.5) * 7, Math.min(s, y + len)); g.stroke();
+      g.fillStyle = 'rgba(128,55,18,0.25)';
+      g.fillRect(Math.max(0, x - 2), Math.max(0, y - 2), 3 + rnd() * 5, 4 + rnd() * 12);
+    }
+  }
+
+  // Dark dried blood smears and thin downward runs, deliberately restrained.
+  if (kind !== 'rack') {
+    for (let i = 0; i < (kind === 'concrete' ? 8 : 4); i++) {
+      const x = rnd() * s, y = s * (0.12 + rnd() * 0.72);
+      const len = s * (0.025 + rnd() * 0.12);
+      g.strokeStyle = ['rgba(72,5,8,0.48)','rgba(103,10,13,0.34)','rgba(35,3,5,0.46)'][i % 3];
+      g.lineWidth = 1 + rnd() * (kind === 'concrete' ? 5 : 3);
+      g.beginPath(); g.moveTo(x, y); g.bezierCurveTo(x + 2, y + len * .25, x - 2, y + len * .7, x + (rnd() - .5) * 4, Math.min(s, y + len)); g.stroke();
+      g.fillStyle = 'rgba(63,4,8,0.24)';
+      g.beginPath(); g.ellipse(x, y, 3 + rnd() * 8, 2 + rnd() * 5, rnd(), 0, Math.PI * 2); g.fill();
+    }
+  }
+
+  if (kind === 'concrete' || kind === 'door') {
+    // Hairline fractures with short branches, plus chipped plaster at edges.
+    g.strokeStyle = 'rgba(12,13,12,0.72)'; g.lineWidth = 1;
+    for (let i = 0; i < (kind === 'concrete' ? 10 : 5); i++) {
+      let x = rnd() * s, y = rnd() * s;
+      g.beginPath(); g.moveTo(x, y);
+      for (let k = 0; k < 5; k++) {
+        x += (rnd() - .5) * 22; y += (rnd() - .5) * 26;
+        g.lineTo(x, y);
+        if (k === 2 && rnd() > .45) {
+          g.moveTo(x, y); g.lineTo(x + (rnd() - .5) * 24, y + (rnd() - .5) * 20);
+          g.moveTo(x, y);
+        }
+      }
+      g.stroke();
+    }
+    g.fillStyle = 'rgba(12,12,11,0.28)';
+    g.fillRect(0, s * .88, s, s * .12);
+    g.fillStyle = 'rgba(150,145,130,0.08)';
+    for (let i = 0; i < 12; i++) g.fillRect(rnd() * s, rnd() * s, 2 + rnd() * 8, 1 + rnd() * 4);
+  }
+}
+
 const TEX = {
   concrete: () => canvasTex(512, (g, s) => {
-    fillBg(g, s, '#45494a'); speckle(g, s, 650, 0.035);
+    fillBg(g, s, '#393b39'); speckle(g, s, 650, 0.035); distressSurface(g, s, 'concrete');
     // Ровные бетонные панели вместо больших радиальных пятен, которые на стенах
     // выглядели как повторяющиеся белые круги при близкой раскладке UV.
     g.strokeStyle = 'rgba(15,18,18,0.22)'; g.lineWidth = 2;
@@ -273,14 +342,14 @@ const TEX = {
       g.fillStyle = '#15171a';
       [[14, 14], [p - 14, 14], [14, p - 14], [p - 14, p - 14]].forEach(([a, b]) => { g.beginPath(); g.arc(x + a, y + b, 4, 0, 7); g.fill(); });
     }
-    speckle(g, s, 650, 0.06);
+    speckle(g, s, 650, 0.06); distressSurface(g, s, 'metal');
     g.strokeStyle = 'rgba(255,255,255,0.1)';
     for (let i = 0; i < 14; i++) { const x = rnd() * s, y = rnd() * s; g.beginPath(); g.moveTo(x, y); g.lineTo(x + rnd() * 40 - 20, y + rnd() * 40 - 20); g.stroke(); }
   }),
   door: () => canvasTex(256, (g, s) => {
     fillBg(g, s, '#4a5750'); g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 4; g.strokeRect(24, 24, s - 48, s - 48);
     g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = 2; g.strokeRect(28, 28, s - 56, s - 56);
-    speckle(g, s, 700, 0.07); stains(g, s, 3, 'rgba(20,10,0,0.24)');
+    speckle(g, s, 700, 0.07); stains(g, s, 3, 'rgba(20,10,0,0.24)'); distressSurface(g, s, 'door');
     g.fillStyle = '#d9a400'; g.fillRect(0, s - 14, s, 8);
   }),
   wood: () => canvasTex(256, (g, s) => {
@@ -298,7 +367,7 @@ const TEX = {
       for (let x = 22; x < s - 40; x += 7) { g.fillStyle = 'rgba(255,255,255,0.07)'; g.fillRect(x, y + 4, 3, 14); }
       g.fillStyle = rnd() < 0.5 ? '#0f0' : '#f80'; g.fillRect(s - 30, y + 8, 6, 6);
     }
-    speckle(g, s, 2000, 0.3);
+    speckle(g, s, 2000, 0.3); distressSurface(g, s, 'rack');
   }),
   cab: () => canvasTex(512, (g, s) => {
     // Сталь лифта: спокойная базовая поверхность, мелкие потёртости вместо
@@ -322,7 +391,7 @@ const TEX = {
       g.beginPath(); g.moveTo(x, y); g.lineTo(x + (rnd() - 0.5) * 3, Math.min(s, y + h)); g.stroke();
     }
     // Редкие пятна влаги и следы эксплуатации.
-    stains(g, s, 2, 'rgba(8,12,14,0.24)');
+    stains(g, s, 2, 'rgba(8,12,14,0.24)'); distressSurface(g, s, 'cab');
     speckle(g, s, 220, 0.035);
     // Технические панели и крепёж.
     g.fillStyle = 'rgba(0,0,0,0.25)';
@@ -336,7 +405,7 @@ const TEX = {
     fillBg(g, s, '#aeb6b4');
     for (let y = 0; y < s; y += 4) { g.fillStyle = 'rgba(0,0,0,0.05)'; g.fillRect(0, y, s, 1); }
     g.fillStyle = 'rgba(40,80,130,0.5)'; g.fillRect(0, s * 0.4, s, 16);
-    speckle(g, s, 2500, 0.25); stains(g, s, 3, 'rgba(120,20,15,0.3)');
+    speckle(g, s, 1800, 0.20); stains(g, s, 3, 'rgba(120,20,15,0.3)'); distressSurface(g, s, 'cloth');
   }),
   statue: () => canvasTex(256, (g, s) => { // SCP-173: бетон с потёками краски
     fillBg(g, s, '#8b8576'); speckle(g, s, 6000, 0.4);
@@ -358,7 +427,7 @@ const TEX = {
   ceil: () => canvasTex(256, (g, s) => {
     fillBg(g, s, '#23272b'); g.strokeStyle = 'rgba(0,0,0,0.7)'; g.lineWidth = 4; g.strokeRect(0, 0, s, s);
     g.strokeStyle = 'rgba(255,255,255,0.06)'; g.lineWidth = 2; g.strokeRect(6, 6, s - 12, s - 12);
-    speckle(g, s, 900, 0.08);
+    speckle(g, s, 900, 0.08); distressSurface(g, s, 'concrete');
   })
 };
 
