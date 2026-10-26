@@ -18,12 +18,25 @@ var comms_restored: bool = false
 var opened_doors: Dictionary = {}
 var loop_count: int = 0
 var triggered_events: Dictionary = {}
+var game_started: bool = false
+var menu_layer: CanvasLayer
+var menu_root: Control
+var intro_root: Control
+var hud_layer: CanvasLayer
+var intro_page: int = 0
 
 func _ready() -> void:
 	_build_environment()
 	_build_facility()
+	_load_game_state()
+	_apply_loaded_state()
 	_build_player()
 	_build_hud()
+	hud_layer.visible = false
+	player_ref.set_physics_process(false)
+	player_ref.set_process(false)
+	_build_menu()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 func _load_game_state() -> void:
 	var config := ConfigFile.new()
@@ -183,6 +196,11 @@ func _flash_alarm() -> void:
 	tween.tween_callback(flash.queue_free)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not game_started:
+		if event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_ENTER or event.keycode == KEY_SPACE):
+			if intro_root != null and intro_root.visible:
+				_advance_intro()
+		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
 		_interact()
 
@@ -396,10 +414,228 @@ func _build_player() -> void:
 	if config.load("user://keter_breach_save.cfg") == OK:
 		player.set("flashlight_charge", clampf(float(config.get_value("player", "flashlight_charge", 100.0)), 0.0, 100.0))
 
+
+func _build_menu() -> void:
+	menu_layer = CanvasLayer.new()
+	menu_layer.name = "MainMenu"
+	menu_layer.layer = 20
+	add_child(menu_layer)
+	menu_root = Control.new()
+	menu_root.name = "MenuRoot"
+	menu_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	menu_layer.add_child(menu_root)
+	var background := TextureRect.new()
+	background.name = "MenuBackground"
+	var background_texture := load("res://assets/menu-background.svg") as Texture2D
+	if background_texture != null:
+		background.texture = background_texture
+	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	menu_root.add_child(background)
+	var shade := ColorRect.new()
+	shade.color = Color(0.008, 0.012, 0.018, 0.72)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu_root.add_child(shade)
+	var column := VBoxContainer.new()
+	column.name = "MenuColumn"
+	column.set_anchors_preset(Control.PRESET_CENTER)
+	column.position = Vector2(-285, -245)
+	column.size = Vector2(570, 490)
+	column.add_theme_constant_override("separation", 16)
+	menu_root.add_child(column)
+	var eyebrow := Label.new()
+	eyebrow.text = "ФОНД • ОТДЕЛ KETER • ДОСЬЕ D-12"
+	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	eyebrow.add_theme_font_size_override("font_size", 16)
+	eyebrow.add_theme_color_override("font_color", Color(0.76, 0.18, 0.15))
+	column.add_child(eyebrow)
+	var title := Label.new()
+	title.text = "KETER BREACH"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 48)
+	title.add_theme_color_override("font_color", Color(0.91, 0.9, 0.86))
+	column.add_child(title)
+	var subtitle := Label.new()
+	subtitle.text = "ОБЪЕКТ KETER-19  //  ИНЦИДЕНТ 03:17"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_font_size_override("font_size", 17)
+	subtitle.add_theme_color_override("font_color", Color(0.64, 0.67, 0.69))
+	column.add_child(subtitle)
+	var spacer := Control.new()
+	spacer.custom_minimum_size.y = 18
+	column.add_child(spacer)
+	_add_menu_button(column, "НАЧАТЬ • ИНТРО", _start_intro)
+	_add_menu_button(column, "ПРОДОЛЖИТЬ", _continue_game)
+	_add_menu_button(column, "ДОСЬЕ ИНЦИДЕНТА", _show_dossier)
+	var footer := Label.new()
+	footer.text = "WASD — ДВИЖЕНИЕ   •   F — ФОНАРЬ   •   E — ВЗАИМОДЕЙСТВИЕ"
+	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	footer.add_theme_font_size_override("font_size", 12)
+	footer.add_theme_color_override("font_color", Color(0.52, 0.55, 0.57))
+	column.add_child(footer)
+	intro_root = Control.new()
+	intro_root.name = "IntroRoot"
+	intro_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	intro_root.visible = false
+	menu_layer.add_child(intro_root)
+	var intro_shade := ColorRect.new()
+	intro_shade.color = Color(0.004, 0.006, 0.009, 0.96)
+	intro_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	intro_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	intro_root.add_child(intro_shade)
+	var intro_column := VBoxContainer.new()
+	intro_column.name = "IntroColumn"
+	intro_column.set_anchors_preset(Control.PRESET_CENTER)
+	intro_column.position = Vector2(-430, -230)
+	intro_column.size = Vector2(860, 460)
+	intro_column.add_theme_constant_override("separation", 22)
+	intro_root.add_child(intro_column)
+	var intro_header := Label.new()
+	intro_header.name = "IntroHeader"
+	intro_header.text = "ЗАПИСЬ СИСТЕМЫ НАБЛЮДЕНИЯ // 03:17"
+	intro_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	intro_header.add_theme_font_size_override("font_size", 16)
+	intro_header.add_theme_color_override("font_color", Color(0.8, 0.12, 0.1))
+	intro_column.add_child(intro_header)
+	var intro_text := Label.new()
+	intro_text.name = "IntroText"
+	intro_text.text = ""
+	intro_text.custom_minimum_size = Vector2(820, 240)
+	intro_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	intro_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	intro_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	intro_text.add_theme_font_size_override("font_size", 22)
+	intro_text.add_theme_color_override("font_color", Color(0.84, 0.83, 0.78))
+	intro_column.add_child(intro_text)
+	var continue_button := Button.new()
+	continue_button.name = "IntroContinue"
+	continue_button.text = "ДАЛЕЕ  →"
+	continue_button.custom_minimum_size = Vector2(280, 48)
+	continue_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	continue_button.pressed.connect(_advance_intro)
+	_style_menu_button(continue_button)
+	intro_column.add_child(continue_button)
+	var skip_button := Button.new()
+	skip_button.text = "ПРОПУСТИТЬ ИНТРО"
+	skip_button.custom_minimum_size = Vector2(220, 36)
+	skip_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	skip_button.pressed.connect(_enter_game)
+	skip_button.add_theme_font_size_override("font_size", 13)
+	intro_column.add_child(skip_button)
+
+func _add_menu_button(parent: VBoxContainer, label_text: String, callback: Callable) -> void:
+	var button := Button.new()
+	button.text = label_text
+	button.custom_minimum_size = Vector2(390, 48)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	button.pressed.connect(callback)
+	_style_menu_button(button)
+	parent.add_child(button)
+
+func _style_menu_button(button: Button) -> void:
+	button.add_theme_font_size_override("font_size", 17)
+	button.add_theme_color_override("font_color", Color(0.88, 0.87, 0.83))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 0.25, 0.19))
+	button.add_theme_color_override("font_pressed_color", Color(1.0, 0.35, 0.24))
+	button.add_theme_stylebox_override("normal", _menu_button_style(Color(0.025, 0.032, 0.04, 0.88), Color(0.32, 0.08, 0.07, 0.9)))
+	button.add_theme_stylebox_override("hover", _menu_button_style(Color(0.09, 0.025, 0.025, 0.96), Color(0.78, 0.12, 0.09, 1.0)))
+	button.add_theme_stylebox_override("pressed", _menu_button_style(Color(0.14, 0.025, 0.02, 1.0), Color(0.9, 0.16, 0.1, 1.0)))
+
+func _menu_button_style(fill: Color, outline: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = outline
+	style.set_border_width_all(1)
+	style.set_content_margin_all(10)
+	return style
+
+func _start_intro() -> void:
+	menu_root.visible = false
+	intro_root.visible = true
+	intro_page = 0
+	_update_intro_page()
+
+func _update_intro_page() -> void:
+	var text_label := intro_root.find_child("IntroText", true, false) as Label
+	var header := intro_root.find_child("IntroHeader", true, false) as Label
+	var button := intro_root.find_child("IntroContinue", true, false) as Button
+	var pages := [
+		{"header":"ЗАПИСЬ СИСТЕМЫ НАБЛЮДЕНИЯ // 03:17","text":"СЕКТОР D-12. ПРОТОКОЛ СОДЕРЖАНИЯ НАРУШЕН.\n\nСвязь с персоналом потеряна. Камеры показывают пустые коридоры, но датчики продолжают фиксировать движение."},
+		{"header":"ЛИЧНОЕ ДЕЛО // D-CLASS","text":"Вы очнулись в грузовом лифте. Последние 47 минут стёрты из памяти. На форме нет имени — только номер испытуемого.\n\nПо внутренней связи доктор Гирс повторяет: «Не открывайте камеру KETER-19»."},
+		{"header":"ПРИОРИТЕТЫ // ЭВАКУАЦИЯ","text":"Найдите карту L1, изучите журнал смены, получите доступ к техническим секторам и восстановите связь. Не доверяйте маршруту эвакуации.\n\nЕсли увидите коридор, которого нет на плане, не входите в него."}
+	]
+	var page: Dictionary = pages[intro_page]
+	header.text = str(page["header"])
+	text_label.text = str(page["text"])
+	button.text = "ВОЙТИ В КОМПЛЕКС  →" if intro_page == pages.size() - 1 else "ДАЛЕЕ  →"
+
+func _advance_intro() -> void:
+	if intro_page < 2:
+		intro_page += 1
+		_update_intro_page()
+	else:
+		_enter_game()
+
+func _continue_game() -> void:
+	_enter_game()
+
+func _show_dossier() -> void:
+	menu_root.visible = false
+	intro_root.visible = true
+	intro_page = 0
+	var header := intro_root.find_child("IntroHeader", true, false) as Label
+	var text_label := intro_root.find_child("IntroText", true, false) as Label
+	var button := intro_root.find_child("IntroContinue", true, false) as Button
+	header.text = "ДОСЬЕ ИНЦИДЕНТА // KETER-19"
+	text_label.text = "03:17 — аварийный сигнал зафиксирован в секторе D-12.\n\nДоктор Гирс сообщил о расхождении показаний камер и датчиков движения. Последняя запись смены содержит предупреждение о коридоре, которого нет на плане комплекса.\n\nДоступ к полному досье засекречен.\n\nНажмите «Войти в комплекс», чтобы начать расследование."
+	button.text = "ВЕРНУТЬСЯ В МЕНЮ"
+	for connection in button.pressed.get_connections():
+		button.pressed.disconnect(connection.callable)
+	button.pressed.connect(_return_to_menu)
+	var skip := intro_root.find_child("IntroContinue", true, false)
+	var skip_button := intro_root.get_child(0)
+	# Keep the dossier as a single readable screen.
+	var column := intro_root.find_child("IntroColumn", true, false) as VBoxContainer
+	if column != null and column.get_child_count() > 4:
+		column.get_child(4).queue_free()
+
+func _return_to_menu() -> void:
+	intro_root.visible = false
+	menu_root.visible = true
+	var button := intro_root.find_child("IntroContinue", true, false) as Button
+	if button:
+		for connection in button.pressed.get_connections():
+			button.pressed.disconnect(connection.callable)
+		button.pressed.connect(_advance_intro)
+	var column := intro_root.find_child("IntroColumn", true, false) as VBoxContainer
+	if column != null and column.get_child_count() == 4:
+		var skip_button := Button.new()
+		skip_button.text = "ПРОПУСТИТЬ ИНТРО"
+		skip_button.custom_minimum_size = Vector2(220, 36)
+		skip_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		skip_button.pressed.connect(_enter_game)
+		skip_button.add_theme_font_size_override("font_size", 13)
+		column.add_child(skip_button)
+	_update_intro_page()
+
+func _enter_game() -> void:
+	game_started = true
+	menu_root.visible = false
+	intro_root.visible = false
+	hud_layer.visible = true
+	player_ref.set_process(true)
+	player_ref.set_physics_process(true)
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	_show_status("03:17 — грузовой лифт остановился. Последние 47 минут отсутствуют в памяти. Найди карту L1 в администрации.")
+
 func _build_hud() -> void:
 	var layer := CanvasLayer.new()
 	layer.name = "HUD"
+	layer.layer = 5
 	add_child(layer)
+	hud_layer = layer
 	var crosshair := Label.new()
 	crosshair.text = "+"
 	crosshair.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
