@@ -34,6 +34,8 @@ func _ready() -> void:
  _build_elevator()
  _build_walls()
  _build_props()
+ _build_detail_pass()
+ _build_room_dressing()
  _build_lights()
  _build_labels()
 
@@ -282,6 +284,76 @@ func _build_props() -> void:
   _box("Containment status light",Vector3(0.06,0.06,0.06),Vector3(side*13.58,1.7,56.0 if side<0 else 51.5),red_mat,false)
  for p in [Vector3(-1.75,0.018,18.6),Vector3(1.65,0.018,47.2),Vector3(-2.15,0.018,56.8),Vector3(1.8,0.018,66.1)]:
   _box("Dried blood trace",Vector3(1.5,0.012,0.85),p,_mat(Color(0.12,0.012,0.016),0.0,0.98),false)
+
+func _build_room_dressing() -> void:
+ # Small non-colliding props give each sector a distinct history without blocking navigation.
+ var paper_mat := _mat(Color(0.62, 0.59, 0.48), 0.0, 0.96)
+ var dark_mat := _mat(Color(0.055, 0.065, 0.07), 0.2, 0.72)
+ var glass_mat := _mat(Color(0.18, 0.36, 0.38, 0.72), 0.22, 0.2)
+ var amber_mat := _mat(Color(0.95, 0.42, 0.045), 0.08, 0.4)
+ # Administration: paperwork, desk terminal and a wall ventilation grille.
+ for i in range(4):
+  _box("Scattered administration document", Vector3(0.34, 0.012, 0.24), Vector3(-10.15 + i * 0.13, 0.812 + i * 0.003, 12.05 + (i % 2) * 0.12), paper_mat, false)
+ _box("Administration terminal base", Vector3(0.62, 0.12, 0.36), Vector3(-10.0, 0.91, 11.72), dark_mat, false)
+ _box("Administration terminal screen", Vector3(0.54, 0.34, 0.045), Vector3(-10.0, 1.13, 11.89), _mat(Color(0.04, 0.23, 0.22)), false)
+ _box("Administration vent frame", Vector3(0.08, 0.62, 0.9), Vector3(-4.71, 2.25, 12.0), metal_mat, false)
+ for i in range(7):
+  _box("Administration vent slat", Vector3(0.025, 0.035, 0.78), Vector3(-4.65, 2.03 + i * 0.07, 12.0), dark_mat, false)
+ # Medical block: privacy screens, bedside equipment and supply cabinets.
+ for z in [6.5, 9.5, 13.0]:
+  _box("Medical bed head panel", Vector3(0.95, 0.28, 0.12), Vector3(13.8, 0.73, z - 0.82), metal_mat, false)
+  _box("Medical bed pillow", Vector3(0.62, 0.09, 0.34), Vector3(13.8, 0.63, z - 0.67), paper_mat, false)
+  _box("Medical privacy screen post", Vector3(0.045, 1.65, 0.045), Vector3(12.55, 0.83, z), metal_mat, false)
+  _box("Medical privacy screen", Vector3(0.035, 1.2, 1.5), Vector3(12.55, 1.45, z + 0.65), glass_mat, false)
+ _box("Medical supply cabinet", Vector3(0.65, 1.65, 0.5), Vector3(16.0, 0.825, 7.0), metal_mat, false)
+ _box("Medical cabinet glass", Vector3(0.025, 0.95, 0.34), Vector3(15.66, 1.08, 7.0), glass_mat, false)
+ _cylinder("Medical IV stand", 0.035, 1.85, Vector3(11.8, 0.93, 13.5), metal_mat, false)
+ _cylinder("Medical IV hook", 0.025, 0.28, Vector3(11.8, 1.77, 13.5), metal_mat, false)
+ _box("Medical monitor", Vector3(0.42, 0.3, 0.08), Vector3(13.8, 1.08, 5.45), dark_mat, false)
+ _box("Medical monitor screen", Vector3(0.34, 0.21, 0.025), Vector3(13.8, 1.1, 5.395), screen_mat, false)
+ # Archive: numbered file boxes and a fallen stack of reports.
+ for i in range(4):
+  _box("Archive labeled storage box", Vector3(0.38, 0.28, 0.42), Vector3(-15.1, 0.14 + i * 0.29, 30.2 + (i % 2) * 0.48), paper_mat, false)
+  _box("Archive box label", Vector3(0.018, 0.09, 0.18), Vector3(-14.9, 0.16 + i * 0.29, 30.2 + (i % 2) * 0.48), amber_mat, false)
+ for i in range(3):
+  _box("Archive fallen report", Vector3(0.42, 0.018, 0.29), Vector3(-9.65 + i * 0.08, 0.82 + i * 0.02, 28.1 + i * 0.08), paper_mat, false)
+ # Workshop: tool chest, hazard beacon and cable drums.
+ _box("Workshop tool chest", Vector3(0.82, 0.72, 0.52), Vector3(-12.8, 0.36, 35.0), dark_mat, false)
+ for i in range(4):
+  _box("Workshop drawer handle", Vector3(0.025, 0.045, 0.28), Vector3(-12.37, 0.18 + i * 0.15, 35.0), metal_mat, false)
+ _cylinder("Workshop cable drum", 0.34, 0.42, Vector3(-8.2, 0.21, 35.8), metal_mat, false)
+ _cylinder("Workshop cable drum core", 0.09, 0.44, Vector3(-8.2, 0.21, 35.8), dark_mat, false)
+ _box("Workshop hazard beacon base", Vector3(0.2, 0.08, 0.2), Vector3(-14.1, 1.62, 33.2), dark_mat, false)
+ _box("Workshop hazard beacon", Vector3(0.12, 0.12, 0.12), Vector3(-14.1, 1.72, 33.2), amber_mat, false)
+ # Containment wing: warning placards, observation glass and isolated equipment.
+ for z in [48.0, 55.0]:
+  _box("Containment warning placard", Vector3(0.045, 0.42, 0.78), Vector3(-11.2, 2.25, z), amber_mat, false)
+  _box("Containment placard text strip", Vector3(0.02, 0.045, 0.48), Vector3(-11.16, 2.32, z), dark_mat, false)
+ for p in [Vector3(-5.0, 1.65, 49.5), Vector3(5.0, 1.65, 55.0)]:
+  _box("Containment observation window frame", Vector3(0.08, 1.1, 1.8), p, metal_mat, false)
+  _box("Containment observation glass", Vector3(0.035, 0.88, 1.55), p + Vector3(0.05, 0, 0), glass_mat, false)
+ # Security sector: control desk, blinking-panel style indicators and floor cable channel.
+ _box("Security control desk", Vector3(2.2, 0.72, 0.8), Vector3(-9.0, 0.36, 75.5), dark_mat, false)
+ for i in range(5):
+  _box("Security console button", Vector3(0.12, 0.035, 0.12), Vector3(-9.72 + i * 0.34, 0.75, 75.25), amber_mat if i == 2 else screen_mat, false)
+ _box("Security wall display", Vector3(0.06, 0.78, 1.25), Vector3(-15.7, 2.1, 70.0), dark_mat, false)
+ _box("Security display image", Vector3(0.025, 0.62, 1.05), Vector3(-15.66, 2.1, 70.0), screen_mat, false)
+ # Personnel area: chair, locker labels and a damaged ceiling panel.
+ _box("Personnel chair seat", Vector3(0.48, 0.12, 0.48), Vector3(-23.7, 0.52, 86.7), dark_mat, false)
+ _box("Personnel chair back", Vector3(0.48, 0.55, 0.1), Vector3(-23.7, 0.82, 86.92), dark_mat, false)
+ _box("Personnel desk papers", Vector3(0.42, 0.014, 0.3), Vector3(-25.1, 0.87, 85.9), paper_mat, false)
+ _box("Personnel locker label", Vector3(0.025, 0.16, 0.22), Vector3(-30.69, 1.38, 84.0), amber_mat, false)
+ # Channel 7: cable bundles, equipment status lights and a damaged relay box.
+ for i in range(3):
+  _box("Comms cable bundle", Vector3(0.055, 0.055, 2.8), Vector3(-1.3 + i * 0.18, 2.8, 91.0), dark_mat, false)
+ for i in range(4):
+  _box("Comms status indicator", Vector3(0.08, 0.055, 0.055), Vector3(-0.48 + i * 0.32, 1.75, 88.58), amber_mat if i == 3 else screen_mat, false)
+ _box("Comms damaged relay", Vector3(0.48, 0.62, 0.36), Vector3(3.1, 0.31, 92.5), dark_mat, false)
+ _box("Comms relay warning label", Vector3(0.025, 0.14, 0.22), Vector3(2.85, 0.42, 92.5), amber_mat, false)
+ # Mirror Protocol: repeated ceiling panels and an off-centre warning sign imply the copy is imperfect.
+ for z in [111.0, 117.0, 123.0]:
+  _box("Mirror corridor ceiling panel", Vector3(1.05, 0.035, 0.42), Vector3(0.45, 3.17, z), lamp_mat, false)
+ _box("Mirror protocol warning plate", Vector3(0.05, 0.42, 0.92), Vector3(-3.7, 2.3, 119.0), red_mat, false)
 
 func _build_detail_pass() -> void:
  var pipe_mat := _mat(Color(0.28, 0.33, 0.34), 0.68, 0.42)
