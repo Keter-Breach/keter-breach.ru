@@ -737,6 +737,45 @@ function init3DMode() {
   prevTime = performance.now();
   updateInventoryHUD();
   animate3D();
+
+  // --- Инженерные детали окружения: кабель-каналы, вентиляционные решётки и сливные трапы ---
+  // Мелкие геометрические элементы добавляют масштаб и читаемые силуэты без тяжёлых моделей.
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0x343b3d, roughness: 0.82, metalness: 0.38 });
+  const edgeMat = new THREE.MeshStandardMaterial({ color: 0x59615f, roughness: 0.7, metalness: 0.52 });
+  const grateMat = new THREE.MeshStandardMaterial({ color: 0x252b2c, roughness: 0.88, metalness: 0.28 });
+
+  // Длинные кабельные лотки под потолком главного коридора.
+  [-4.18, 4.18].forEach((x, i) => {
+    box(trimMat, 0.16, 0.13, 68, x, 2.92, 38, false);
+    box(edgeMat, 0.035, 0.035, 68, x + (i ? -0.1 : 0.1), 2.84, 38, false);
+    for (let z = 8; z < 72; z += 8) {
+      box(edgeMat, 0.24, 0.035, 0.12, x, 2.82, z, false);
+    }
+  });
+
+  // Защитные плинтусы по стенам, с перерывами у дверных проёмов.
+  [-4.72, 4.72].forEach(x => {
+    [[3, 24], [28, 31], [34, 38], [41, 76]].forEach(([z1, z2]) => {
+      box(trimMat, 0.055, 0.18, z2 - z1, x, 0.11, (z1 + z2) / 2, false);
+      box(edgeMat, 0.06, 0.025, z2 - z1, x, 0.19, (z1 + z2) / 2, false);
+    });
+  });
+
+  // Напольные сливные решётки — небольшие, тёмные и не перекрывают движение.
+  for (let z = 12; z <= 68; z += 14) {
+    box(grateMat, 1.05, 0.025, 0.34, 0, 0.025, z, false);
+    for (let k = -4; k <= 4; k++) {
+      box(edgeMat, 0.018, 0.012, 0.29, k * 0.11, 0.041, z, false);
+    }
+  }
+
+  // Вентиляционные панели на отдельных стенах, с настоящей глубиной между ламелями.
+  [17, 43, 63].forEach(z => {
+    box(trimMat, 0.045, 0.58, 1.05, 4.70, 2.25, z, false);
+    for (let k = 0; k < 7; k++) {
+      box(edgeMat, 0.065, 0.035, 0.91, 4.66, 2.02 + k * 0.075, z, false);
+    }
+  });
 }
 
 function onMouseMove(e) {
