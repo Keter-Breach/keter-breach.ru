@@ -293,7 +293,22 @@
   <canvas id="minimap-canvas" width="120" height="120"></canvas>
 </div>
 
-<script src="./node_modules/three/build/three.min.js" onerror="document.getElementById('description').textContent='ОШИБКА: не найден локальный 3D-движок. Проверьте целостность установки игры.';"></script>
+<script>
+  (function loadThreeRuntime() {
+    const localScript = document.createElement("script");
+    localScript.src = "./node_modules/three/build/three.min.js";
+    localScript.onerror = function () {
+      const fallbackScript = document.createElement("script");
+      fallbackScript.src = "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js";
+      fallbackScript.onerror = function () {
+        const description = document.getElementById("description");
+        if (description) description.textContent = "ОШИБКА: не удалось загрузить 3D-движок. Проверьте подключение к интернету и обновите страницу.";
+      };
+      document.head.appendChild(fallbackScript);
+    };
+    document.head.appendChild(localScript);
+  })();
+</script>
 <script src="script.js"></script>
 
 </body>
