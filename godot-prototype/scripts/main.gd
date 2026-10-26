@@ -8,6 +8,7 @@ var map_dot: ColorRect
 var facility_ref: Node3D
 var interaction_hint: Label
 var status_label: Label
+var objective_label: Label
 var has_l1: bool = false
 var has_l2: bool = false
 var archive_read: bool = false
@@ -126,6 +127,8 @@ func _interact() -> void:
 		"exit_door":
 			if not has_l2:
 				_show_status("ЭВАКУАЦИЯ ЗАБЛОКИРОВАНА: отсутствует карта L2.")
+			elif not archive_read:
+				_show_status("ПРОТОКОЛ «ЗЕРКАЛО»: сначала изучи журнал смены в архиве.")
 			elif not reactor_disabled:
 				_show_status("ПРОТОКОЛ «ЗЕРКАЛО»: сначала отключи аварийный генератор в мастерской.")
 			elif not comms_restored:
@@ -162,6 +165,23 @@ func _open_door(door_name: String) -> void:
 func _show_status(message: String) -> void:
 	if status_label:
 		status_label.text = message
+	_refresh_objective()
+
+func _refresh_objective() -> void:
+	if objective_label == null:
+		return
+	if not has_l1:
+		objective_label.text = "ЗАДАЧА: НАЙТИ КАРТУ L1 В АДМИНИСТРАЦИИ"
+	elif not archive_read:
+		objective_label.text = "ЗАДАЧА: ПРОЙТИ ШЛЮЗ L1 И ПРОЧИТАТЬ ЖУРНАЛ В АРХИВЕ"
+	elif not has_l2:
+		objective_label.text = "ЗАДАЧА: НАЙТИ КАРТУ L2 В УЗЛЕ ДАННЫХ"
+	elif not reactor_disabled:
+		objective_label.text = "ЗАДАЧА: ОТКЛЮЧИТЬ АВАРИЙНЫЙ ГЕНЕРАТОР В МАСТЕРСКОЙ"
+	elif not comms_restored:
+		objective_label.text = "ЗАДАЧА: ВОССТАНОВИТЬ СВЯЗЬ НА КАНАЛЕ 7"
+	else:
+		objective_label.text = "ЗАДАЧА: ОТКРЫТЬ ЭВАКУАЦИОННЫЙ ШЛЮЗ"
 
 func _build_environment() -> void:
 	var world := WorldEnvironment.new()
@@ -265,20 +285,20 @@ func _build_hud() -> void:
 	info.add_theme_font_size_override("font_size", 15)
 	info.add_theme_color_override("font_color", Color(0.78, 0.78, 0.76, 0.9))
 	layer.add_child(info)
-	var objective := Label.new()
-	objective.text = "ЗАДАЧА: ВЫЙТИ ИЗ ЛИФТА И ИССЛЕДОВАТЬ СЕКТОР D-12"
-	objective.anchor_left = 0.5
-	objective.anchor_right = 0.5
-	objective.anchor_top = 1.0
-	objective.anchor_bottom = 1.0
-	objective.offset_left = -230
-	objective.offset_right = 230
-	objective.offset_top = -48
-	objective.offset_bottom = -20
-	objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	objective.add_theme_font_size_override("font_size", 14)
-	objective.add_theme_color_override("font_color", Color(0.85, 0.12, 0.1))
-	layer.add_child(objective)
+	objective_label = Label.new()
+	objective_label.name = "Objective"
+	objective_label.anchor_left = 0.5
+	objective_label.anchor_right = 0.5
+	objective_label.anchor_top = 1.0
+	objective_label.anchor_bottom = 1.0
+	objective_label.offset_left = -300
+	objective_label.offset_right = 300
+	objective_label.offset_top = -48
+	objective_label.offset_bottom = -20
+	objective_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	objective_label.add_theme_font_size_override("font_size", 14)
+	objective_label.add_theme_color_override("font_color", Color(0.85, 0.12, 0.1))
+	layer.add_child(objective_label)
 	map_panel = ColorRect.new()
 	map_panel.name = "FacilityMinimap"
 	map_panel.color = Color(0.025, 0.035, 0.04, 0.92)
