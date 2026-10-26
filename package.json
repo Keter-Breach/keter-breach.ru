@@ -7,7 +7,7 @@
   "scripts": {
     "test": "node scripts/smoke-check.mjs",
     "desktop:start": "electron .",
-    "desktop:win": "electron-builder --win nsis"
+    "desktop:win": "electron-builder --win nsis --publish never"
   },
   "devDependencies": {
     "electron": "^35.0.0",
