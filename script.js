@@ -462,9 +462,10 @@ function buildMaterials() {
   const M = (t, r, m = 0, detail = 'concrete', bumpScale = 0.035) => {
     const maps = makeSurfaceMaps(detail);
     return new THREE.MeshStandardMaterial({
-      map: t, roughness: r, metalness: m,
-      bumpMap: maps.bump, bumpScale,
-      roughnessMap: maps.roughness
+      map: t, roughness: Math.min(1, r), metalness: m,
+      bumpMap: maps.bump, bumpScale: bumpScale * 0.78,
+      roughnessMap: maps.roughness,
+      envMapIntensity: 0.32
     });
   };
   const fl = TEX.metal(); fl.repeat.set(18, 24);
@@ -654,11 +655,11 @@ function init3DMode() {
 
   // Однократная инициализация: рендерер, слушатели, фонарик — не дублируются при рестарте
   if (!initialized) {
-    container.style.filter = "contrast(1.16) brightness(0.72) sepia(0.18) saturate(0.58)";
+    container.style.filter = "contrast(1.07) brightness(0.94) sepia(0.04) saturate(0.82)";
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x020305);
-    scene.fog = new THREE.FogExp2(0x030407, 0.065);
+    scene.background = new THREE.Color(0x101416);
+    scene.fog = new THREE.FogExp2(0x101416, 0.038);
 
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ'; // yaw отдельно от pitch: взгляд вверх не замедляет ходьбу
@@ -666,9 +667,8 @@ function init3DMode() {
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.72;
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMappingExposure = 0.92;
+    renderer.shadowMap.enabled = false; // Shadows disabled for cleaner image and better FPS.
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
 
@@ -676,18 +676,15 @@ function init3DMode() {
 
     flashlight = new THREE.SpotLight(0xddeeff, 5.0, 35, Math.PI / 3, 0.4, 1.5);
     flashlight.position.set(0, 0, 0);
-    flashlight.castShadow = true;
-    flashlight.shadow.mapSize.set(1024, 1024);
-    flashlight.shadow.bias = -0.0005;
-    flashlight.shadow.camera.near = 0.2;
-    flashlight.shadow.camera.far = 35;
+    flashlight.castShadow = false;
     flashlight.target.position.set(0, 0, -1); // камера смотрит в -Z
     camera.add(flashlight, flashlight.target);
     scene.add(camera);
     firstPersonRig = createFirstPersonRig();
     flashlight.position.set(0.38, -0.48, -1.28);
     flashlight.target.position.set(0.38, -0.44, -5.5);
-    scene.add(new THREE.AmbientLight(0x090d12, 0.16));
+    scene.add(new THREE.HemisphereLight(0x9baeb8, 0x29221b, 1.05));
+    scene.add(new THREE.AmbientLight(0x879096, 0.38));
 
     // Подсказки поверх игры (вместо alert, который ломал pointer lock)
     const base = "position:absolute;left:50%;transform:translateX(-50%);padding:10px 18px;" +
@@ -698,8 +695,8 @@ function init3DMode() {
     hintEl.style.cssText = base + "top:50%;margin-top:40px;";
     hintEl.textContent = "Кликните, чтобы управлять";
     container.append(toastEl, hintEl);
-     const fx = document.createElement('div'); // тяжёлая виньетка и линии развёртки
-     fx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,.04) 18%,rgba(0,0,0,.82) 100%),repeating-linear-gradient(0deg,rgba(0,0,0,.075) 0 1px,transparent 1px 3px);';
+     const fx = document.createElement('div'); // subtle film grain without heavily darkening the room
+     fx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 32%,rgba(0,0,0,.22) 100%),repeating-linear-gradient(0deg,rgba(0,0,0,.025) 0 1px,transparent 1px 4px);';
      container.append(fx);
 
     container.addEventListener('click', () => document.body.requestPointerLock());
@@ -819,7 +816,7 @@ function build10ZonesMap() {
     scaleBoxUV(geo, w, h, d);
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
-    if (mat.isMeshStandardMaterial && !mat.transparent) { m.castShadow = true; m.receiveShadow = true; }
+    if (mat.isMeshStandardMaterial && !mat.transparent) { m.castShadow = false; m.receiveShadow = false; }
     world.add(m);
     if (solid) walls.push({ mesh: m, box: new THREE.Box3().setFromObject(m) });
     return m;
@@ -2214,8 +2211,8 @@ renderChapter(1);
 
       const profile = {
         low: { pixelRatio: 1, shadows: false },
-        medium: { pixelRatio: 1.5, shadows: true },
-        high: { pixelRatio: 2, shadows: true }
+        medium: { pixelRatio: 1.5, shadows: false },
+        high: { pixelRatio: 2, shadows: false }
       }[settings.quality];
 
       const ratio = Math.min(
@@ -2226,15 +2223,13 @@ renderChapter(1);
       renderer.setPixelRatio(ratio);
       renderer.setSize(window.innerWidth, window.innerHeight);
 
-      renderer.shadowMap.enabled =
-        settings.shadows && profile.shadows;
+      renderer.shadowMap.enabled = false;
 
       if (typeof flashlight !== "undefined" && flashlight) {
-        flashlight.castShadow = renderer.shadowMap.enabled;
-        flashlight.shadow.needsUpdate = true;
+        flashlight.castShadow = false;
       }
 
-      renderer.toneMappingExposure = settings.brightness * 0.76;
+      renderer.toneMappingExposure = settings.brightness * 0.92;
 
       const container = el("three-container");
       if (container) {
