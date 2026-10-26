@@ -276,8 +276,8 @@ func _build_props() -> void:
   _cylinder("Sample fluid",0.5,2.2,Vector3(13.8,1.25,z),_mat(Color(0.07,0.24,0.16),0.2,0.25),false)
   _box("Anomalous sample",Vector3(0.36,0.36,0.36),Vector3(13.8,1.2,z),red_mat,false)
   if z == 33.0:
-   _box("KETER-19 sample label", Vector3(0.42, 0.025, 0.22), Vector3(13.8, 2.64, z), _mat(Color(0.72, 0.64, 0.43), 0.0, 0.9), false)
-   _add_interaction("sample_label", Vector3(13.8, 2.78, z), Vector3(0.9, 0.7, 0.9), "Маркировка образца KETER-19")
+   _box("KETER-19 sample label", Vector3(0.42, 0.22, 0.025), Vector3(13.8, 1.35, z - 0.72), _mat(Color(0.72, 0.64, 0.43), 0.0, 0.9), false)
+   _add_interaction("sample_label", Vector3(13.8, 1.3, z - 1.0), Vector3(0.9, 0.9, 0.9), "Маркировка образца KETER-19")
  # Security post, containment partitions and status lights.
  for i in range(6):
   _box("Security locker",Vector3(0.6,2,0.9),Vector3(-13.5,1,64+i*1.1),metal_mat)
