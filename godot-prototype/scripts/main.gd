@@ -11,6 +11,7 @@ var interaction_hint: Label
 var status_label: Label
 var objective_label: Label
 var battery_label: Label
+var inventory_label: Label
 var has_l1: bool = false
 var has_l2: bool = false
 var archive_read: bool = false
@@ -90,7 +91,7 @@ func _apply_loaded_state() -> void:
 	if reactor_disabled:
 		_remove_saved_item("reactor", "Emergency generator")
 	if comms_restored:
-		_remove_saved_item("comms", "Channel 7 terminal")
+		_activate_comms_terminal()
 	if evidence_found.has("incident_memo"):
 		_remove_saved_item("incident_memo", "Incident memo paper")
 	if evidence_found.has("camera_tape"):
@@ -114,6 +115,19 @@ func _remove_saved_item(interaction_id: String, visual_name: String) -> void:
 	var visual := facility_ref.find_child(visual_name, true, false) as Node3D
 	if visual:
 		visual.visible = false
+
+func _activate_comms_terminal() -> void:
+	var terminal := facility_ref.find_child("Interact_comms", true, false) as Area3D
+	if terminal:
+		terminal.set_meta("interaction_title", "Терминал связи: канал 7 [АКТИВЕН]")
+	var screen := facility_ref.find_child("Channel 7 screen", true, false) as MeshInstance3D
+	if screen:
+		var screen_material := screen.material_override as StandardMaterial3D
+		if screen_material:
+			screen_material.albedo_color = Color(0.04, 0.28, 0.18)
+			screen_material.emission_enabled = true
+			screen_material.emission = Color(0.02, 0.35, 0.16)
+			screen_material.emission_energy_multiplier = 0.7
 
 func _set_door_open(door_name: String, animate: bool = false) -> void:
 	var door := facility_ref.find_child(door_name, true, false) as StaticBody3D
@@ -183,6 +197,10 @@ func _process(_delta: float) -> void:
 		interaction_hint.text = "[E]  " + str(target.get_meta("interaction_title", "Взаимодействовать")) if target != null else ""
 	if battery_label:
 		battery_label.text = "ФОНАРЬ: %d%%" % roundi(float(player_ref.get("flashlight_charge")))
+	if inventory_label:
+		var access_l1 := "L1 ✓" if has_l1 else "L1 —"
+		var access_l2 := "L2 ✓" if has_l2 else "L2 —"
+		inventory_label.text = "КАРТЫ: %s   %s     БАТАРЕИ: %d/2" % [access_l1, access_l2, battery_packs_found.size()]
 	_check_story_triggers()
 	if opened_doors.has("Surface exit door") and player_ref.global_position.z > 125.0:
 		_trigger_mirror_loop()
@@ -305,9 +323,12 @@ func _interact() -> void:
 			target.queue_free()
 			_show_status("ГЕНЕРАТОР ОТКЛЮЧЁН. Аварийное питание снято; в секторе стало подозрительно тихо.")
 		"comms":
-			comms_restored = true
-			target.queue_free()
-			_show_status("КАНАЛ 7 / ВХОДЯЩЕЕ: «Если слышишь это, не верь двери с табличкой ВЫХОД. Я уже проходил её. Дважды». — Гирс")
+			if comms_restored:
+				_show_status("КАНАЛ 7 / АРХИВ: последнее сообщение Гирса сохранено. «Не верь двери с табличкой ВЫХОД. Я уже проходил её. Дважды».")
+			else:
+				comms_restored = true
+				_activate_comms_terminal()
+				_show_status("КАНАЛ 7 ВОССТАНОВЛЕН. ВХОДЯЩЕЕ: «Если слышишь это, не верь двери с табличкой ВЫХОД. Я уже проходил её. Дважды». — Гирс")
 		"battery_pack", "battery_pack_start":
 			var charge := float(player_ref.get("flashlight_charge"))
 			if charge >= 100.0:
@@ -830,6 +851,12 @@ func _build_hud() -> void:
 	battery_label.add_theme_font_size_override("font_size", 14)
 	battery_label.add_theme_color_override("font_color", Color(0.45, 0.9, 0.58))
 	layer.add_child(battery_label)
+	inventory_label = Label.new()
+	inventory_label.name = "Inventory"
+	inventory_label.position = Vector2(24, 80)
+	inventory_label.add_theme_font_size_override("font_size", 14)
+	inventory_label.add_theme_color_override("font_color", Color(0.78, 0.82, 0.76, 0.95))
+	layer.add_child(inventory_label)
 	objective_label = Label.new()
 	objective_label.name = "Objective"
 	objective_label.anchor_left = 0.5
