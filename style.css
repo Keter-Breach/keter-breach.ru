@@ -339,24 +339,29 @@ h1 {
   text-align: left;
   animation: keter-menu-arrive .9s cubic-bezier(.2,.75,.25,1) both;
 }
-#text-game > .card::before {
-  content: "PROJECT:";
-  display: block;
-  margin: 24px clamp(18px, 5vw, 32px) 0;
+.keter-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 28px clamp(18px, 5vw, 32px) 20px;
+  border-bottom: 1px solid rgba(185,55,47,.55);
+}
+.keter-brand span {
   color: #b9c3c1;
-  font: 500 clamp(12px, 1.2vw, 15px)/1 var(--mono);
+  font: 500 clamp(12px, 1.2vw, 15px)/1.2 var(--mono);
   letter-spacing: .42em;
 }
-#text-game > .card::after {
-  content: "K E T E R";
-  display: block;
-  margin: -2px clamp(18px, 5vw, 32px) 20px;
+.keter-brand strong {
   color: #f1f1ed;
-  font: 800 clamp(42px, 5.6vw, 68px)/1 var(--head);
-  letter-spacing: .08em;
+  font: 800 clamp(46px, 6vw, 72px)/.98 var(--head);
+  letter-spacing: .09em;
   text-shadow: 0 0 24px rgba(255,60,48,.18);
-  border-bottom: 1px solid rgba(185,55,47,.55);
-  padding-bottom: 18px;
+}
+.keter-brand i {
+  margin-top: 10px;
+  color: #9b625e;
+  font: normal 9px/1.4 var(--mono);
+  letter-spacing: .18em;
 }
 .dossier-bar {
   padding-top: 10px;
