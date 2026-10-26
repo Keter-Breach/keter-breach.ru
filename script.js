@@ -1099,7 +1099,7 @@ function animate3D() {
     }
 
     // Движение относительно направления взгляда (только по горизонтали)
-    const speed = isSprinting ? 9.0 : 5.2;
+    const speed = isSprinting ? 11.5 : 7.0;
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
 
