@@ -535,14 +535,13 @@ function buildMaterials() {
     orange: new THREE.MeshStandardMaterial({ color: 0xb85a10, roughness: 0.8 })
   };
 
-  // Реальные файлы проекта повышают детализацию; процедурные материалы остаются fallback.
-  // Стены и пол оставляем на контролируемых процедурных текстурах: внешние
-  // материалы Concrete034/MetalPlates006 дают в этой сцене слишком крупный рисунок.
-  // Повторяемые узоры сохраняем только там, где они читаются как реальные детали.
-  loadImageTexture("textures/Paint002.png", doorMaterial);
+  // Локальные бесшовные SVG-текстуры входят в сборку и работают офлайн.
+  // Процедурные карты выше остаются резервом, если изображение не загрузится.
+  loadImageTexture("textures/keter-concrete.svg", wallMaterial, 3, 3);
+  loadImageTexture("textures/keter-industrial-floor.svg", floorMaterial, 4, 4);
+  loadImageTexture("textures/keter-painted-metal.svg", doorMaterial, 1, 1);
+  loadImageTexture("textures/keter-painted-metal.svg", serverMaterial, 1.5, 1.5);
   loadImageTexture("textures/dark_wood_diff_1k.jpg", tableMaterial);
-  loadImageTexture("textures/Metal041B.png", serverMaterial);
-  // Для шкафов используем нейтральную процедурную краску вместо мраморного рисунка.
 }
 
 // Физически масштабируем UV по каждой грани. 4 world units = один повтор,
