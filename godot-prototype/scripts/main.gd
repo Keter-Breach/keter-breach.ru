@@ -604,8 +604,14 @@ func _build_menu() -> void:
 	var camera_feed := Label.new()
 	camera_feed.name = "CameraFeedLabel"
 	camera_feed.text = "●  LIVE FEED  /  CAM-06\nSECTOR D-12  •  03:17:04"
-	camera_feed.position = Vector2(0.66, 0.045)
-	camera_feed.size = Vector2(470, 58)
+	camera_feed.anchor_left = 0.66
+	camera_feed.anchor_right = 0.975
+	camera_feed.anchor_top = 0.045
+	camera_feed.anchor_bottom = 0.13
+	camera_feed.offset_left = 0
+	camera_feed.offset_right = 0
+	camera_feed.offset_top = 0
+	camera_feed.offset_bottom = 0
 	camera_feed.add_theme_font_size_override("font_size", 16)
 	camera_feed.add_theme_color_override("font_color", Color(0.92, 0.16, 0.12, 0.9))
 	camera_feed.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -613,8 +619,14 @@ func _build_menu() -> void:
 	var incident_stamp := Label.new()
 	incident_stamp.name = "IncidentStamp"
 	incident_stamp.text = "CONTAINMENT FAILURE\nUNAUTHORIZED MOVEMENT DETECTED"
-	incident_stamp.position = Vector2(0.64, 0.86)
-	incident_stamp.size = Vector2(0.33, 70)
+	incident_stamp.anchor_left = 0.64
+	incident_stamp.anchor_right = 0.975
+	incident_stamp.anchor_top = 0.84
+	incident_stamp.anchor_bottom = 0.94
+	incident_stamp.offset_left = 0
+	incident_stamp.offset_right = 0
+	incident_stamp.offset_top = 0
+	incident_stamp.offset_bottom = 0
 	incident_stamp.add_theme_font_size_override("font_size", 13)
 	incident_stamp.add_theme_color_override("font_color", Color(0.78, 0.25, 0.2, 0.78))
 	incident_stamp.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
