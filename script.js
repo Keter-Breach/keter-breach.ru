@@ -1120,7 +1120,6 @@ function build10ZonesMap() {
   wallLine('x', -4, 60, 80, [[61, 64], [66, 70]]); wallLine('x', 4, 60, 80, [[68.5, 71.5]]);
   wallLine('z', 63, -14, -4); wallLine('z', 77, -14, -4); wallLine('x', -14, 63, 77); // Пост охраны
   wallLine('z', 80, -4, 4, [[-1, 1]]);               // шлюз в центральный узел связи
-  wallLine('z', 105, -15, 15, [[-1, 1]]);             // последний выход из узла связи
 
   // --- Новое боковое крыло: архив, мастерская и изолятор ---
   wallLine('x', -17, 24, 44);
@@ -1569,7 +1568,9 @@ function updateInventoryHUD() {
   const items = [];
   if (window.playerState.keycardL1) items.push("<span style='color:#00aaff;'>[Карта L-1]</span>");
   if (window.playerState.keycardL2) items.push("<span style='color:#aa00ff;'>[Карта L-2]</span>");
-  document.getElementById("inv-items").innerHTML = items.length ? items.join(" ") : "Пусто";
+  const foundLogs = window.playerState.logsFound ? window.playerState.logsFound.length : 0;
+  items.push("<span style='color:#8fc9b0;'>[Улики " + foundLogs + "/7]</span>");
+  document.getElementById("inv-items").innerHTML = items.join(" ");
 }
 
 function interact3D() {
