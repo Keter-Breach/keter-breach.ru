@@ -15,7 +15,7 @@ const [html, script, css] = await Promise.all([
 
 assert.match(html, /id="text-game"/, "story/menu container should exist");
 assert.match(html, /id="three-container"/, "3D container should exist");
-assert.match(html, /src="script\.js"/, "page should load the game script");
+assert.match(html, /gameScript\.src = "\.\/script\.js"/, "page should load the game script after Three.js is ready");
 assert.match(html, /loadThree\("\.\/node_modules\/three\/build\/three\.min\.js", function \(\)/, "desktop build should prefer the bundled local Three.js runtime");
 assert.doesNotMatch(html, /fonts\.googleapis\.com/, "desktop menu should not depend on Google Fonts");
 assert.match(html, /loadThree\("https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.128\.0\/build\/three\.min\.js", showError\)/, "browser deployment should use a version-pinned fallback runtime");
