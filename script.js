@@ -548,6 +548,7 @@ let headBobTimer = 0, stepReady = true, toastTimer = null;
 
 let walls = [];            // { mesh, box } — боксы считаются один раз
 let interactiveItems = [];
+let eventTriggers = [];
 let doors = {};
 let openingDoors = [];     // двери в процессе анимации
 let wallMaterial, floorMaterial, doorMaterial, tableMaterial, serverMaterial;
@@ -706,7 +707,7 @@ function hazardStripe(x, z) {
 }
 
 function build10ZonesMap() {
-  walls = []; interactiveItems = []; doors = {}; flickers = [];
+  walls = []; interactiveItems = []; eventTriggers = []; doors = {}; flickers = [];
 
   const ceilingMat = MAT.ceil;
   const cabMat = MAT.cab;
@@ -813,7 +814,7 @@ function build10ZonesMap() {
   wallLine('z', 24, -5, 5, [[-1, 1]]);               // дверь L-1
   wallLine('z', 4, -15, -5); wallLine('z', 16, -15, -5); wallLine('x', -15, 4, 16); // Администрация
   wallLine('z', 4, 5, 15); wallLine('z', 16, 5, 15); wallLine('x', 15, 4, 16);      // Медпункт
-  wallLine('x', -5, 24, 44); wallLine('x', 5, 24, 44, [[31, 35]]);
+  wallLine('x', -5, 24, 44, [[27, 30], [36, 39]]); wallLine('x', 5, 24, 44, [[31, 35]]);
   wallLine('z', 27, 5, 15); wallLine('z', 39, 5, 15); wallLine('x', 15, 27, 39); // Лаборатория                              // Узел данных
   wallLine('z', 44, -16, 16, [[-1.5, 1.5]]);         // узел -> зал содержания
   wallLine('x', -16, 44, 60); wallLine('x', 16, 44, 60);
@@ -821,6 +822,45 @@ function build10ZonesMap() {
   wallLine('x', -4, 60, 80, [[66, 70]]); wallLine('x', 4, 60, 80);
   wallLine('z', 63, -14, -4); wallLine('z', 77, -14, -4); wallLine('x', -14, 63, 77); // Пост охраны
   wallLine('z', 80, -4, 4, [[-1, 1]]);               // выходная дверь
+
+  // --- Новое боковое крыло: архив, изолятор и техобслуживание ---
+  // Две комнаты имеют отдельные входы с центрального коридора.
+  wallLine('x', -17, 24, 44);
+  wallLine('z', 24, -17, -5);
+  wallLine('z', 44, -17, -5);
+  wallLine('z', 34, -17, -5);
+  // Разбитая внутренняя перегородка: проём между архивом и изолятором.
+  // Архив (z 24–34): высокие архивные стеллажи и разбросанные папки.
+  for (let i = 0; i < 5; i++) {
+    box(cabMat, 0.55, 2.35, 1.0, -15.4, 1.18, 25.7 + i * 1.55, true);
+    box(seamWingMat(), 0.58, 0.035, 0.92, -15.4, 2.0, 25.7 + i * 1.55);
+  }
+  mkTable(-10.2, 31.3);
+  box(MAT.orange, 0.42, 0.06, 0.3, -10.2, 0.84, 31.3);
+  addPointLight(-11.3, 29.5, 0xffc477);
+  // Изолятор / допросная (z 34–44): койка, ремни и аварийная лампа.
+  box(bedMat, 1.0, 0.42, 2.2, -14.1, 0.28, 38.2, true);
+  box(cabMat, 0.12, 0.7, 0.12, -14.5, 0.75, 37.4);
+  box(cabMat, 0.12, 0.7, 0.12, -13.7, 0.75, 37.4);
+  box(tableMaterial, 0.8, 0.75, 0.7, -9.3, 0.375, 41.1, true);
+  addPointLight(-10.5, 40.5, 0xff3322);
+  addSign(['АРХИВ 04', 'ДОСТУП ОГРАНИЧЕН'], -16.72, 2.65, 29, Math.PI / 2, '#d9c6a0');
+  addSign(['ИЗОЛЯТОР', 'ЗАПИСЬ ПОВРЕЖДЕНА'], -16.72, 2.65, 39, Math.PI / 2, '#ff5555');
+  // Низкие ящики и обломки у стен, не перекрывающие проход.
+  box(cabMat, 0.8, 0.55, 0.65, -6.5, 0.275, 25.5, true);
+  box(cabMat, 0.65, 0.4, 0.6, -6.4, 0.2, 42.3, true);
+
+  // Одноразовые сюжетные события срабатывают при входе в помещение.
+  eventTriggers = [
+    { x: -11.0, z: 29.0, radius: 2.8, message: 'АРХИВ 04: терминал печатает отчёт сам по себе. В записи указано: «НЕ СМОТРЕТЬ В КАМЕРУ 6».', sound: 'deny', fired: false },
+    { x: -11.0, z: 39.5, radius: 2.8, message: 'ИЗОЛЯТОР: за дверью слышны три удара. Затем кто-то шепчет ваше имя по внутренней связи.', sound: 'door', fired: false },
+    { x: 0, z: 18.5, radius: 2.5, message: 'РАДИОПЕРЕХВАТ: «...эвакуация отменена. Персонал не покидал комплекс. Повторяю: персонал не покидал...»', sound: 'deny', fired: false },
+    { x: 0, z: 51.5, radius: 3.0, message: 'ПРОТОКОЛ KETER: датчик фиксирует движение внутри пустой камеры. Свет в секторе гаснет на секунду.', sound: 'door', fired: false }
+  ];
+
+  function seamWingMat() {
+    return new THREE.MeshStandardMaterial({ color: 0x252a28, roughness: 0.94 });
+  }
 
   // --- Освещение: у каждой зоны свой цвет ---
   addPointLight(0, -4);                    // шлюз, жёлтый
@@ -1197,6 +1237,18 @@ function animate3D() {
       camera.position.y = 1.6 + s * 0.04;
       if (s < -0.9) { if (stepReady) { playSound('step'); stepReady = false; } }
       else if (s > 0) stepReady = true;
+    }
+  }
+
+  // Сюжетные ивенты: каждый триггер срабатывает только один раз за запуск.
+  if (locked && eventTriggers.length) {
+    for (const event of eventTriggers) {
+      if (!event.fired && Math.hypot(camera.position.x - event.x, camera.position.z - event.z) < event.radius) {
+        event.fired = true;
+        playSound(event.sound || 'deny');
+        showToast(event.message, 6500);
+        break;
+      }
     }
   }
 
