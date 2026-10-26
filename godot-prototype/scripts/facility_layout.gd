@@ -297,18 +297,18 @@ func _add_light(p: Vector3,c: Color,e: float,r: float) -> void:
  _box("Lamp housing",Vector3(0.72,0.09,0.3),Vector3(p.x,3.08,p.z),metal_mat,false)
 
 func _build_labels() -> void:
-	# Надписи стоят на стенах непосредственно у входов; yaw направляет текст в проход.
-	_label("D-12 / GATE",Vector3(0,2.65,-3.8),Color(0.9,0.12,0.08))
-	_label("ADMINISTRATION",Vector3(-5.28,2.65,10),Color(0.35,0.55,0.9),PI/2.0)
-	_label("MEDICAL",Vector3(5.28,2.65,10),Color(0.35,0.8,0.6),-PI/2.0)
-	_label("ARCHIVE 04",Vector3(-5.28,2.65,26.5),Color(0.85,0.65,0.4),PI/2.0)
-	_label("WORKSHOP",Vector3(-5.28,2.65,32.5),Color(0.9,0.35,0.1),PI/2.0)
-	_label("ISOLATION",Vector3(-5.28,2.65,39.5),Color(0.9,0.08,0.05),PI/2.0)
-	_label("DATA NODE",Vector3(0,2.65,43.72),Color(0.15,0.85,0.75),PI)
-	_label("KETER CONTAINMENT",Vector3(0,2.65,44.28),Color(0.9,0.08,0.05))
-	_label("EVACUATION",Vector3(0,2.65,60.28),Color(0.85,0.6,0.3),PI)
-	_label("COMMS / CHANNEL 7",Vector3(0,2.65,80.28),Color(0.35,0.5,0.95),PI)
-	_label("MIRROR PROTOCOL",Vector3(0,2.7,109),Color(0.9,0.08,0.05),PI)
+ # Надписи стоят на стенах непосредственно у входов; yaw направляет текст в проход.
+ _label("D-12 / GATE",Vector3(0,2.65,-3.8),Color(0.9,0.12,0.08))
+ _label("ADMINISTRATION",Vector3(-5.28,2.65,10),Color(0.35,0.55,0.9),PI/2.0)
+ _label("MEDICAL",Vector3(5.28,2.65,10),Color(0.35,0.8,0.6),-PI/2.0)
+ _label("ARCHIVE 04",Vector3(-5.28,2.65,26.5),Color(0.85,0.65,0.4),PI/2.0)
+ _label("WORKSHOP",Vector3(-5.28,2.65,32.5),Color(0.9,0.35,0.1),PI/2.0)
+ _label("ISOLATION",Vector3(-5.28,2.65,39.5),Color(0.9,0.08,0.05),PI/2.0)
+ _label("DATA NODE",Vector3(0,2.65,43.72),Color(0.15,0.85,0.75),PI)
+ _label("KETER CONTAINMENT",Vector3(0,2.65,44.28),Color(0.9,0.08,0.05))
+ _label("EVACUATION",Vector3(0,2.65,60.28),Color(0.85,0.6,0.3),PI)
+ _label("COMMS / CHANNEL 7",Vector3(0,2.65,80.28),Color(0.35,0.5,0.95),PI)
+ _label("MIRROR PROTOCOL",Vector3(0,2.7,109),Color(0.9,0.08,0.05),PI)
 
 func _label(t: String,p: Vector3,c: Color,yaw: float=0.0) -> void:
  var l:=Label3D.new()
