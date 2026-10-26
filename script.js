@@ -158,6 +158,7 @@ function generateKeycardTexture(levelStr, colorHex) {
 
 // === 2b. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ (рисуются на canvas, внешние файлы не нужны) ===
 let MAT = null, dust = null, flickers = [];
+let emergencyPulse = null;
 const rnd = Math.random;
 
 function dataTexture(size, draw) {
@@ -782,6 +783,26 @@ function init3DMode() {
     if (solid) walls.push({ mesh, box: new THREE.Box3().setFromObject(mesh) });
     return mesh;
   };
+
+  // Emergency beacon: a restrained red pulse adds depth and a clear horror cue.
+  const beaconHousing = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.16, 0.2, 0.12, 10),
+    new THREE.MeshStandardMaterial({ color: 0x24292a, roughness: 0.72, metalness: 0.48 })
+  );
+  beaconHousing.position.set(0, 2.88, 12);
+  world.add(beaconHousing);
+  const beaconLens = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.115, 0.14, 0.08, 10),
+    new THREE.MeshStandardMaterial({
+      color: 0x4b1110, emissive: 0xff2418, emissiveIntensity: 0.55,
+      roughness: 0.35, metalness: 0.12
+    })
+  );
+  beaconLens.position.set(0, 2.78, 12);
+  world.add(beaconLens);
+  emergencyPulse = new THREE.PointLight(0xff2518, 0.2, 15, 2);
+  emergencyPulse.position.set(0, 2.68, 12);
+  world.add(emergencyPulse);
 
   createDistantApparition();
 
@@ -1601,6 +1622,11 @@ function animate3D() {
 
   // Пленочный дрифт камеры (не накапливается)
   camera.rotation.z = Math.sin(time * 0.0007) * 0.004 + (Math.random() - 0.5) * 0.0008;
+
+  if (emergencyPulse) {
+    const pulse = Math.max(0, Math.sin(time * 0.0019));
+    emergencyPulse.intensity = 0.18 + pulse * 1.25;
+  }
 
   flickers.forEach(f => {
     const outage = Math.random() < 0.065;
