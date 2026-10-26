@@ -227,6 +227,9 @@ func _build_props() -> void:
  _table(Vector3(-10.2,0,27.8))
  _box("Archive terminal",Vector3(0.42,0.06,0.3),Vector3(-10.2,0.84,27.8),red_mat,false)
  _add_interaction("archive_log",Vector3(-10.2,1.1,27.8),Vector3(1.8,1.8,1.8),"Журнал архива")
+ _box("Incident memo paper", Vector3(0.38, 0.018, 0.27), Vector3(-9.55, 0.83, 28.25), _mat(Color(0.66, 0.61, 0.48), 0.0, 0.96), false)
+ _box("Incident memo red stamp", Vector3(0.12, 0.008, 0.07), Vector3(-9.55, 0.843, 28.25), red_mat, false)
+ _add_interaction("incident_memo", Vector3(-9.55, 0.95, 28.25), Vector3(0.9, 0.8, 0.8), "Служебная записка")
  _box("Emergency generator",Vector3(1.25,1.55,1),Vector3(-14.8,0.78,32.8),metal_mat)
  _add_interaction("reactor",Vector3(-14.8,1.1,32.8),Vector3(2.2,2.2,2.2),"Аварийный генератор")
  _box("Sparking panel",Vector3(0.08,0.08,0.08),Vector3(-14.05,1.2,32.55),red_mat,false)
@@ -241,6 +244,9 @@ func _build_props() -> void:
  _box("Channel 7 terminal",Vector3(1.8,1.25,0.16),Vector3(0,1.35,88.8),metal_mat)
  _box("Channel 7 screen",Vector3(1.52,0.9,0.035),Vector3(0,1.37,88.69),_mat(Color(0.04,0.07,0.16)),false)
  _add_interaction("comms",Vector3(0,1.4,87.8),Vector3(2.4,2.2,2.2),"Терминал связи: канал 7")
+ _box("Channel 7 recovered tape", Vector3(0.28, 0.055, 0.18), Vector3(1.35, 0.84, 88.2), dark_mat, false)
+ _box("Channel 7 tape label", Vector3(0.16, 0.012, 0.09), Vector3(1.35, 0.874, 88.2), paper_mat, false)
+ _add_interaction("camera_tape", Vector3(1.35, 0.98, 88.2), Vector3(0.9, 0.8, 0.8), "Кассета наблюдения №6")
  _box("L1 security door",Vector3(2,2.8,0.2),Vector3(0,1.4,24),door_mat)
  _door_frame(24.0, "L1")
  _add_interaction("door_l1",Vector3(0,1.4,22.8),Vector3(3,2.6,2.2),"Шлюз L1")
@@ -269,6 +275,9 @@ func _build_props() -> void:
   _cylinder("Sample tank",0.65,2.5,Vector3(13.8,1.25,z),_mat(Color(0.18,0.25,0.23),0.45,0.3))
   _cylinder("Sample fluid",0.5,2.2,Vector3(13.8,1.25,z),_mat(Color(0.07,0.24,0.16),0.2,0.25),false)
   _box("Anomalous sample",Vector3(0.36,0.36,0.36),Vector3(13.8,1.2,z),red_mat,false)
+  if z == 33.0:
+   _box("KETER-19 sample label", Vector3(0.42, 0.025, 0.22), Vector3(13.8, 2.64, z), _mat(Color(0.72, 0.64, 0.43), 0.0, 0.9), false)
+   _add_interaction("sample_label", Vector3(13.8, 2.78, z), Vector3(0.9, 0.7, 0.9), "Маркировка образца KETER-19")
  # Security post, containment partitions and status lights.
  for i in range(6):
   _box("Security locker",Vector3(0.6,2,0.9),Vector3(-13.5,1,64+i*1.1),metal_mat)
