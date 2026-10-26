@@ -32,6 +32,8 @@ var intro_tween: Tween
 var loading_root: Control
 var loading_progress: ProgressBar
 var loading_status: Label
+var menu_camera: Camera3D
+var menu_alarm_light: OmniLight3D
 
 func _ready() -> void:
 	_build_environment()
@@ -186,7 +188,13 @@ func _build_facility() -> void:
 	facility_ref = facility
 
 func _process(_delta: float) -> void:
-	if player_ref == null or map_panel == null or map_dot == null:
+	if menu_camera != null and not game_started:
+		var t := float(Time.get_ticks_msec()) * 0.001
+		menu_camera.position = Vector3(sin(t * 0.18) * 0.22, 2.22 + sin(t * 0.31) * 0.035, -14.0 + cos(t * 0.13) * 0.12)
+		menu_camera.look_at(Vector3(sin(t * 0.11) * 0.12, 1.55, 22.0), Vector3.UP)
+		if menu_alarm_light != null:
+			menu_alarm_light.light_energy = 0.35 + absf(sin(t * 1.7)) * 0.85
+	if not game_started or player_ref == null or map_panel == null or map_dot == null:
 		return
 	var p := player_ref.global_position
 	var px := 8.0 + clampf((p.x + 40.0) / 80.0, 0.0, 1.0) * (map_panel.size.x - 16.0)
@@ -496,6 +504,24 @@ func _build_player() -> void:
 
 
 func _build_menu() -> void:
+	# Use the actual facility as the menu backdrop: this is a live 3D camera, not a flat poster.
+	menu_camera = Camera3D.new()
+	menu_camera.name = "MenuCinematicCamera"
+	menu_camera.fov = 66.0
+	menu_camera.position = Vector3(0, 2.22, -14.0)
+	menu_camera.look_at(Vector3(0, 1.55, 22.0), Vector3.UP)
+	add_child(menu_camera)
+	menu_camera.current = true
+	var player_camera := player_ref.get_node_or_null("PlayerCamera") as Camera3D
+	if player_camera:
+		player_camera.current = false
+	menu_alarm_light = OmniLight3D.new()
+	menu_alarm_light.name = "MenuAlarmPulse"
+	menu_alarm_light.position = Vector3(0, 2.8, 7.0)
+	menu_alarm_light.light_color = Color(0.85, 0.025, 0.018)
+	menu_alarm_light.light_energy = 0.6
+	menu_alarm_light.omni_range = 10.0
+	add_child(menu_alarm_light)
 	menu_layer = CanvasLayer.new()
 	menu_layer.name = "MainMenu"
 	menu_layer.layer = 20
@@ -504,25 +530,22 @@ func _build_menu() -> void:
 	menu_root.name = "MenuRoot"
 	menu_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	menu_layer.add_child(menu_root)
-	var background := TextureRect.new()
-	background.name = "MenuBackground"
-	var background_texture := load("res://assets/menu-background.svg") as Texture2D
-	if background_texture != null:
-		background.texture = background_texture
-	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	menu_root.add_child(background)
 	var shade := ColorRect.new()
-	shade.color = Color(0.008, 0.012, 0.018, 0.56)
+	shade.name = "MenuAtmosphereOverlay"
+	shade.color = Color(0.004, 0.008, 0.012, 0.34)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	menu_root.add_child(shade)
 	var menu_panel := Panel.new()
 	menu_panel.name = "MenuPanel"
-	menu_panel.set_anchors_preset(Control.PRESET_CENTER)
-	menu_panel.position = Vector2(-340, -300)
-	menu_panel.size = Vector2(680, 600)
+	menu_panel.anchor_left = 0.035
+	menu_panel.anchor_right = 0.425
+	menu_panel.anchor_top = 0.055
+	menu_panel.anchor_bottom = 0.945
+	menu_panel.offset_left = 0
+	menu_panel.offset_right = 0
+	menu_panel.offset_top = 0
+	menu_panel.offset_bottom = 0
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color(0.008, 0.013, 0.017, 0.82)
 	panel_style.border_color = Color(0.58, 0.10, 0.075, 0.98)
@@ -532,10 +555,15 @@ func _build_menu() -> void:
 	menu_root.add_child(menu_panel)
 	var column := VBoxContainer.new()
 	column.name = "MenuColumn"
-	column.set_anchors_preset(Control.PRESET_CENTER)
-	column.position = Vector2(-285, -245)
-	column.size = Vector2(570, 490)
-	column.add_theme_constant_override("separation", 16)
+	column.anchor_left = 0.055
+	column.anchor_right = 0.405
+	column.anchor_top = 0.105
+	column.anchor_bottom = 0.895
+	column.offset_left = 0
+	column.offset_right = 0
+	column.offset_top = 0
+	column.offset_bottom = 0
+	column.add_theme_constant_override("separation", 12)
 	menu_root.add_child(column)
 	var eyebrow := Label.new()
 	eyebrow.text = "ФОНД • ОТДЕЛ KETER • ДОСЬЕ D-12"
@@ -546,7 +574,7 @@ func _build_menu() -> void:
 	var title := Label.new()
 	title.text = "KETER BREACH"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 54)
+	title.add_theme_font_size_override("font_size", 48)
 	title.add_theme_color_override("font_color", Color(0.91, 0.9, 0.86))
 	column.add_child(title)
 	var title_rule := ColorRect.new()
@@ -568,11 +596,29 @@ func _build_menu() -> void:
 	_add_menu_button(column, "ПРОДОЛЖИТЬ", _continue_game)
 	_add_menu_button(column, "ДОСЬЕ ИНЦИДЕНТА", _show_dossier)
 	var footer := Label.new()
-	footer.text = "WASD — ДВИЖЕНИЕ   •   F — ФОНАРЬ   •   E — ВЗАИМОДЕЙСТВИЕ\nСИСТЕМА D-12  //  ДОСТУП ОГРАНИЧЕН"
+	footer.text = "WASD — ДВИЖЕНИЕ   •   SHIFT — БЕГ\nF — ФОНАРЬ   •   E — ВЗАИМОДЕЙСТВИЕ\nСИСТЕМА D-12  //  ДОСТУП ОГРАНИЧЕН"
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	footer.add_theme_font_size_override("font_size", 12)
 	footer.add_theme_color_override("font_color", Color(0.52, 0.55, 0.57))
 	column.add_child(footer)
+	var camera_feed := Label.new()
+	camera_feed.name = "CameraFeedLabel"
+	camera_feed.text = "●  LIVE FEED  /  CAM-06\nSECTOR D-12  •  03:17:04"
+	camera_feed.position = Vector2(0.66, 0.045)
+	camera_feed.size = Vector2(470, 58)
+	camera_feed.add_theme_font_size_override("font_size", 16)
+	camera_feed.add_theme_color_override("font_color", Color(0.92, 0.16, 0.12, 0.9))
+	camera_feed.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	menu_root.add_child(camera_feed)
+	var incident_stamp := Label.new()
+	incident_stamp.name = "IncidentStamp"
+	incident_stamp.text = "CONTAINMENT FAILURE\nUNAUTHORIZED MOVEMENT DETECTED"
+	incident_stamp.position = Vector2(0.64, 0.86)
+	incident_stamp.size = Vector2(0.33, 70)
+	incident_stamp.add_theme_font_size_override("font_size", 13)
+	incident_stamp.add_theme_color_override("font_color", Color(0.78, 0.25, 0.2, 0.78))
+	incident_stamp.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	menu_root.add_child(incident_stamp)
 	intro_root = Control.new()
 	intro_root.name = "IntroRoot"
 	intro_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -823,6 +869,13 @@ func _finish_enter_game() -> void:
 	hud_layer.visible = true
 	player_ref.set_process(true)
 	player_ref.set_physics_process(true)
+	var player_camera := player_ref.get_node_or_null("PlayerCamera") as Camera3D
+	if player_camera:
+		player_camera.current = true
+	if menu_camera:
+		menu_camera.current = false
+	if menu_alarm_light:
+		menu_alarm_light.visible = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	_show_status("03:17 — грузовой лифт остановился. Последние 47 минут отсутствуют в памяти. Найди карту L1 в администрации.")
 
