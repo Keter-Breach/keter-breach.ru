@@ -54,7 +54,7 @@ function playSound(name) {
 }
 
 // === 2. СЮЖЕТ И СОСТОЯНИЕ ===
-const freshState = () => ({ keycardL1: false, keycardL2: false });
+const freshState = () => ({ keycardL1: false, keycardL2: false, logsFound: [], reactorDisabled: false, anomalySeen: false, radioMessages: 0, containmentOverride: false });
 window.playerState = freshState();
 let loopCount = 1;
 
@@ -80,7 +80,7 @@ const storyData = {
   1: {
     title: "ГЛАВА 1: НАРУШЕНИЕ СОДЕРЖАНИЯ",
     location: "Сектор D-12",
-    desc: "Аварийные сирены ревут. Комплекс погрузился во тьму. Найдите пропускные карты, восстановите питание шлюзов и выберитесь на поверхность, пока не поздно.",
+    desc: "ИНЦИДЕНТ KETER-19 · 03:17. Сектор D-12 запечатан после исчезновения ночной смены. Ни в коридорах, ни в камерах содержания нет ни одного человека, но датчики продолжают считать шаги. Вы очнулись в грузовом лифте с провалом в памяти длиной 47 минут. Исследуйте административный блок, медпункт, архив-09, технический уровень и галерею наблюдения. Соберите журналы смены, найдите карты L-1/L-2 и доберитесь до узла связи. Канал 7 передаёт сообщения из завтрашнего дня — и голос в них принадлежит вам.",
     choices: [
       { text: "Войти в комплекс (3D)", nextChapter: 2 },
       { text: "Открыть досье ключевых сотрудников Фонда", nextChapter: "PERSONNEL_DOSSIER" }
@@ -88,9 +88,9 @@ const storyData = {
   },
   2: { title: "3D КОМПЛЕКС", is3D: true },
   3: {
-    title: "ПОБЕГ УСПЕШЕН",
-    location: "Поверхность",
-    desc: "Вы преодолели все отсеки сдерживания! Команда эвакуации забирает вас.",
+    title: "ЭВАКУАЦИЯ · ПРОТОКОЛ «ЗЕРКАЛО»",
+    location: "Внешний периметр / неизвестно",
+    desc: "ПРОТОКОЛ «ЗЕРКАЛО» ЗАПУЩЕН. За шлюзом нет поверхности — только точная копия D-12, включая свежие следы ваших ботинок. Канал 7 наконец отвечает голосом доктора Гирса: «Вы не пропали во время аварии. Вы и есть запись, которую мы пытались остановить». На терминале появляется последняя строка: «Смена завершена в 03:17. Состав смены: шесть человек». В отражении экрана по-прежнему семеро. Вы можете начать цикл заново, но теперь знаете, какие помещения проверить первыми.",
     choices: [{ text: "Начать заново", nextChapter: 'RESET' }]
   }
 };
@@ -127,7 +127,7 @@ function renderChapter(chapNum) {
   if (data.is3D) { init3DMode(); return; }
 
   document.getElementById("chapter-title").textContent = data.title;
-  document.getElementById("current-location").textContent = data.location || "SCP Facility";
+  document.getElementById("current-location").textContent = data.location || "KETER Facility";
   document.getElementById("description").textContent = data.desc;
   document.getElementById("loop-count").textContent = `#${loopCount}`;
 
@@ -148,7 +148,7 @@ function generateKeycardTexture(levelStr, colorHex) {
   ctx.fillStyle = '#111'; ctx.fillRect(0, 20, 256, 30);
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 22px Courier New';
-  ctx.fillText("SCP SECURITY", 20, 85);
+  ctx.fillText("FACILITY SECURITY", 20, 85);
   ctx.font = 'bold 18px Courier New';
   ctx.fillText(`LEVEL ${levelStr}`, 20, 125);
   const tex = new THREE.CanvasTexture(canvas);
@@ -535,14 +535,13 @@ function buildMaterials() {
     orange: new THREE.MeshStandardMaterial({ color: 0xb85a10, roughness: 0.8 })
   };
 
-  // Реальные файлы проекта повышают детализацию; процедурные материалы остаются fallback.
-  // Стены и пол оставляем на контролируемых процедурных текстурах: внешние
-  // материалы Concrete034/MetalPlates006 дают в этой сцене слишком крупный рисунок.
-  // Повторяемые узоры сохраняем только там, где они читаются как реальные детали.
-  loadImageTexture("textures/Paint002.png", doorMaterial);
+  // Локальные бесшовные SVG-текстуры входят в сборку и работают офлайн.
+  // Процедурные карты выше остаются резервом, если изображение не загрузится.
+  loadImageTexture("textures/keter-concrete.svg", wallMaterial, 3, 3);
+  loadImageTexture("textures/keter-industrial-floor.svg", floorMaterial, 4, 4);
+  loadImageTexture("textures/keter-painted-metal.svg", doorMaterial, 1, 1);
+  loadImageTexture("textures/keter-painted-metal.svg", serverMaterial, 1.5, 1.5);
   loadImageTexture("textures/dark_wood_diff_1k.jpg", tableMaterial);
-  loadImageTexture("textures/Metal041B.png", serverMaterial);
-  // Для шкафов используем нейтральную процедурную краску вместо мраморного рисунка.
 }
 
 // Физически масштабируем UV по каждой грани. 4 world units = один повтор,
@@ -602,7 +601,8 @@ let doors = {};
 let openingDoors = [];     // двери в процессе анимации
 let wallMaterial, floorMaterial, doorMaterial, tableMaterial, serverMaterial;
 
-const isLocked = () => document.pointerLockElement === document.body;
+let fallbackMouseLook = false;
+const isLocked = () => document.pointerLockElement === document.body || fallbackMouseLook;
 
 function showToast(text, ms = 2500) {
   toastEl.textContent = text;
@@ -703,11 +703,11 @@ function init3DMode() {
 
   // Однократная инициализация: рендерер, слушатели, фонарик — не дублируются при рестарте
   if (!initialized) {
-    container.style.filter = "contrast(1.07) brightness(0.94) sepia(0.04) saturate(0.82)";
+    container.style.filter = "contrast(1.07) brightness(1.02) sepia(0.04) saturate(0.82)";
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x101416);
-    scene.fog = new THREE.FogExp2(0x101416, 0.038);
+    scene.background = new THREE.Color(0x050708);
+    scene.fog = new THREE.FogExp2(0x070a0b, 0.024);
 
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ'; // yaw отдельно от pitch: взгляд вверх не замедляет ходьбу
@@ -715,24 +715,31 @@ function init3DMode() {
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.92;
-    renderer.shadowMap.enabled = false; // Shadows disabled for cleaner image and better FPS.
+    renderer.toneMappingExposure = 0.98;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // Standard Three.js light units are more reliable across older laptop GPUs.
+    // Physical units made the starting lift nearly black on some integrated graphics.
+    renderer.physicallyCorrectLights = false;
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
 
     buildMaterials();
 
-    flashlight = new THREE.SpotLight(0xddeeff, 5.0, 35, Math.PI / 3, 0.4, 1.5);
+    flashlight = new THREE.SpotLight(0xddeeff, 8, 32, Math.PI / 4.2, 0.58, 1.7);
     flashlight.position.set(0, 0, 0);
-    flashlight.castShadow = false;
+    flashlight.castShadow = true;
+    flashlight.shadow.mapSize.set(1024, 1024);
+    flashlight.shadow.bias = -0.00025;
+    flashlight.shadow.normalBias = 0.025;
     flashlight.target.position.set(0, 0, -1); // камера смотрит в -Z
     camera.add(flashlight, flashlight.target);
     scene.add(camera);
     firstPersonRig = createFirstPersonRig();
     flashlight.position.set(0.38, -0.48, -1.28);
     flashlight.target.position.set(0.38, -0.44, -5.5);
-    scene.add(new THREE.HemisphereLight(0x9baeb8, 0x29221b, 1.05));
-    scene.add(new THREE.AmbientLight(0x879096, 0.38));
+    scene.add(new THREE.HemisphereLight(0x9baeb7, 0x24211d, 0.95));
+    scene.add(new THREE.AmbientLight(0x9ba5a8, 0.55));
 
     // Подсказки поверх игры (вместо alert, который ломал pointer lock)
     const base = "position:absolute;left:50%;transform:translateX(-50%);padding:10px 18px;" +
@@ -747,7 +754,34 @@ function init3DMode() {
      fx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 32%,rgba(0,0,0,.22) 100%),repeating-linear-gradient(0deg,rgba(0,0,0,.025) 0 1px,transparent 1px 4px);';
      container.append(fx);
 
-    container.addEventListener('click', () => document.body.requestPointerLock());
+    container.addEventListener('click', () => {
+      // Захват мыши может быть запрещён системой/окном. Не оставляем игрока
+      // с безмолвной подсказкой поверх неподвижного экрана.
+      try {
+        const request = document.body.requestPointerLock();
+        if (request && typeof request.catch === "function") {
+          request.catch(() => {
+            fallbackMouseLook = true;
+            window.__keterPaused = false;
+            hintEl.textContent = "Управление включено без захвата курсора: WASD — движение, мышь — обзор. Кликните ещё раз, чтобы захватить курсор.";
+            hintEl.style.display = "block";
+          });
+        }
+      } catch (error) {
+        fallbackMouseLook = true;
+        window.__keterPaused = false;
+        hintEl.textContent = "Управление включено без захвата курсора: WASD — движение, мышь — обзор. Кликните ещё раз, чтобы захватить курсор.";
+        hintEl.style.display = "block";
+      }
+    });
+    document.addEventListener("pointerlockerror", () => {
+      fallbackMouseLook = true;
+      window.__keterPaused = false;
+      if (hintEl) {
+        hintEl.textContent = "Управление включено без захвата курсора: WASD — движение, мышь — обзор. Кликните ещё раз, чтобы захватить курсор.";
+        hintEl.style.display = "block";
+      }
+    });
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('keydown', (e) => {
       // Не повторяем одноразовые действия, пока клавиша удерживается.
@@ -806,15 +840,15 @@ function init3DMode() {
 
   createDistantApparition();
 
-  battery = 100; flashlightOn = true; flashlight.intensity = 5.0;
+  battery = 100; flashlightOn = true; flashlight.intensity = 8;
   if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0.3;
   velocity.set(0, 0, 0); openingDoors = [];
   camera.position.set(0, 0.72, -8);
-  camera.rotation.set(0.22, Math.PI, 0); // приходит в себя на полу лифта, затем поднимает голову
-  if (firstPersonRig) firstPersonRig.visible = true;
+  camera.rotation.set(0.22, Math.PI, 0); // first-person: без видимой модели тела/рук персонажа
+  if (firstPersonRig) firstPersonRig.visible = false;
   wakeupProgress = 0;
   wakeupActive = true;
-  showToast("Вы приходите в себя в остановившемся лифте...", 4200);
+  showToast("ИНЦИДЕНТ KETER-19: лифт остановлен. Найдите карту L-1 и проверьте архивные терминалы.", 5200);
   const batteryHUD = document.getElementById("battery-level");
   batteryHUD.textContent = "100%";
   batteryHUD.classList.remove("battery-low", "battery-critical");
@@ -946,9 +980,54 @@ function toggleFlashlight() {
 // Шлюз D-12 -> Главный холл (Администрация / Медпункт) -> [L-1] Узел данных -> Зал содержания -> [L-2] Эвакуация -> [выход]
 let hazardTex = null;
 
-function addSign() {
-  // Таблички отключены для более реалистичного, менее игрового окружения.
-  return null;
+function addSign(lines, x, y, z, rotation = 0, accent = '#9dffcb', scale = 1) {
+  // Небольшие физические таблички с локальной canvas-текстурой: работают офлайн
+  // и дают игроку ориентиры без внешних картинок и тяжёлых моделей.
+  const labelLines = Array.isArray(lines) ? lines : [String(lines || 'СЕКТОР D-12')];
+  const width = 2.25 * Math.max(0.4, scale || 1);
+  const height = 0.56 * Math.max(0.4, scale || 1);
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#101719';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#202b2e';
+  ctx.fillRect(8, 8, 496, 112);
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(8, 8, 496, 112);
+  ctx.fillStyle = accent;
+  ctx.fillRect(18, 18, 5, 92);
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 29px "Courier New", monospace';
+  ctx.fillStyle = '#e2ece8';
+  ctx.fillText(String(labelLines[0] || '').toUpperCase().slice(0, 30), 38, labelLines[1] ? 48 : 64, 450);
+  if (labelLines[1]) {
+    ctx.font = 'bold 17px "Courier New", monospace';
+    ctx.fillStyle = accent;
+    ctx.fillText(String(labelLines[1]).toUpperCase().slice(0, 42), 38, 84, 450);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.encoding = THREE.sRGBEncoding;
+  texture.anisotropy = 2;
+  const group = new THREE.Group();
+  const backing = new THREE.Mesh(
+    new THREE.BoxGeometry(width + 0.08, height + 0.08, 0.075),
+    new THREE.MeshStandardMaterial({ color: 0x20282a, roughness: 0.78, metalness: 0.38 })
+  );
+  group.add(backing);
+  const face = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, height),
+    new THREE.MeshBasicMaterial({ map: texture, toneMapped: false })
+  );
+  face.position.z = 0.041;
+  group.add(face);
+  group.position.set(x, y, z);
+  group.rotation.y = rotation;
+  group.traverse(obj => { if (obj.isMesh) { obj.castShadow = false; obj.receiveShadow = false; } });
+  world.add(group);
+  return group;
 }
 
 function hazardStripe(x, z) {
@@ -980,9 +1059,9 @@ function build10ZonesMap() {
   const glassMat = MAT.glass;
   const redMat = () => new THREE.MeshBasicMaterial({ color: 0xff2222 });
 
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 160), floorMaterial);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(180, 240), floorMaterial);
   floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 30); floor.receiveShadow = true; world.add(floor);
-  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(120, 160), ceilingMat);
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(180, 240), ceilingMat);
   ceiling.rotation.x = Math.PI / 2; ceiling.position.set(0, 3.2, 30); world.add(ceiling);
 
   const box = (mat, w, h, d, x, y, z, solid) => {
@@ -1011,11 +1090,18 @@ function build10ZonesMap() {
     if (a2 > cur) seg(cur, a2);
   }
 
+  const fixtureHousingMat = new THREE.MeshStandardMaterial({ color: 0x202729, roughness: 0.74, metalness: 0.52 });
   function addPointLight(x, z, color = 0xffa040, y = 2.8) {
     const light = new THREE.PointLight(color, 0.42, 8);
-    light.position.set(x, y, z); world.add(light);
+    light.position.set(x, y, z);
+    world.add(light);
     if (color === 0xff3322 || color === 0x40ffee) flickers.push({ light, base: 0.42 });
-    box(new THREE.MeshBasicMaterial({ color: color === 0xff3322 ? 0x4d0b0b : 0x554a2c }), 0.8, 0.1, 0.3, x, 3.1, z);
+    // Visible recessed ceiling fixture, not just an invisible point light.
+    box(fixtureHousingMat, 0.94, 0.09, 0.34, x, 3.075, z, false);
+    const diffuser = new THREE.MeshBasicMaterial({ color, toneMapped: false });
+    box(diffuser, 0.72, 0.018, 0.19, x, 3.025, z, false);
+    box(new THREE.MeshStandardMaterial({ color: 0x343b3d, roughness: 0.8, metalness: 0.4 }), 0.035, 0.025, 0.26, x - 0.39, 3.02, z, false);
+    box(new THREE.MeshStandardMaterial({ color: 0x343b3d, roughness: 0.8, metalness: 0.4 }), 0.035, 0.025, 0.26, x + 0.39, 3.02, z, false);
   }
 
   const mkTable = (x, z) => {
@@ -1073,19 +1159,19 @@ function build10ZonesMap() {
   wallLine('x', -4, -10, 2, [[-5, -1]]); wallLine('x', 4, -10, 2);
   wallLine('z', -9, -14, -4); wallLine('z', 1, -14, -4); wallLine('x', -14, -9, 1); // Блок D-класса
   wallLine('z', 2, -5, 5, [[-1.5, 1.5]]);            // шлюз -> холл
-  wallLine('x', -5, 2, 24, [[8, 12]]);               // холл (проём в Администрацию)
-  wallLine('x', 5, 2, 24, [[8, 12]]);                // холл (проём в Медпункт)
+  wallLine('x', -5, 2, 24, [[8, 12], [16.5, 19.5]]); // администрация + боковой архивный коридор
+  wallLine('x', 5, 2, 24, [[8, 12]]);                // холл -> медпункт
   wallLine('z', 24, -5, 5, [[-1, 1]]);               // дверь L-1
   wallLine('z', 4, -15, -5); wallLine('z', 16, -15, -5); wallLine('x', -15, 4, 16); // Администрация
   wallLine('z', 4, 5, 15); wallLine('z', 16, 5, 15); wallLine('x', 15, 4, 16);      // Медпункт
-  wallLine('x', -5, 24, 44, [[25, 28], [31, 34], [38, 41]]); wallLine('x', 5, 24, 44, [[31, 35]]);
+  wallLine('x', -5, 24, 44, [[25, 28], [31, 34], [38, 41]]); wallLine('x', 5, 24, 44, [[31, 35], [36.5, 39.5]]);
   wallLine('z', 27, 5, 15); wallLine('z', 39, 5, 15); wallLine('x', 15, 27, 39); // Лаборатория                              // Узел данных
   wallLine('z', 44, -16, 16, [[-1.5, 1.5]]);         // узел -> зал содержания
   wallLine('x', -16, 44, 60); wallLine('x', 16, 44, 60);
   wallLine('z', 60, -16, 16, [[-1, 1]]);             // дверь L-2
-  wallLine('x', -4, 60, 80, [[66, 70]]); wallLine('x', 4, 60, 80);
+  wallLine('x', -4, 60, 80, [[61, 64], [66, 70]]); wallLine('x', 4, 60, 80, [[68.5, 71.5]]);
   wallLine('z', 63, -14, -4); wallLine('z', 77, -14, -4); wallLine('x', -14, 63, 77); // Пост охраны
-  wallLine('z', 80, -4, 4, [[-1, 1]]);               // выходная дверь
+  wallLine('z', 80, -4, 4, [[-1, 1]]);               // шлюз в центральный узел связи
 
   // --- Новое боковое крыло: архив, мастерская и изолятор ---
   wallLine('x', -17, 24, 44);
@@ -1155,8 +1241,9 @@ function build10ZonesMap() {
     return m;
   };
   doors.doorL1 = makeDoor(24, ['ДОПУСК L-1', 'УЗЕЛ ДАННЫХ']);
-  doors.doorL2 = makeDoor(60, ['ДОПУСК L-2', 'ЭВАКУАЦИЯ']);
-  doors.doorExit = makeDoor(80, ['ВЫХОД', 'НА ПОВЕРХНОСТЬ']);
+  doors.doorL2 = makeDoor(60, ['ДОПУСК L-2', 'ЗОНА СОДЕРЖАНИЯ']);
+  doors.doorControl = makeDoor(80, ['ДОПУСК L-2', 'УЗЕЛ СВЯЗИ']);
+  doors.doorExit = makeDoor(105, ['ВЫХОД', 'НА ПОВЕРХНОСТЬ']);
 
   // --- Таблички зон ---
   addSign(['ФОНД SCP', 'ШЛЮЗ D-12'], 0, 2.75, 1.72);
@@ -1277,7 +1364,7 @@ function build10ZonesMap() {
 
   // --- Лаборатория: столы, ёмкости с образцами ---
   addPointLight(10, 33, 0x33ff88);
-  addSign(['ЛАБОРАТОРИЯ', 'ИССЛЕДОВАНИЯ SCP'], 4.72, 2.75, 33, -Math.PI / 2, '#66ffaa');
+  addSign(['ЛАБОРАТОРИЯ', 'АНАЛИЗ НЕИЗВЕСТНОГО ОБРАЗЦА'], 4.72, 2.75, 33, -Math.PI / 2, '#9ba8a5');
   [30, 36].forEach(z => box(MAT.cab, 3, 0.9, 1, 8.5, 0.45, z, true));
   [29, 33, 37].forEach(z => {
     const t = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 2.5, 16), MAT.tank); t.position.set(13.8, 1.25, z); solid(t);
@@ -1306,22 +1393,311 @@ function build10ZonesMap() {
       const z1 = zs[i], z2 = zs[i + 1], mid = (z1 + z2) / 2;
       if (type !== 'breach') box(glassMat, 0.1, 2.8, z2 - z1, s * 11, 1.4, mid, true);
       const label = {
-        statue: ['SCP-173', 'EUCLID'], breach: ['КАМЕРА ПУСТА', 'НАРУШЕНИЕ'],
-        keter: ['SCP-████', 'KETER'], empty: ['КАМЕРА СВОБОДНА', 'СТАТУС: РЕЗЕРВ']
+        statue: ['ОТСЕК ОПЕЧАТАН', 'ОБЪЕКТ НЕ ОБНАРУЖЕН'], breach: ['КАМЕРА ПУСТА', 'НАРУШЕНИЕ'],
+        keter: ['СИГНАЛ ЕСТЬ', 'ОБЪЕКТ НЕ ОБНАРУЖЕН'], empty: ['КАМЕРА СВОБОДНА', 'СТАТУС: РЕЗЕРВ']
       }[type];
       const col = type === 'keter' ? '#ff4444' : type === 'breach' ? '#ffaa33' : '#ffd34d';
       addSign(label, s * 10.85, 2.4, mid, -s * Math.PI / 2, col);
-      if (type === 'statue') addStatue(s * 13.5, mid, -s);
+      // Монстры и их модели временно отключены.
       if (type === 'breach') for (let k = 0; k < 4; k++)
         box(glassMat, 0.3, 0.02, 0.3, s * (10 + Math.random() * 1.2), 0.02, z1 + 1 + k * 1.1);
       if (type === 'keter') {
-        box(darkMat, 1.2, 2.2, 1.2, s * 14.2, 1.1, mid);
-        box(redMat(), 0.06, 0.06, 0.06, s * 13.58, 1.7, mid - 0.2);
-        box(redMat(), 0.06, 0.06, 0.06, s * 13.58, 1.7, mid + 0.2);
-        if (s < 0) { const l = new THREE.PointLight(0xff2200, 2, 9); l.position.set(s * 13, 2.2, mid); world.add(l); }
+        // Камера пуста: остались только стойка датчиков и красный статусный индикатор.
+        box(cabMat, 1.2, 2.2, 0.16, s * 14.2, 1.1, mid, false);
+        box(redMat(), 0.08, 0.08, 0.08, s * 13.58, 1.7, mid);
+        if (s < 0) { const l = new THREE.PointLight(0xff2200, 0.6, 7); l.position.set(s * 13, 2.2, mid); world.add(l); }
       }
     });
   });
+
+  // Дополнительные крылья комплекса: архив, медблок и технический уровень.
+  const roomFloor = new THREE.MeshStandardMaterial({ color: 0x303638, roughness: 0.94 });
+  const room = (cx, cz, w, d, title, subtitle, lightColor = 0x8aa8a0) => {
+    const rf = new THREE.Mesh(new THREE.PlaneGeometry(w, d), roomFloor);
+    rf.rotation.x = -Math.PI / 2; rf.position.set(cx, 0.012, cz); world.add(rf);
+    const rc = new THREE.Mesh(new THREE.PlaneGeometry(w, d), ceilingMat);
+    rc.rotation.x = Math.PI / 2; rc.position.set(cx, 3.18, cz); world.add(rc);
+
+    // У боковых крыльев теперь есть настоящие дверные проёмы и коридоры,
+    // а не полностью запечатанные декорационные комнаты.
+    const gap = 1.45;
+    const xWall = (x, doorZ = null) => {
+      if (doorZ === null) {
+        box(wallMaterial, 0.45, 3.2, d, x, 1.6, cz, true);
+        return;
+      }
+      const start = cz - d / 2, end = cz + d / 2;
+      if (doorZ - gap > start) box(wallMaterial, 0.45, 3.2, doorZ - gap - start, x, 1.6, (start + doorZ - gap) / 2, true);
+      if (end > doorZ + gap) box(wallMaterial, 0.45, 3.2, end - doorZ - gap, x, 1.6, (doorZ + gap + end) / 2, true);
+      box(wallMaterial, 0.45, 0.8, gap * 2, x, 2.8, doorZ, false);
+    };
+    const zWall = (z, doorX = null) => {
+      if (doorX === null) {
+        box(wallMaterial, w, 3.2, 0.45, cx, 1.6, z, true);
+        return;
+      }
+      const start = cx - w / 2, end = cx + w / 2;
+      if (doorX - gap > start) box(wallMaterial, doorX - gap - start, 3.2, 0.45, (start + doorX - gap) / 2, 1.6, z, true);
+      if (end > doorX + gap) box(wallMaterial, end - doorX - gap, 3.2, 0.45, (doorX + gap + end) / 2, 1.6, z, true);
+      box(wallMaterial, gap * 2, 0.8, 0.45, doorX, 2.8, z, false);
+    };
+
+    if (cx < 0) {
+      xWall(cx - w / 2);
+      xWall(cx + w / 2, cz);
+    } else if (cx > 0) {
+      xWall(cx - w / 2, cz);
+      xWall(cx + w / 2);
+    } else {
+      xWall(cx - w / 2, cz === 94 ? 88 : null);
+      xWall(cx + w / 2);
+    }
+
+    if (cx === 0 && cz === 94) {
+      zWall(cz - d / 2, 0);
+      zWall(cz + d / 2, 0);
+    } else {
+      zWall(cz - d / 2);
+      zWall(cz + d / 2);
+    }
+    addPointLight(cx, cz, lightColor, 2.65);
+    addSign([title, subtitle], cx, 2.65, cz - d / 2 + 0.35, 0, '#9dffcb');
+  };
+  // Коридоры связывают боковые крылья с основным маршрутом.
+  wallLine('z', 16.5, -13, -5); wallLine('z', 19.5, -13, -5);
+  wallLine('z', 36.5, 5, 13); wallLine('z', 39.5, 5, 13);
+  wallLine('z', 60.5, -13, -4); wallLine('z', 63.5, -13, -4);
+  wallLine('z', 68.5, 4, 13); wallLine('z', 71.5, 4, 13);
+
+  room(-25, 18, 24, 24, 'АРХИВ-09', 'ЗАПИСИ ИНЦИДЕНТА', 0x5c9b87);
+  room(25, 38, 24, 26, 'МЕДБЛОК', 'КАРАНТИН УРОВНЯ 4', 0x7b9dba);
+  room(-25, 62, 24, 26, 'ТЕХНИЧЕСКИЙ УРОВЕНЬ', 'РЕАКТОР / НЕ ВХОДИТЬ', 0xff5533);
+  for (let z = 11; z <= 25; z += 4) {
+    box(MAT.cab, 0.7, 2.25, 2.6, -31.8, 1.125, z, true);
+    box(MAT.cab, 0.7, 2.25, 2.6, -18.2, 1.125, z, true);
+  }
+  for (let z = 32; z <= 44; z += 4) {
+    box(MAT.bed, 2.5, 0.35, 0.9, 22.2, 0.35, z, true);
+    box(MAT.cab, 0.18, 1.1, 0.18, 21.2, 0.55, z - 0.3, true);
+    box(MAT.cab, 0.18, 1.1, 0.18, 23.2, 0.55, z - 0.3, true);
+  }
+  for (let z = 55; z <= 70; z += 3) {
+    // Только опечатанные контейнеры и аварийные индикаторы: модели существ не используются.
+    box(MAT.cab, 1.2, 2.5, 1.1, -30.5, 1.25, z, true);
+    box(new THREE.MeshBasicMaterial({ color: 0xff3322 }), 0.08, 0.08, 0.08, -29.85, 1.7, z, false);
+  }
+  // Дальняя исследовательская галерея и вспомогательные отсеки делают комплекс глубже.
+  room(25, 70, 24, 24, 'ГАЛЕРЕЯ НАБЛЮДЕНИЯ', 'СТЕКЛО ПОВРЕЖДЕНО ИЗНУТРИ', 0x6a7778);
+  wallLine('z', 85, -15, -4); wallLine('z', 91, -15, -4);
+  for (let z = 62; z <= 78; z += 4) {
+    box(MAT.cab, 2.8, 2.1, 0.35, 18.5, 1.05, z, true);
+    box(MAT.glass, 0.08, 1.8, 2.8, 20.0, 1.15, z + 1.2, false);
+  }
+  room(0, 94, 30, 22, 'УЗЕЛ СВЯЗИ', 'КАНАЛ 7 · СИГНАЛ ИЗ БУДУЩЕГО', 0x5a79b8);
+  for (let x = -11; x <= 11; x += 5.5) {
+    box(MAT.cab, 1.4, 2.2, 0.8, x, 1.1, 90, true);
+    box(MAT.glass, 0.05, 1.5, 0.6, x, 1.6, 89.55, false);
+  }
+  box(wallMaterial, 0.5, 3.2, 18, -13, 1.6, 18, true);
+  box(wallMaterial, 0.5, 3.2, 20, 13, 1.6, 38, true);
+  box(wallMaterial, 18, 3.2, 0.5, -25, 1.6, 50, true);
+  addSign(['ЗАПАСНОЙ МАРШРУТ', 'СЛУЖЕБНЫЙ КОРИДОР'], -6.5, 2.55, 86, 0, '#ffb45e');
+
+  // Дополнительные архитектурные детали: техпанели, напольные решётки и следы эвакуации.
+  const panelMat = new THREE.MeshStandardMaterial({ color: 0x202729, roughness: 0.88, metalness: 0.32 });
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0x485052, roughness: 0.76, metalness: 0.48 });
+  const warningMat = new THREE.MeshBasicMaterial({ color: 0x76251f });
+  [-1, 1].forEach(side => {
+    for (let z = 18; z <= 78; z += 12) {
+      box(panelMat, 0.08, 0.9, 1.4, side * 5.55, 1.65, z, false);
+      box(trimMat, 0.09, 0.035, 1.46, side * 5.55, 2.12, z, false);
+      box(warningMat, 0.025, 0.07, 0.12, side * 5.49, 1.45, z - 0.38, false);
+    }
+  });
+  for (let z = 22; z <= 82; z += 15) {
+    box(grateMat, 1.25, 0.025, 0.42, 0, 0.025, z, false);
+    for (let x = -0.52; x <= 0.53; x += 0.21) {
+      box(trimMat, 0.025, 0.012, 0.36, x, 0.041, z, false);
+    }
+  }
+  // Комната персонала: столы, брошенные папки и журнал последней смены.
+  room(-25, 88, 20, 18, 'КОМНАТА ПЕРСОНАЛА', 'СМЕНА НЕ ЗАВЕРШЕНА', 0x697a78);
+  box(MAT.cab, 3.2, 0.12, 1.25, -25, 0.82, 87, true);
+  box(MAT.cab, 0.12, 0.8, 0.12, -26.4, 0.4, 86.5, true);
+  box(MAT.cab, 0.12, 0.8, 0.12, -23.6, 0.4, 86.5, true);
+  box(MAT.bed, 0.7, 0.08, 0.95, -27.4, 0.42, 89, false);
+  box(MAT.bed, 0.7, 0.08, 0.95, -22.8, 0.42, 85.5, false);
+  addSign(['ЖУРНАЛ СМЕНЫ', 'ПОСЛЕДНЯЯ ЗАПИСЬ: 03:17'], -25, 2.55, 80.5, 0, '#b5c0bd');
+
+  // Первая сюжетная улика: терминал дежурной смены, который можно изучить.
+  const loreScreenMat = new THREE.MeshStandardMaterial({
+    color: 0x172522, roughness: 0.38, metalness: 0.22,
+    emissive: 0x164b3a, emissiveIntensity: 0.7
+  });
+  const loreFrameMat = new THREE.MeshStandardMaterial({ color: 0x252d2f, roughness: 0.76, metalness: 0.4 });
+  const spawnLoreTerminal = (x, z, type, color = 0x164b3a) => {
+    const frame = new THREE.Mesh(
+      new THREE.BoxGeometry(0.78, 0.58, 0.12),
+      loreFrameMat
+    );
+    frame.position.set(x, 1.35, z);
+    frame.userData = { type };
+    world.add(frame);
+    interactiveItems.push(frame);
+    const screen = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.62, 0.4),
+      new THREE.MeshStandardMaterial({
+        color: 0x14201d, roughness: 0.34, metalness: 0.18,
+        emissive: color, emissiveIntensity: 0.85
+      })
+    );
+    screen.position.set(x, 1.36, z - 0.066);
+    world.add(screen);
+  };
+
+  // У каждой зоны есть собственная улика — игрок собирает картину инцидента по частям.
+  spawnLoreTerminal(-25, 18.5, 'loreArchive', 0x174b36);
+  spawnLoreTerminal(-8.5, 12.7, 'loreAdmin', 0x164b3a);
+  spawnLoreTerminal(29, 38, 'loreMedical', 0x1a4055);
+  spawnLoreTerminal(-25, 62.5, 'loreReactor', 0x5a2118);
+  spawnLoreTerminal(29, 70, 'loreGallery', 0x173b58);
+
+  const shiftTerminal = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.72, 0.12), loreFrameMat);
+  shiftTerminal.position.set(-25, 1.55, 81.25);
+  shiftTerminal.userData = { type: 'loreShift' };
+  world.add(shiftTerminal);
+  interactiveItems.push(shiftTerminal);
+  const shiftScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.78, 0.48), loreScreenMat);
+  shiftScreen.position.set(-25, 1.58, 81.17);
+  world.add(shiftScreen);
+  // Оставленные стулья и раскрытая папка намекают, что сотрудники ушли посреди работы.
+  box(MAT.cab, 0.52, 0.08, 0.52, -27.6, 0.48, 82.4, false);
+  box(trimMat, 0.42, 0.035, 0.56, -23.3, 0.91, 83.2, false);
+  box(MAT.bed, 0.025, 0.012, 0.48, -23.3, 0.935, 83.2, false);
+
+  // Узел связи: стойка с аварийным терминалом и панелью, показывающей временную рассинхронизацию.
+  const commsFrame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.25, 0.16), loreFrameMat);
+  commsFrame.position.set(0, 1.35, 88.8);
+  commsFrame.userData = { type: 'loreChannel7' };
+  world.add(commsFrame);
+  interactiveItems.push(commsFrame);
+  const commsScreen = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.52, 0.9),
+    new THREE.MeshStandardMaterial({
+      color: 0x1a202c, roughness: 0.3, metalness: 0.15,
+      emissive: 0x1b2c65, emissiveIntensity: 0.8
+    })
+  );
+  commsScreen.position.set(0, 1.37, 88.705);
+  world.add(commsScreen);
+  for (let x = -1.05; x <= 1.05; x += 0.35) {
+    box(trimMat, 0.055, 0.055, 0.18, x, 0.62, 89, false);
+  }
+
+  // --- Визуальный проход: потолочные световые панели, маркировка и уникальные детали зон ---
+  // Световые панели над главной осью делают потолок читаемым и не требуют дорогих эффектов.
+  const lampHousing = new THREE.MeshStandardMaterial({ color: 0x202729, roughness: 0.82, metalness: 0.42 });
+  const lampGlow = new THREE.MeshBasicMaterial({ color: 0xb8c9c5, toneMapped: false });
+  for (let z = 4; z <= 80; z += 8) {
+    box(lampHousing, 1.55, 0.09, 0.42, 0, 3.04, z, false);
+    box(lampGlow, 1.28, 0.018, 0.25, 0, 2.988, z, false);
+    box(trimMat, 0.05, 0.035, 0.34, -0.69, 2.98, z, false);
+    box(trimMat, 0.05, 0.035, 0.34, 0.69, 2.98, z, false);
+  }
+
+  // Archive: file boxes, shelf rails and scattered folders.
+  const paperMat = new THREE.MeshStandardMaterial({ color: 0x8a8978, roughness: 0.96 });
+  const folderMat = new THREE.MeshStandardMaterial({ color: 0x5b655f, roughness: 0.91 });
+  [-32.8, -28.2, -23.6, -19.2].forEach((x, row) => {
+    for (let tier = 0; tier < 3; tier++) {
+      box(trimMat, 0.11, 0.055, 12.5, x, 0.45 + tier * 0.72, 18, false);
+      for (let n = 0; n < 7; n++) {
+        const z = 12.8 + n * 1.7;
+        box(n % 3 === 0 ? paperMat : folderMat, 0.24, 0.42, 0.82, x + (row % 2 ? 0.08 : -0.08), 0.7 + tier * 0.72, z, false);
+      }
+    }
+  });
+  // Small red evidence marker beside the archive terminal.
+  box(warningMat, 0.045, 0.42, 0.045, -24.45, 1.32, 18.5, false);
+
+  // Medical block: privacy curtain rail, curtain panels, supply cart and task lighting.
+  box(trimMat, 9.2, 0.06, 0.06, 25, 2.72, 37.5, false);
+  const curtainMat = new THREE.MeshStandardMaterial({ color: 0x637a7d, roughness: 0.98, transparent: true, opacity: 0.78, side: THREE.DoubleSide });
+  [23.8, 27.8].forEach(x => {
+    const curtain = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.75), curtainMat);
+    curtain.position.set(x, 1.7, 37.5);
+    curtain.rotation.y = (x < 25 ? 0.04 : -0.04);
+    curtain.castShadow = false; curtain.receiveShadow = false;
+    world.add(curtain);
+    for (let k = 0; k < 5; k++) box(trimMat, 0.035, 0.04, 0.035, x - 0.85 + k * 0.42, 2.62, 37.5, false);
+  });
+  box(panelMat, 0.62, 0.82, 0.52, 30.8, 1.0, 34.2, false);
+  box(new THREE.MeshBasicMaterial({ color: 0x4db8bd, toneMapped: false }), 0.025, 0.24, 0.34, 30.47, 1.2, 34.2, false);
+  box(paperMat, 0.72, 0.035, 0.52, 29.5, 0.84, 41.5, false);
+
+  // Technical level: insulated pipes and a compact warning/control cabinet.
+  const pipeMat = new THREE.MeshStandardMaterial({ color: 0x343d40, roughness: 0.58, metalness: 0.66 });
+  const pipeRedMat = new THREE.MeshStandardMaterial({ color: 0x582522, roughness: 0.62, metalness: 0.42, emissive: 0x210503, emissiveIntensity: 0.6 });
+  [-1, 1].forEach(side => {
+    const x = -25 + side * 9.2;
+    [-0.0, 0.24, 0.48].forEach((offset, idx) => {
+      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.055 - idx * 0.008, 0.055 - idx * 0.008, 18, 8), idx === 2 ? pipeRedMat : pipeMat);
+      pipe.rotation.x = Math.PI / 2;
+      pipe.position.set(x + offset, 2.68 - idx * 0.2, 62);
+      pipe.castShadow = false; pipe.receiveShadow = false;
+      world.add(pipe);
+    });
+  });
+  box(panelMat, 1.4, 1.65, 0.18, -21.8, 1.05, 71.4, false);
+  box(new THREE.MeshBasicMaterial({ color: 0xff493b, toneMapped: false }), 0.08, 0.08, 0.025, -21.35, 1.62, 71.28, false);
+  box(new THREE.MeshBasicMaterial({ color: 0xe0a94b, toneMapped: false }), 0.08, 0.08, 0.025, -21.35, 1.42, 71.28, false);
+
+  // Observation gallery: a reinforced viewing frame and two small consoles.
+  [65, 73].forEach(z => {
+    box(trimMat, 0.12, 2.15, 0.12, 20.4, 1.12, z, false);
+    box(trimMat, 0.12, 0.12, 3.0, 20.4, 2.22, z + 1.5, false);
+  });
+  [27.5, 32].forEach(x => {
+    box(panelMat, 1.15, 0.78, 0.58, x, 0.72, 76.5, false);
+    box(new THREE.MeshBasicMaterial({ color: 0x2f8292, toneMapped: false }), 0.72, 0.38, 0.025, x, 1.1, 76.19, false);
+    for (let k = 0; k < 3; k++) box(warningMat, 0.08, 0.025, 0.025, x - 0.25 + k * 0.25, 0.81, 76.17, false);
+  });
+
+  // Staff room: abandoned chairs, tipped document trays and a desk lamp.
+  const chairMat = new THREE.MeshStandardMaterial({ color: 0x252b2d, roughness: 0.86, metalness: 0.18 });
+  [-28.4, -21.6].forEach((x, i) => {
+    box(chairMat, 0.68, 0.12, 0.68, x, 0.48, i ? 86.3 : 89.4, false);
+    box(chairMat, 0.12, 0.65, 0.12, x, 0.25, i ? 86.3 : 89.4, false);
+    box(chairMat, 0.62, 0.62, 0.12, x, 0.83, i ? 86.0 : 89.1, false);
+  });
+  box(paperMat, 0.58, 0.025, 0.4, -24.2, 0.91, 87.1, false);
+  box(folderMat, 0.34, 0.035, 0.27, -25.0, 0.94, 87.25, false);
+
+  // Comms node: bundled ceiling cables, console indicators and a cool-blue signal glow.
+  [-1, 1].forEach(side => {
+    box(trimMat, 0.12, 0.12, 16, side * 11.6, 2.91, 94, false);
+    box(pipeMat, 0.045, 0.045, 15, side * 11.2, 2.79, 94, false);
+  });
+  for (let i = 0; i < 6; i++) {
+    box(new THREE.MeshBasicMaterial({ color: i === 3 ? 0xff493b : 0x48a8bc, toneMapped: false }),
+      0.07, 0.045, 0.035, -1.1 + i * 0.44, 0.66, 89.15, false);
+  }
+  // Subtle yellow-black threshold marks help distinguish restricted doors.
+  [38, 62, 80].forEach(z => {
+    const stripe = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.28), new THREE.MeshBasicMaterial({ color: 0x8c7028, toneMapped: false }));
+    stripe.rotation.x = -Math.PI / 2;
+    stripe.position.set(0, 0.026, z);
+    stripe.scale.set(1, 1, 1);
+    world.add(stripe);
+    for (let k = -3; k <= 3; k++) box(new THREE.MeshBasicMaterial({ color: 0x171b1c, toneMapped: false }),
+      0.14, 0.012, 0.28, k * 0.28, 0.033, z, false);
+  });
+
+  for (let x = -34; x <= 34; x += 17) {
+    box(trimMat, 5.2, 0.07, 0.08, x, 2.92, 53, false);
+    box(panelMat, 1.3, 2.3, 0.12, x, 1.15, 52.2, false);
+    box(warningMat, 0.12, 0.12, 0.035, x - 0.42, 2.55, 52.1, false);
+  }
 }
 
 function spawnKeycard(x, y, z, level, colorHex, type) {
@@ -1343,7 +1719,9 @@ function updateInventoryHUD() {
   const items = [];
   if (window.playerState.keycardL1) items.push("<span style='color:#00aaff;'>[Карта L-1]</span>");
   if (window.playerState.keycardL2) items.push("<span style='color:#aa00ff;'>[Карта L-2]</span>");
-  document.getElementById("inv-items").innerHTML = items.length ? items.join(" ") : "Пусто";
+  const foundLogs = window.playerState.logsFound ? window.playerState.logsFound.length : 0;
+  items.push("<span style='color:#8fc9b0;'>[Улики " + foundLogs + "/7]</span>");
+  document.getElementById("inv-items").innerHTML = items.join(" ");
 }
 
 function interact3D() {
@@ -1357,6 +1735,21 @@ function interact3D() {
       if (t === 'keycardL1') { window.playerState.keycardL1 = true; showToast("Получена карта L-1"); }
       else if (t === 'keycardL2') { window.playerState.keycardL2 = true; showToast("Получена карта L-2"); }
       else if (t === 'battery') { battery = Math.min(100, battery + 50); showToast("Батарея фонаря +50%"); }
+      else {
+        const loreMessages = {
+          loreArchive: "АРХИВ-09 · ДЕЛО K-19: пропускная ведомость отмечает шесть сотрудников. На бумажной копии — семь подписей. Седьмая выполнена вашим почерком, но дата стоит завтрашняя.",
+          loreAdmin: "СЛУЖЕБНАЯ ЗАПИСКА ГИРСА · «Не доверять лифту. Камеры показывают пустые коридоры, потому что запись отстаёт на 47 минут. Если услышите канал 7 — не отвечайте собственным голосом».",
+          loreMedical: "МЕДБЛОК · Пять коек заняты, шесть пульсов зарегистрированы. Седьмой сигнал идёт из помещения, в котором нет пациента. Время первого совпадения: 03:17.",
+          loreReactor: "ТЕХНИЧЕСКИЙ ЖУРНАЛ · Резервное питание было включено вручную. Код оператора совпадает с вашим пропуском, однако система утверждает, что команда поступила завтра.",
+          loreGallery: "ГАЛЕРЕЯ НАБЛЮДЕНИЯ · Все кадры пусты. На стекле изнутри остались отпечатки ладоней, а в отражении монитора оператор стоит за спиной наблюдателя. Запрет: не смотреть в камеру 6.",
+          loreShift: "ЖУРНАЛ СМЕНЫ · 03:17 — «Нас шестеро в комнате, но в отражении монитора — семеро. Гирс приказал не смотреть на камеры. Если запись найдут: НЕ ВЫХОДИТЕ ЧЕРЕЗ ЛИФТ».",
+          loreChannel7: "КАНАЛ 7 · «Не включайте резервное питание. Вы уже сделали это завтра. Когда услышите собственный голос — не отвечайте». ВРЕМЯ ПАКЕТА: ЗАВТРА, 03:17."
+        };
+        if (loreMessages[t]) {
+          if (!window.playerState.logsFound.includes(t)) window.playerState.logsFound.push(t);
+          showToast(loreMessages[t], 10000);
+        }
+      }
       world.remove(item); interactiveItems.splice(i, 1);
       updateInventoryHUD();
       return;
@@ -1371,7 +1764,8 @@ function interact3D() {
   };
 
   tryDoor(doors.doorL1, 'keycardL1', "Нужна ключ-карта L-1 (кабинет администрации)") ||
-  tryDoor(doors.doorL2, 'keycardL2', "Нужна ключ-карта L-2 (серверная)") ||
+  tryDoor(doors.doorL2, 'keycardL2', "Нужна ключ-карта L-2 (узел данных)") ||
+  tryDoor(doors.doorControl, 'keycardL2', "Нужна карта L-2: доступ к узлу связи закрыт") ||
   tryDoor(doors.doorExit, 'keycardL2', "Выход заблокирован: нужна карта L-2", () => {
     document.exitPointerLock();
     document.getElementById("three-container").classList.add("hidden");
@@ -1391,28 +1785,60 @@ function openDoor(mesh) {
 function drawMinimap() {
   const canvas = document.getElementById("minimap-canvas");
   const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, 120, 120);
-  const scale = 1.2, cx = 60, cy = 14;
+  if (!ctx || !camera) return;
 
-  ctx.fillStyle = 'rgba(0,255,102,0.25)';
+  const width = canvas.width, height = canvas.height;
+  const cx = width / 2, cy = height / 2;
+  const scale = 1.35;
+
+  // Радиолокатор следует за игроком: маркер всегда остаётся в центре,
+  // а стены и двери показываются относительно текущего положения камеры.
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "rgba(0, 10, 5, 0.94)";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.strokeStyle = "rgba(0,255,102,0.16)";
+  ctx.lineWidth = 1;
+  for (let r = 20; r < Math.min(width, height) / 2; r += 20) {
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, height); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(width, cy); ctx.stroke();
+
+  const mapX = x => cx + (x - camera.position.x) * scale;
+  const mapY = z => cy + (z - camera.position.z) * scale;
+
+  ctx.fillStyle = "rgba(0,255,102,0.42)";
   walls.forEach(({ box }) => {
-    if (box.max.y - box.min.y < 3) return; // только стены, без мебели
-    ctx.fillRect(cx + box.min.x * scale, cy + box.min.z * scale,
-      (box.max.x - box.min.x) * scale, (box.max.z - box.min.z) * scale);
+    if (box.max.y - box.min.y < 3) return;
+    const x1 = mapX(box.min.x), x2 = mapX(box.max.x);
+    const y1 = mapY(box.min.z), y2 = mapY(box.max.z);
+    if (x2 < 0 || x1 > width || y2 < 0 || y1 > height) return;
+    ctx.fillRect(x1, y1, Math.max(1, x2 - x1), Math.max(1, y2 - y1));
   });
 
-  ctx.fillStyle = '#ffaa00';
+  ctx.fillStyle = "#ffaa00";
   Object.values(doors).forEach(d => {
-    if (d.position.y < 2.0) ctx.fillRect(cx + d.position.x * scale - 4, cy + d.position.z * scale, 8, 2);
+    if (d.position.y < 2.0) {
+      const x = mapX(d.position.x), y = mapY(d.position.z);
+      if (x >= -5 && x <= width + 5 && y >= -5 && y <= height + 5) {
+        ctx.fillRect(x - 4, y - 2, 8, 4);
+      }
+    }
   });
 
-  const px = cx + camera.position.x * scale, pz = cy + camera.position.z * scale;
+  // Игрок — отчётливый зелёный маркер в центре, с направлением взгляда.
   const yaw = camera.rotation.y;
-  ctx.strokeStyle = '#00ff66';
-  ctx.beginPath(); ctx.moveTo(px, pz);
-  ctx.lineTo(px - Math.sin(yaw) * 9, pz - Math.cos(yaw) * 9); ctx.stroke();
-  ctx.fillStyle = '#00ff66';
-  ctx.beginPath(); ctx.arc(px, pz, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = "#00ff66";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx - Math.sin(yaw) * 12, cy - Math.cos(yaw) * 12);
+  ctx.stroke();
+  ctx.fillStyle = "#00ff66";
+  ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = "rgba(0,255,102,0.85)";
+  ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.stroke();
 }
 
 // === 7. ИГРОВОЙ ЦИКЛ ===
@@ -1432,46 +1858,13 @@ let apparitionFired = false;
 let apparitionCueFired = false;
 
 function createDistantApparition() {
-  if (!world) return;
-  const figure = new THREE.Group();
-  figure.name = "KETER_DistantApparition";
-
-  const shadowMat = new THREE.MeshStandardMaterial({
-    color: 0x050809, roughness: 1, metalness: 0,
-    transparent: true, opacity: 0, depthWrite: false
-  });
-  const eyeMat = new THREE.MeshBasicMaterial({
-    color: 0xb9ffdf, transparent: true, opacity: 0,
-    blending: THREE.AdditiveBlending, depthWrite: false
-  });
-  const addPart = (geometry, material, x, y, z, rx = 0, ry = 0, rz = 0) => {
-    const part = new THREE.Mesh(geometry, material);
-    part.position.set(x, y, z);
-    part.rotation.set(rx, ry, rz);
-    part.castShadow = false;
-    part.receiveShadow = false;
-    figure.add(part);
-  };
-
-  // Incomplete human proportions make a readable silhouette without blocking movement.
-  addPart(new THREE.SphereGeometry(0.23, 8, 6), shadowMat, 0, 1.72, 0);
-  addPart(new THREE.BoxGeometry(0.52, 0.78, 0.25), shadowMat, 0, 1.12, 0);
-  addPart(new THREE.CylinderGeometry(0.075, 0.11, 0.72, 6), shadowMat, -0.24, 1.13, 0, 0, 0, -0.12);
-  addPart(new THREE.CylinderGeometry(0.075, 0.11, 0.72, 6), shadowMat, 0.24, 1.13, 0, 0, 0, 0.12);
-  addPart(new THREE.CylinderGeometry(0.09, 0.12, 0.78, 6), shadowMat, -0.13, 0.42, 0);
-  addPart(new THREE.CylinderGeometry(0.09, 0.12, 0.78, 6), shadowMat, 0.13, 0.42, 0);
-  addPart(new THREE.SphereGeometry(0.035, 6, 4), eyeMat, -0.085, 1.75, -0.205);
-  addPart(new THREE.SphereGeometry(0.035, 6, 4), eyeMat, 0.085, 1.75, -0.205);
-
-  figure.position.set(0, 0, 29);
-  figure.visible = false;
-  world.add(figure);
-  distantApparition = { group: figure, shadowMat, eyeMat };
+  // Временно отключены монстры и гуманоидные явления; атмосферу создают свет, звук и окружение.
+  distantApparition = null;
   apparitionClock = 0;
   apparitionFired = false;
   apparitionCueFired = false;
+  return;
 }
-
 function updateDistantApparition(delta, locked) {
   if (!distantApparition || !locked || apparitionFired) return;
   apparitionClock += delta;
@@ -1514,7 +1907,7 @@ function animate3D() {
   prevTime = time;
 
   const locked = isLocked();
-  hintEl.style.display = locked ? 'none' : 'block';
+  hintEl.style.display = locked && !fallbackMouseLook ? 'none' : 'block';
 
   // Медленное пробуждение: взгляд поднимается с пола лифта.
   if (wakeupActive) {
@@ -1539,7 +1932,7 @@ function animate3D() {
         if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0;
         showToast("Фонарь погас");
       } else if (battery < 15) {
-        flashlight.intensity = Math.random() < 0.08 ? 1.0 : 5.0; // мерцание
+        flashlight.intensity = Math.random() < 0.08 ? 18.0 : 75.0; // мерцание
         if (!lowBatteryStaticPlayed) {
           lowBatteryStaticPlayed = true;
           try {
@@ -2490,9 +2883,9 @@ renderChapter(1);
       if (container) {
         // Связываем ползунок экспозиции и с постобработочным фильтром,
         // чтобы настройка была заметна даже в затемнённой VHS-сцене.
-        const displayBrightness = clamp(settings.brightness / 0.95 * 0.78, 0.55, 1.25);
+        const displayBrightness = clamp(settings.brightness / 0.95 * 0.98, 0.78, 1.35);
         container.style.filter =
-          `contrast(1.16) brightness(${displayBrightness.toFixed(2)}) sepia(0.18) saturate(0.58)`;
+          `contrast(1.12) brightness(${displayBrightness.toFixed(2)}) sepia(0.10) saturate(0.72)`;
       }
     } catch (error) {
       console.warn("[KETER] Не удалось применить графику:", error);
@@ -2749,12 +3142,16 @@ renderChapter(1);
 
     document.addEventListener("pointerlockchange", () => {
       if (isPointerLocked()) {
+        fallbackMouseLook = false;
         pauseRequested = false;
         window.__keterPaused = false;
         startVhsAmbient();
         hideOverlay();
         return;
       }
+
+      // В средах, где Pointer Lock запрещён, продолжаем игру с обычным движением мыши.
+      if (fallbackMouseLook) return;
 
       // Потеря захвата мыши в 3D переводит игру на паузу.
       if (sessionStarted && is3DVisible()) {

@@ -2,11 +2,12 @@ name: Build Windows desktop app
 
 on:
   pull_request:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main, feat/windows-desktop-build]
   push:
+    branches: [feat/windows-desktop-build, fix/offline-exe-build]
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -21,13 +22,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Install dependencies
         run: npm install
       - name: Run smoke tests
         run: npm test
       - name: Build Windows installer
-        run: npm run desktop:win
+        run: npm run desktop:win -- --publish never
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
