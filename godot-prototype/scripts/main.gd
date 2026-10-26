@@ -185,7 +185,9 @@ func _check_story_triggers() -> void:
 		{"id":"archive_04","position":Vector3(-11,0,27),"radius":2.8,"message":"АРХИВ 04: терминал печатает отчёт сам по себе. В записи указано: «НЕ СМОТРЕТЬ В КАМЕРУ 6»."},
 		{"id":"workshop_arc","position":Vector3(-11,0,33),"radius":2.8,"message":"МАСТЕРСКАЯ: щиток выбивает дугой. На секунду лампы гаснут — в темноте кто-то проходит за спиной."},
 		{"id":"isolation_bangs","position":Vector3(-11,0,39.5),"radius":2.8,"message":"ИЗОЛЯТОР: за дверью слышны три удара. Затем кто-то шепчет ваше имя по внутренней связи."},
-		{"id":"keter_motion","position":Vector3(0,0,51.5),"radius":3.0,"message":"ПРОТОКОЛ KETER: датчик фиксирует движение внутри пустой камеры. Свет в секторе гаснет на секунду."}
+		{"id":"keter_motion","position":Vector3(0,0,51.5),"radius":3.0,"message":"ПРОТОКОЛ KETER: датчик фиксирует движение внутри пустой камеры. Свет в секторе гаснет на секунду."},
+		{"id":"sample_reaction","position":Vector3(13.8,0,33.0),"radius":2.8,"message":"ЛАБОРАТОРИЯ: образец меняет положение внутри герметичной колбы. На стекле изнутри появляется отпечаток ладони."},
+		{"id":"mirror_mismatch","position":Vector3(0,0,116.0),"radius":2.8,"message":"ПРОТОКОЛ «ЗЕРКАЛО»: табличка указывает на сектор D-12, но стрелка направлена в стену. За стеной слышен звук лифта."}
 	]
 	for event in events:
 		var event_id: String = event["id"]
@@ -196,7 +198,7 @@ func _check_story_triggers() -> void:
 			triggered_events[event_id] = true
 			_show_status(str(event["message"]))
 			_save_game_state()
-			if event_id == "workshop_arc" or event_id == "keter_motion":
+			if event_id == "workshop_arc" or event_id == "keter_motion" or event_id == "sample_reaction" or event_id == "mirror_mismatch":
 				_flash_alarm()
 
 func _flash_alarm() -> void:
