@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project: Keter</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --paper: #d9e5da;
@@ -296,7 +293,7 @@
   <canvas id="minimap-canvas" width="120" height="120"></canvas>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';}else{document.getElementById('description').textContent='ОШИБКА: не удалось загрузить 3D-движок. Проверьте соединение и обновите страницу (Ctrl+F5).';}"></script>
+<script src="./node_modules/three/build/three.min.js" onerror="document.getElementById('description').textContent='ОШИБКА: не найден локальный 3D-движок. Проверьте целостность установки игры.';"></script>
 <script src="script.js"></script>
 
 </body>
