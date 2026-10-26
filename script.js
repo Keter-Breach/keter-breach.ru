@@ -535,7 +535,7 @@ function makeDust() { // мелкая пыль и редкие частицы в
 }
 
 // === 3. 3D ДВИЖОК ===
-let scene, camera, renderer, flashlight, world, hintEl, toastEl;
+let scene, camera, renderer, flashlight, world, hintEl, toastEl, firstPersonRig;
 let initialized = false;
 let flashlightOn = true, battery = 100;
 let lowBatteryStaticPlayed = false;
@@ -560,6 +560,91 @@ function showToast(text, ms = 2500) {
   toastEl.style.opacity = 1;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => (toastEl.style.opacity = 0), ms);
+}
+
+// === Персонаж от первого лица: рукава SCP-охраны, броня и ручной фонарь ===
+function createFirstPersonRig() {
+  const rig = new THREE.Group();
+  rig.name = 'KETER_FirstPerson_SCP_Security_Rig';
+
+  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x20272a, roughness: 0.94, metalness: 0.04 });
+  const armorMat = new THREE.MeshStandardMaterial({ color: 0x111719, roughness: 0.78, metalness: 0.22 });
+  const gloveMat = new THREE.MeshStandardMaterial({ color: 0x090d0e, roughness: 0.98 });
+  const seamMatFP = new THREE.MeshStandardMaterial({ color: 0x414a4b, roughness: 0.86, metalness: 0.12 });
+  const patchMat = new THREE.MeshStandardMaterial({ color: 0x8b1d20, roughness: 0.9 });
+  const lensMat = new THREE.MeshStandardMaterial({ color: 0x9aa9a4, roughness: 0.25, metalness: 0.7, emissive: 0x15201d, emissiveIntensity: 0.3 });
+
+  const addBox = (w, h, d, mat, x, y, z, rz = 0) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    mesh.position.set(x, y, z);
+    mesh.rotation.z = rz;
+    mesh.frustumCulled = false;
+    rig.add(mesh);
+    return mesh;
+  };
+
+  // Forearms sit low in frame so they don't cover the crosshair or exploration view.
+  addBox(0.23, 0.31, 0.62, sleeveMat, -0.48, -0.53, -1.03, -0.22);
+  addBox(0.24, 0.31, 0.62, sleeveMat,  0.43, -0.54, -0.98,  0.18);
+
+  // Reinforced elbow / wrist plates and muted red unit patch.
+  addBox(0.245, 0.09, 0.24, armorMat, -0.48, -0.42, -0.91, -0.22);
+  addBox(0.255, 0.085, 0.23, armorMat,  0.43, -0.43, -0.88,  0.18);
+  addBox(0.09, 0.07, 0.012, patchMat, -0.48, -0.49, -0.713, -0.22);
+  addBox(0.25, 0.08, 0.13, seamMatFP, -0.48, -0.67, -1.18, -0.22);
+  addBox(0.25, 0.08, 0.13, seamMatFP,  0.43, -0.67, -1.12,  0.18);
+
+  // Gloves and knuckle guards.
+  addBox(0.22, 0.16, 0.22, gloveMat, -0.43, -0.62, -1.32, -0.12);
+  addBox(0.23, 0.16, 0.22, gloveMat,  0.39, -0.62, -1.28,  0.10);
+  addBox(0.19, 0.045, 0.12, armorMat, -0.43, -0.55, -1.34, -0.12);
+  addBox(0.19, 0.045, 0.12, armorMat,  0.39, -0.55, -1.30,  0.10);
+
+  // Compact, low-poly handheld flashlight in the right hand.
+  const torch = new THREE.Group();
+  torch.position.set(0.38, -0.56, -1.42);
+  torch.rotation.x = -0.06;
+  torch.rotation.z = -0.08;
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.052, 0.34, 8), armorMat);
+  barrel.rotation.x = Math.PI / 2;
+  barrel.position.z = -0.04;
+  torch.add(barrel);
+  const head = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.052, 0.09, 8), seamMatFP);
+  head.rotation.x = Math.PI / 2;
+  head.position.z = -0.22;
+  torch.add(head);
+  const lens = new THREE.Mesh(new THREE.CircleGeometry(0.052, 10), lensMat);
+  lens.position.z = -0.268;
+  torch.add(lens);
+  const grip = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.09, 0.12), gloveMat);
+  grip.position.set(0, -0.075, 0.045);
+  torch.add(grip);
+  rig.add(torch);
+  rig.userData.torchLens = lens;
+
+  // Helmet lamp housing at the very top edge of the view, subtle and unobtrusive.
+  const helmetLamp = new THREE.Group();
+  helmetLamp.position.set(0, 0.39, -0.92);
+  const housing = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.055, 0.075), armorMat);
+  helmetLamp.add(housing);
+  const lampLens = new THREE.Mesh(new THREE.CircleGeometry(0.027, 8), lensMat);
+  lampLens.position.set(0, 0, -0.041);
+  helmetLamp.add(lampLens);
+  rig.add(helmetLamp);
+
+  rig.position.set(0, 0, 0);
+  rig.renderOrder = 2;
+  rig.traverse(obj => {
+    if (obj.isMesh) {
+      obj.frustumCulled = false;
+      obj.renderOrder = 2;
+      obj.castShadow = false;
+      obj.receiveShadow = false;
+      if (obj.material) obj.material.depthWrite = true;
+    }
+  });
+  camera.add(rig);
+  return rig;
 }
 
 function init3DMode() {
@@ -640,7 +725,7 @@ function init3DMode() {
   battery = 100; flashlightOn = true; flashlight.intensity = 5.0;
   velocity.set(0, 0, 0); openingDoors = [];
   camera.position.set(0, 0.72, -8);
-  camera.rotation.set(0.22, Math.PI, 0); // приходит в себя на полу лифта, затем поднимает голову
+  camera.rotation.set(0.22, Math.PI, 0); // приходит в себя на полу лифта, затем поднимает голову\n  if (firstPersonRig) firstPersonRig.visible = true;
   wakeupProgress = 0;
   wakeupActive = true;
   showToast("Вы приходите в себя в остановившемся лифте...", 4200);
