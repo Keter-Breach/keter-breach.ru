@@ -134,6 +134,24 @@
  <path d="M300 1015q80 -22 135 -8M350 1024l44 -4M1280 1010q45 -17 92 -6M1325 1020l36 -3" stroke="#c1ccc4" stroke-width="2" opacity=".13"/>
  <path d="M40 720l160 -26M220 687l88 -13M1580 690l130 22M1740 718l80 13" stroke="#020303" stroke-width="13" opacity=".3"/>
 </g>
+<!-- cinematic pass: alarm haze, lens grime, deeper corners, and an uncertain silhouette -->
+<defs>
+ <radialGradient id="deepBlack"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".72"/></radialGradient>
+ <linearGradient id="alarmSweep" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#6f0909" stop-opacity="0"/><stop offset=".5" stop-color="#b51e18" stop-opacity=".18"/><stop offset="1" stop-color="#6f0909" stop-opacity="0"/></linearGradient>
+ <filter id="silhouetteBlur"><feGaussianBlur stdDeviation="11"/></filter>
+</defs>
+<!-- a barely visible human-shaped shadow behind observation glass -->
+<g opacity=".22" filter="url(#silhouetteBlur)" fill="#010202">
+ <ellipse cx="1000" cy="505" rx="42" ry="64"/>
+ <path d="M950 566Q1000 535 1045 570L1072 690L1040 714L1022 625L1014 752H985L978 630L955 710L929 697Z"/>
+</g>
+<rect width="1920" height="1080" fill="url(#alarmSweep)"/>
+<rect width="1920" height="1080" fill="url(#deepBlack)"/>
+<!-- corner-lens smears and faint vertical water tracks -->
+<g fill="none" stroke="#aab4ad" stroke-linecap="round" opacity=".07">
+ <path d="M70 0Q82 90 61 180T72 350M110 0Q125 70 104 145T112 260M1830 0Q1814 115 1836 205T1825 390M1880 0Q1868 95 1892 160T1875 280" stroke-width="5"/>
+ <path d="M20 470l36 -9M1840 520l44 11M1660 90l28 -7M210 800l52 -10" stroke-width="2"/>
+</g>
 <!-- fine sensor noise and shallow lens fog, intentionally restrained -->
 <rect width="1920" height="1080" fill="#9eaaa3" opacity=".10" filter="url(#microNoise)"/>
 <ellipse cx="450" cy="500" rx="420" ry="290" fill="url(#lensMist)"/>
