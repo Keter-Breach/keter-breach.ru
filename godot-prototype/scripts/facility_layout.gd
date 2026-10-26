@@ -157,10 +157,10 @@ func _build_walls() -> void:
  # Узел связи: центр (0,94), 30x22.
  _wall_line("x",-15,83,105)
  _wall_line("x",15,83,105)
- _wall_line("z",105,-15,15)
+ _wall_line("z",105,-15,15,[[-4,4]])
  # За эвакуационным шлюзом начинается визуально повторённый коридор Протокола «Зеркало».
- _wall_line("x",-4,80,105)
- _wall_line("x",4,80,105)
+ _wall_line("x",-4,105,130)
+ _wall_line("x",4,105,130)
 
 func _cylinder(n: String,radius: float,height: float,p: Vector3,m: Material,solid: bool=true) -> Node3D:
  var node: Node3D
@@ -227,9 +227,9 @@ func _build_props() -> void:
  _box("Personnel locker",Vector3(0.55,1.9,0.65),Vector3(-31,0.95,84),metal_mat)
  _box("Personnel table",Vector3(1.2,0.12,0.65),Vector3(-25,0.8,86),metal_mat)
  _box("Observation console",Vector3(2,1.1,0.65),Vector3(25,0.55,70),metal_mat)
- _box("Channel 7 terminal",Vector3(1.8,1.25,0.16),Vector3(-2,1.35,74.5),metal_mat)
- _box("Channel 7 screen",Vector3(1.52,0.9,0.035),Vector3(-2,1.37,74.39),_mat(Color(0.04,0.07,0.16)),false)
- _add_interaction("comms",Vector3(-2,1.4,73.2),Vector3(2.4,2.2,2.2),"Терминал связи: канал 7")
+ _box("Channel 7 terminal",Vector3(1.8,1.25,0.16),Vector3(0,1.35,88.8),metal_mat)
+ _box("Channel 7 screen",Vector3(1.52,0.9,0.035),Vector3(0,1.37,88.69),_mat(Color(0.04,0.07,0.16)),false)
+ _add_interaction("comms",Vector3(0,1.4,87.8),Vector3(2.4,2.2,2.2),"Терминал связи: канал 7")
  _box("L1 security door",Vector3(2,2.8,0.2),Vector3(0,1.4,24),door_mat)
  _add_interaction("door_l1",Vector3(0,1.4,22.8),Vector3(3,2.6,2.2),"Шлюз L1")
  _box("L2 security door",Vector3(2,2.8,0.2),Vector3(0,1.4,60),door_mat)
@@ -239,9 +239,9 @@ func _build_props() -> void:
 
  # Repeating red floor marks make the Mirror corridor feel like a corrupted copy.
  for z in [84.0,88.0,92.0,96.0]:
-  _box("Mirror floor warning stripe",Vector3(2.2,0.015,0.08),Vector3(0,0.015,z),red_mat,false)
-  _box("Mirror wall marker",Vector3(0.06,0.22,0.5),Vector3(-3.68,2.45,z),red_mat,false)
-  _box("Mirror wall marker",Vector3(0.06,0.22,0.5),Vector3(3.68,2.45,z),red_mat,false)
+  _box("Mirror floor warning stripe",Vector3(2.2,0.015,0.08),Vector3(0,0.015,z+24.0),red_mat,false)
+  _box("Mirror wall marker",Vector3(0.06,0.22,0.5),Vector3(-3.68,2.45,z+24.0),red_mat,false)
+  _box("Mirror wall marker",Vector3(0.06,0.22,0.5),Vector3(3.68,2.45,z+24.0),red_mat,false)
  # D-class bunks and a spare battery from the original coordinates.
  for z in [-7.0, -4.0, -1.0]:
   _box("D-class bunk", Vector3(0.9,1.6,2.0), Vector3(-13,0.8,z), metal_mat)
@@ -283,8 +283,8 @@ func _build_lights() -> void:
  _add_light(Vector3(-10.8,2.8,33),Color(0.95,0.3,0.08),0.7,6)
  _add_light(Vector3(-10.5,2.8,40.5),Color(0.9,0.025,0.02),0.7,6)
  _add_light(Vector3(0,2.8,88),Color(0.2,0.3,0.85),0.6,8)
- _add_light(Vector3(0,2.8,86),Color(0.72,0.08,0.06),0.48,7)
- _add_light(Vector3(0,2.8,96),Color(0.12,0.18,0.32),0.42,7)
+ _add_light(Vector3(0,2.8,112),Color(0.72,0.08,0.06),0.48,7)
+ _add_light(Vector3(0,2.8,124),Color(0.12,0.18,0.32),0.42,7)
 
 func _add_light(p: Vector3,c: Color,e: float,r: float) -> void:
  var light:=OmniLight3D.new()
@@ -297,22 +297,24 @@ func _add_light(p: Vector3,c: Color,e: float,r: float) -> void:
  _box("Lamp housing",Vector3(0.72,0.09,0.3),Vector3(p.x,3.08,p.z),metal_mat,false)
 
 func _build_labels() -> void:
- _label("D-12 / GATE",Vector3(0,2.65,-3.8),Color(0.9,0.12,0.08))
- _label("ADMINISTRATION",Vector3(-10,2.7,6),Color(0.35,0.55,0.9))
- _label("MEDICAL",Vector3(10,2.7,6),Color(0.35,0.8,0.6))
- _label("ARCHIVE 04",Vector3(-11,2.7,25.5),Color(0.85,0.65,0.4))
- _label("WORKSHOP",Vector3(-11,2.7,31.5),Color(0.9,0.35,0.1))
- _label("ISOLATION",Vector3(-11,2.7,37.5),Color(0.9,0.08,0.05))
- _label("DATA NODE",Vector3(0,2.7,34),Color(0.15,0.85,0.75))
- _label("KETER CONTAINMENT",Vector3(0,2.7,48),Color(0.9,0.08,0.05))
- _label("EVACUATION",Vector3(0,2.7,68),Color(0.85,0.6,0.3))
- _label("COMMS / CHANNEL 7",Vector3(-2,2.7,76.4),Color(0.35,0.5,0.95))
- _label("MIRROR PROTOCOL",Vector3(0,2.7,84),Color(0.9,0.08,0.05))
+	# Надписи стоят на стенах непосредственно у входов; yaw направляет текст в проход.
+	_label("D-12 / GATE",Vector3(0,2.65,-3.8),Color(0.9,0.12,0.08))
+	_label("ADMINISTRATION",Vector3(-5.28,2.65,10),Color(0.35,0.55,0.9),PI/2.0)
+	_label("MEDICAL",Vector3(5.28,2.65,10),Color(0.35,0.8,0.6),-PI/2.0)
+	_label("ARCHIVE 04",Vector3(-5.28,2.65,26.5),Color(0.85,0.65,0.4),PI/2.0)
+	_label("WORKSHOP",Vector3(-5.28,2.65,32.5),Color(0.9,0.35,0.1),PI/2.0)
+	_label("ISOLATION",Vector3(-5.28,2.65,39.5),Color(0.9,0.08,0.05),PI/2.0)
+	_label("DATA NODE",Vector3(0,2.65,43.72),Color(0.15,0.85,0.75),PI)
+	_label("KETER CONTAINMENT",Vector3(0,2.65,44.28),Color(0.9,0.08,0.05))
+	_label("EVACUATION",Vector3(0,2.65,60.28),Color(0.85,0.6,0.3),PI)
+	_label("COMMS / CHANNEL 7",Vector3(0,2.65,80.28),Color(0.35,0.5,0.95),PI)
+	_label("MIRROR PROTOCOL",Vector3(0,2.7,109),Color(0.9,0.08,0.05),PI)
 
-func _label(t: String,p: Vector3,c: Color) -> void:
+func _label(t: String,p: Vector3,c: Color,yaw: float=0.0) -> void:
  var l:=Label3D.new()
  l.text=t
  l.position=p
+ l.rotation.y=yaw
  l.font_size=34
  l.pixel_size=0.008
  l.modulate=c
