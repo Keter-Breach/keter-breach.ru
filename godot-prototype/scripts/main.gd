@@ -349,18 +349,21 @@ func _build_environment() -> void:
 	sky.sky_material = sky_mat
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.16, 0.18, 0.22)
-	env.ambient_light_energy = 0.35
+	env.ambient_light_color = Color(0.22, 0.24, 0.28)
+	env.ambient_light_energy = 0.52
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.fog_enabled = true
 	env.fog_light_color = Color(0.06, 0.045, 0.05)
-	env.fog_density = 0.018
+	env.fog_density = 0.009
+	env.glow_enabled = true
+	env.glow_intensity = 0.35
+	env.glow_bloom = 0.08
 	world.environment = env
 	add_child(world)
 	var light := DirectionalLight3D.new()
 	light.rotation_degrees = Vector3(-35, -25, 0)
 	light.light_color = Color(0.55, 0.61, 0.72)
-	light.light_energy = 0.16
+	light.light_energy = 0.22
 	add_child(light)
 
 func _build_corridor() -> void:
