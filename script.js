@@ -601,7 +601,11 @@ let doors = {};
 let openingDoors = [];     // двери в процессе анимации
 let wallMaterial, floorMaterial, doorMaterial, tableMaterial, serverMaterial;
 
-const isLocked = () => document.pointerLockElement === document.body;
+const isLocked = () => {
+  const canvas = renderer && renderer.domElement;
+  return document.pointerLockElement === document.body ||
+    (!!canvas && document.pointerLockElement === canvas);
+};
 
 function showToast(text, ms = 2500) {
   toastEl.textContent = text;
@@ -748,8 +752,9 @@ function init3DMode() {
     hintEl.style.cssText = base + "top:50%;margin-top:40px;";
     hintEl.textContent = "Кликните, чтобы управлять";
     container.append(toastEl, hintEl);
-     const fx = document.createElement('div'); // subtle film grain without heavily darkening the room
-     fx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 32%,rgba(0,0,0,.22) 100%),repeating-linear-gradient(0deg,rgba(0,0,0,.025) 0 1px,transparent 1px 4px);';
+     const fx = document.createElement('div'); // VHS film grain, scanlines and signal tracking
+     fx.className = 'keter-vhs-overlay';
+     fx.setAttribute('aria-hidden', 'true');
      container.append(fx);
 
     // Request pointer lock from the actual game surface. Some laptop browsers
@@ -1889,7 +1894,9 @@ renderChapter(1);
   }
 
   function isPointerLocked() {
-    return document.pointerLockElement === document.body;
+    const canvas = typeof renderer !== "undefined" && renderer && renderer.domElement;
+    return document.pointerLockElement === document.body ||
+      (!!canvas && document.pointerLockElement === canvas);
   }
 
   function setStatus(message) {
@@ -2678,9 +2685,11 @@ renderChapter(1);
         renderChapter(1);
       }
     } else if (is3DVisible()) {
-      // Захват мыши должен быть вызван действием пользователя.
+      // Захват мыши должен быть вызван действием пользователя. Используем тот же
+      // canvas, на котором запрашивается Pointer Lock при первом входе в 3D.
       try {
-        const request = document.body.requestPointerLock();
+        const lockTarget = (typeof renderer !== "undefined" && renderer && renderer.domElement) || document.body;
+        const request = lockTarget.requestPointerLock();
         if (request && typeof request.catch === "function") {
           request.catch(() => {
             window.__keterPaused = true;
