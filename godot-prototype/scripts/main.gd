@@ -20,6 +20,7 @@ var opened_doors: Dictionary = {}
 var loop_count: int = 0
 var triggered_events: Dictionary = {}
 var evidence_found: Dictionary = {}
+var battery_packs_found: Dictionary = {}
 var game_started: bool = false
 var menu_layer: CanvasLayer
 var menu_root: Control
@@ -61,6 +62,7 @@ func _load_game_state() -> void:
 	opened_doors = config.get_value("progress", "opened_doors", {}) as Dictionary
 	triggered_events = config.get_value("events", "triggered", {}) as Dictionary
 	evidence_found = config.get_value("evidence", "found", {}) as Dictionary
+	battery_packs_found = config.get_value("items", "battery_packs_found", {}) as Dictionary
 
 func _save_game_state() -> void:
 	var config := ConfigFile.new()
@@ -73,6 +75,7 @@ func _save_game_state() -> void:
 	config.set_value("progress", "opened_doors", opened_doors)
 	config.set_value("events", "triggered", triggered_events)
 	config.set_value("evidence", "found", evidence_found)
+	config.set_value("items", "battery_packs_found", battery_packs_found)
 	if player_ref != null:
 		config.set_value("player", "flashlight_charge", float(player_ref.get("flashlight_charge")))
 	config.save("user://keter_breach_save.cfg")
@@ -94,6 +97,9 @@ func _apply_loaded_state() -> void:
 		_remove_saved_item("camera_tape", "Channel 7 recovered tape")
 	if evidence_found.has("sample_label"):
 		_remove_saved_item("sample_label", "KETER-19 sample label")
+	for item_id in battery_packs_found.keys():
+		var battery_visual_name := "Battery visual" if str(item_id) == "battery_pack" else "D-class spare battery"
+		_remove_saved_item(str(item_id), battery_visual_name)
 	if opened_doors.has("L1 security door"):
 		_set_door_open("L1 security door")
 	if opened_doors.has("L2 security door"):
@@ -259,12 +265,12 @@ func _interact() -> void:
 	match interaction_id:
 		"card_l1":
 			has_l1 = true
-			target.queue_free()
-			_show_status("ПОЛУЧЕНА КАРТА L1. Доступ к первому шлюзу разрешён.")
+			_remove_saved_item("card_l1", "L1 card visual")
+			_show_status("КАРТА L1 ДОБАВЛЕНА В ИНВЕНТАРЬ. На считывателе загорелся зелёный индикатор.")
 		"card_l2":
 			has_l2 = true
-			target.queue_free()
-			_show_status("ПОЛУЧЕНА КАРТА L2. Доступ к эвакуационному уровню разрешён.")
+			_remove_saved_item("card_l2", "L2 card visual")
+			_show_status("КАРТА L2 ДОБАВЛЕНА В ИНВЕНТАРЬ. Доступ к эвакуационному уровню разрешён.")
 		"door_l1":
 			if has_l1:
 				_open_door("L1 security door")
@@ -302,11 +308,16 @@ func _interact() -> void:
 			comms_restored = true
 			target.queue_free()
 			_show_status("КАНАЛ 7 / ВХОДЯЩЕЕ: «Если слышишь это, не верь двери с табличкой ВЫХОД. Я уже проходил её. Дважды». — Гирс")
-		"battery_pack":
+		"battery_pack", "battery_pack_start":
 			var charge := float(player_ref.get("flashlight_charge"))
+			if charge >= 100.0:
+				_show_status("БАТАРЕЯ НЕ НУЖНА: фонарь уже полностью заряжен.")
+				return
 			player_ref.set("flashlight_charge", minf(100.0, charge + 40.0))
-			target.queue_free()
-			_show_status("НАЙДЕНА ЗАПАСНАЯ БАТАРЕЯ. Заряд фонаря восстановлен на 40%.")
+			battery_packs_found[interaction_id] = true
+			var battery_visual_name := "Battery visual" if interaction_id == "battery_pack" else "D-class spare battery"
+			_remove_saved_item(interaction_id, battery_visual_name)
+			_show_status("БАТАРЕЯ ПОДОБРАНА И УБРАНА В СНАРЯЖЕНИЕ. Заряд фонаря: %d%%." % roundi(float(player_ref.get("flashlight_charge"))))
 		"incident_memo":
 			evidence_found["incident_memo"] = true
 			target.queue_free()
