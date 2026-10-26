@@ -53,12 +53,12 @@ func _build_facility() -> void:
 	add_child(facility)
 
 func _process(_delta: float) -> void:
- if player_ref == null or map_panel == null or map_dot == null:
-  return
- var p := player_ref.global_position
- var px := clampf((p.x + 40.0) / 80.0, 0.0, 1.0) * map_panel.size.x
- var py := clampf((p.z + 10.0) / 110.0, 0.0, 1.0) * map_panel.size.y
- map_dot.position = Vector2(px - map_dot.size.x * 0.5, py - map_dot.size.y * 0.5)
+	if player_ref == null or map_panel == null or map_dot == null:
+		return
+	var p := player_ref.global_position
+	var px := clampf((p.x + 40.0) / 80.0, 0.0, 1.0) * map_panel.size.x
+	var py := clampf((p.z + 10.0) / 110.0, 0.0, 1.0) * map_panel.size.y
+	map_dot.position = Vector2(px - map_dot.size.x * 0.5, py - map_dot.size.y * 0.5)
 
 func _build_environment() -> void:
 	var world := WorldEnvironment.new()
