@@ -826,6 +826,63 @@ function build10ZonesMap() {
   const solid = (m) => { world.add(m); walls.push({ mesh: m, box: new THREE.Box3().setFromObject(m) }); };
   dust = makeDust();
 
+  // --- Хоррор-декали: засохшая кровь и следы аварийной эвакуации ---
+  // Текстура создаётся процедурно: не требует внешних файлов и не влияет на коллизии.
+  const makeBloodDecalTexture = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 256;
+    const g = canvas.getContext('2d');
+    const stain = (x, y, rx, ry, alpha) => {
+      g.save();
+      g.translate(x, y); g.scale(rx, ry);
+      const grad = g.createRadialGradient(0, 0, 0, 0, 0, 1);
+      grad.addColorStop(0, 'rgba(48,5,7,' + alpha + ')');
+      grad.addColorStop(0.55, 'rgba(72,8,10,' + (alpha * 0.8) + ')');
+      grad.addColorStop(1, 'rgba(28,3,5,0)');
+      g.fillStyle = grad; g.beginPath(); g.arc(0, 0, 1, 0, Math.PI * 2); g.fill();
+      g.restore();
+    };
+    stain(120, 128, 82, 58, 0.82);
+    for (let i = 0; i < 17; i++) {
+      const x = 65 + Math.random() * 125, y = 75 + Math.random() * 115;
+      stain(x, y, 8 + Math.random() * 25, 5 + Math.random() * 19, 0.55);
+    }
+    // Узкие потёки, словно кровь размазали ботинком по бетону.
+    g.lineCap = 'round';
+    for (let i = 0; i < 9; i++) {
+      const x = 70 + Math.random() * 115, y = 112 + Math.random() * 55;
+      g.strokeStyle = 'rgba(39,3,5,' + (0.22 + Math.random() * 0.38) + ')';
+      g.lineWidth = 1 + Math.random() * 5;
+      g.beginPath(); g.moveTo(x, y); g.bezierCurveTo(x - 8, y + 14, x + 12, y + 22, x + (Math.random() - 0.5) * 30, y + 42 + Math.random() * 35); g.stroke();
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.encoding = THREE.sRGBEncoding;
+    texture.anisotropy = 4;
+    return texture;
+  };
+  const bloodTexture = makeBloodDecalTexture();
+  const bloodMat = new THREE.MeshBasicMaterial({
+    map: bloodTexture, transparent: true, opacity: 0.72,
+    depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1
+  });
+  const floorBlood = (x, z, sx, sz, rotation = 0) => {
+    const decal = new THREE.Mesh(new THREE.PlaneGeometry(sx, sz), bloodMat);
+    decal.rotation.x = -Math.PI / 2;
+    decal.rotation.z = rotation;
+    decal.position.set(x, 0.018, z);
+    world.add(decal);
+  };
+  // Небольшие, не слишком яркие следы — игрок замечает их в луче фонаря.
+  floorBlood(-1.75, 18.6, 1.9, 1.25, 0.35);
+  floorBlood(1.65, 47.2, 1.55, 1.05, -0.55);
+  floorBlood(-2.15, 56.8, 1.7, 1.1, 0.2);
+  floorBlood(1.8, 66.1, 1.4, 0.9, -0.3);
+  // След на стене у камер содержания: заметен только при близком осмотре.
+  const wallBlood = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.45), bloodMat);
+  wallBlood.position.set(-15.735, 1.15, 51.4);
+  wallBlood.rotation.y = Math.PI / 2;
+  world.add(wallBlood);
+
   // --- Блок D-класса: нары, стол, запасная батарея ---
   addPointLight(-9, -4, 0xffa040);
   addSign(['БЛОК D-КЛАССА', 'ЖИЛЫЕ ПОМЕЩЕНИЯ'], -3.72, 2.75, -3, Math.PI / 2);
@@ -1267,18 +1324,48 @@ renderChapter(1);
         position: fixed;
         inset: 0;
         pointer-events: none;
-        opacity: .22;
+        opacity: .3;
         background-image:
-          repeating-linear-gradient(0deg, rgba(210,225,220,.12) 0 1px, transparent 1px 3px),
-          linear-gradient(90deg, transparent 0 48%, rgba(255,30,25,.05) 49%, transparent 50% 100%);
-        background-size: 100% 4px, 100% 100%;
-        animation: keter-vhs-jitter 11s steps(1, end) infinite;
+          repeating-linear-gradient(0deg, rgba(205,224,215,.11) 0 1px, transparent 1px 3px),
+          repeating-linear-gradient(0deg, transparent 0 44%, rgba(220,235,228,.035) 44.2% 44.7%, transparent 45% 100%),
+          linear-gradient(90deg, rgba(255,25,20,.035), transparent 22% 77%, rgba(30,160,255,.025)),
+          linear-gradient(90deg, transparent 0 48%, rgba(255,30,25,.07) 49%, transparent 50% 100%);
+        background-size: 100% 4px, 100% 100%, 100% 100%, 100% 100%;
+        animation: keter-vhs-jitter 9s steps(1, end) infinite, keter-vhs-tracking 13s linear infinite;
         pointer-events: none;
+        mix-blend-mode: screen;
       }
       @keyframes keter-vhs-jitter {
-        0%, 91%, 93%, 100% { opacity: .2; transform: translateX(0); }
-        92% { opacity: .32; transform: translateX(2px); }
+        0%, 76%, 78%, 91%, 93%, 100% { opacity: .24; transform: translateX(0); filter: none; }
+        77% { opacity: .42; transform: translateX(3px); filter: saturate(1.5); }
+        79% { opacity: .16; transform: translateX(-2px); }
+        92% { opacity: .48; transform: translateX(2px); }
         94% { opacity: .12; transform: translateX(-1px); }
+      }
+      @keyframes keter-vhs-tracking {
+        0%, 100% { background-position: 0 0, 0 -120%, 0 0, 0 0; }
+        50% { background-position: 0 0, 0 120%, 0 0, 0 0; }
+      }
+      #keter-overlay {
+        filter: saturate(.82) contrast(1.06);
+      }
+      #keter-overlay .keter-title {
+        position: relative;
+        text-shadow: 2px 0 rgba(255,30,25,.22), -2px 0 rgba(30,190,255,.14), 0 0 24px rgba(230,20,18,.16);
+      }
+      #keter-main-menu .keter-title {
+        animation: keter-title-flicker 8s steps(1, end) infinite;
+      }
+      @keyframes keter-title-flicker {
+        0%, 72%, 74%, 100% { opacity: 1; transform: translateX(0); }
+        73% { opacity: .82; transform: translateX(1px); }
+        75% { opacity: .96; transform: translateX(-1px); }
+      }
+      #keter-overlay::after {
+        text-shadow: 1px 0 rgba(255,30,25,.25), -1px 0 rgba(30,190,255,.18);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #keter-overlay::before, #keter-main-menu .keter-title { animation: none !important; }
       }
       #keter-overlay::after {
         content: "CAM 01 // MAIN ELEVATOR     •     REC 00:00:17     •     INTERNAL USE ONLY";
@@ -2161,6 +2248,19 @@ renderChapter(1);
   // --------------------------------------------------
 
   function installEvents() {
+    // Browsers block autoplay until a real user gesture. Start the quiet VHS
+    // tape hiss on the first interaction with the menu, then keep it looping.
+    document.addEventListener("pointerdown", () => {
+      if (!isPointerLocked() && settings.volume > 0) startVhsAmbient();
+    }, { passive: true });
+
+    document.addEventListener("keydown", event => {
+      if ((event.code === "Enter" || event.code === "Space") &&
+          !isPointerLocked() && settings.volume > 0) {
+        startVhsAmbient();
+      }
+    });
+
     document.addEventListener("pointerlockchange", () => {
       if (isPointerLocked()) {
         pauseRequested = false;

@@ -26,15 +26,12 @@ try {
   const initialTitle = await page.locator("#chapter-title").innerText();
   assert.ok(initialTitle.trim().length > 0, "Initial chapter title should not be empty");
 
-  const firstChoice = page.locator("#buttons-container button").first();
-  await firstChoice.click();
-  await page.locator("#three-container").waitFor({ state: "visible", timeout: 15000 });
-
-  // The 3D mode deliberately opens its own in-game terminal overlay. Start
-  // through that UI instead of clicking a story button underneath the overlay.
+  // The terminal overlay is layered above the story screen from initial load.
+  // Enter through the visible in-game menu rather than clicking a covered story button.
   const startButton = page.locator("#keter-main-menu button").first();
-  await startButton.waitFor({ state: "visible", timeout: 10000 });
+  await startButton.waitFor({ state: "visible", timeout: 15000 });
   await startButton.click();
+  await page.locator("#three-container").waitFor({ state: "visible", timeout: 15000 });
   await page.waitForFunction(() => {
     const canvas = document.querySelector("#three-container canvas");
     return canvas && canvas.width > 0 && canvas.height > 0;

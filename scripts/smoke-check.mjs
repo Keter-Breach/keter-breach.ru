@@ -24,6 +24,11 @@ assert.match(script, /roughnessMap:\s*maps\.roughness/, "PBR roughness map shoul
 assert.match(script, /inputLength > 1/, "diagonal movement should be normalized");
 assert.match(script, /e\.repeat && \(e\.code === 'KeyF' \|\| e\.code === 'KeyE'\)/, "held interaction keys should not repeat");
 assert.match(script, /url\("menu-background\.svg"\)/, "VHS menu backdrop should be referenced");
+assert.match(script, /keter-vhs-tracking/, "VHS tracking-band effect should be present");
+assert.match(script, /keter-title-flicker/, "Subtle title signal flicker should be present");
+assert.match(script, /new Audio\("audio\/vhs\.mp3"\)/, "VHS ambience audio should be configured");
+assert.match(script, /document\.addEventListener\("pointerdown", \(\) => \{[\s\S]{0,180}startVhsAmbient\(\)/, "VHS ambience should start after a user gesture in the menu");
+assert.match(script, /repeating-linear-gradient\(0deg, rgba\(205,224,215,\.11\)/, "VHS scanlines should be present");
 
 new Function(script); // Parse only; do not execute browser-dependent game code.
 await access(new URL("../menu-background.svg", import.meta.url), constants.R_OK);
