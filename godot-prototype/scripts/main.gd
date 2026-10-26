@@ -77,7 +77,7 @@ func _process(_delta: float) -> void:
 		interaction_hint.text = "[E]  " + str(target.get_meta("interaction_title", "Взаимодействовать")) if target != null else ""
 	if battery_label:
 		battery_label.text = "ФОНАРЬ: %d%%" % roundi(float(player_ref.get("flashlight_charge")))
-	if opened_doors.has("Surface exit door") and player_ref.global_position.z > 99.0:
+	if opened_doors.has("Surface exit door") and player_ref.global_position.z > 125.0:
 		_trigger_mirror_loop()
 
 func _unhandled_input(event: InputEvent) -> void:
