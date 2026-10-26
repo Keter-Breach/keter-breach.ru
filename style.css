@@ -448,3 +448,114 @@ p#description {
 @media (prefers-reduced-motion: reduce) {
   #text-game, #text-game::before, #text-game > .card { animation: none !important; }
 }
+
+
+/* === BOOT SCREEN: загрузка игры как терминал объекта SCP === */
+.keter-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 24px;
+  overflow: hidden;
+  color: #d9e2df;
+  background:
+    radial-gradient(ellipse at 68% 45%, rgba(126, 28, 25, .18), transparent 38%),
+    linear-gradient(135deg, rgba(2,5,6,.98), rgba(9,13,15,.98));
+  font-family: var(--mono, "Courier New", monospace);
+  text-align: center;
+  transition: opacity .48s ease, visibility .48s ease;
+}
+.keter-loading[hidden] { display: none !important; }
+.keter-loading::before,
+.keter-loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.keter-loading::before {
+  opacity: .35;
+  background: repeating-linear-gradient(to bottom, transparent 0 3px, rgba(176,208,195,.07) 4px, transparent 5px);
+  animation: boot-scan 8s linear infinite;
+}
+.keter-loading::after {
+  inset: 18px;
+  border: 1px solid rgba(144,163,157,.16);
+  box-shadow: inset 0 0 80px rgba(0,0,0,.38);
+}
+.keter-loading.is-ready { opacity: 0; visibility: hidden; pointer-events: none; }
+.loading-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border: 1px solid rgba(190,61,53,.5);
+  border-radius: 50%;
+  box-shadow: 0 0 30px rgba(184,39,33,.12), inset 0 0 24px rgba(184,39,33,.08);
+  animation: boot-mark-pulse 2.8s ease-in-out infinite;
+}
+.loading-mark::before,
+.loading-mark::after {
+  content: "";
+  position: absolute;
+  border: 1px solid rgba(202,216,208,.22);
+  border-radius: 50%;
+}
+.loading-mark::before { inset: 7px; border-top-color: #d84b42; animation: boot-spin 1.8s linear infinite; }
+.loading-mark::after { inset: 16px; border-bottom-color: #d84b42; animation: boot-spin 2.7s linear infinite reverse; }
+.loading-mark span {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ff6558;
+  box-shadow: 0 0 9px #e94439;
+}
+.loading-mark span:nth-child(1) { top: 4px; left: 35px; }
+.loading-mark span:nth-child(2) { right: 4px; top: 35px; }
+.loading-mark span:nth-child(3) { bottom: 4px; left: 35px; }
+.loading-mark span:nth-child(4) { left: 4px; top: 35px; }
+.loading-brand { position: relative; z-index: 1; font-size: 12px; letter-spacing: .42em; color: #9ca9a5; }
+.loading-brand strong { display: block; margin-top: 6px; font: 800 42px/.95 var(--head, Impact, sans-serif); letter-spacing: .14em; color: #f0f2ee; text-shadow: 0 0 28px rgba(210,54,45,.18); }
+.loading-status { position: relative; z-index: 1; min-height: 1.4em; font-size: 10px; letter-spacing: .16em; color: #d4a09b; }
+.loading-track { position: relative; z-index: 1; width: min(300px, 74vw); height: 2px; overflow: hidden; background: rgba(183,198,190,.16); }
+.loading-track span { display: block; width: 38%; height: 100%; background: #c6433a; box-shadow: 0 0 14px rgba(220,58,48,.8); animation: boot-progress 1.6s ease-in-out infinite; }
+.loading-foot { position: relative; z-index: 1; color: #6f7c78; font-size: 9px; letter-spacing: .13em; }
+.loading-foot i { color: #d74b41; font-style: normal; animation: boot-led 1.2s steps(2,end) infinite; }
+#loading-retry { position: relative; z-index: 1; padding: 12px 18px; border: 1px solid #a9443d; background: rgba(80,15,14,.28); color: #ffe8e4; font: 600 11px var(--mono, monospace); letter-spacing: .08em; cursor: pointer; }
+#loading-retry[hidden] { display: none !important; }
+.keter-loading.has-error .loading-mark { border-color: #f24b40; animation: none; }
+.keter-loading.has-error .loading-track span { width: 100%; animation: none; background: #f24b40; }
+.menu-atmosphere { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.menu-atmosphere::before { content: ""; position: absolute; inset: -20%; background: radial-gradient(ellipse at 78% 40%, rgba(200,35,28,.12), transparent 30%); animation: menu-alarm-breathe 5s ease-in-out infinite alternate; }
+.dust { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: rgba(210,224,216,.55); box-shadow: 0 0 8px rgba(198,219,208,.22); opacity: 0; animation: menu-dust-drift 12s linear infinite; }
+.dust-one { left: 63%; top: 82%; animation-delay: -2s; }
+.dust-two { left: 78%; top: 66%; animation-delay: -8s; transform: scale(.7); }
+.dust-three { left: 89%; top: 78%; animation-delay: -5s; transform: scale(.5); }
+.dust-four { left: 57%; top: 72%; animation-delay: -10s; transform: scale(.8); }
+.dust-five { left: 73%; top: 90%; animation-delay: -6s; transform: scale(.6); }
+.dust-six { left: 95%; top: 54%; animation-delay: -3s; transform: scale(.65); }
+@keyframes boot-spin { to { transform: rotate(360deg); } }
+@keyframes boot-progress { 0% { transform: translateX(-120%); } 100% { transform: translateX(360%); } }
+@keyframes boot-mark-pulse { 0%,100% { box-shadow: 0 0 22px rgba(184,39,33,.08), inset 0 0 16px rgba(184,39,33,.04); } 50% { box-shadow: 0 0 38px rgba(184,39,33,.22), inset 0 0 26px rgba(184,39,33,.12); } }
+@keyframes boot-scan { from { transform: translateY(-14px); } to { transform: translateY(14px); } }
+@keyframes boot-led { 50% { opacity: .28; } }
+@keyframes menu-alarm-breathe { from { opacity: .45; transform: translate3d(-1%,0,0); } to { opacity: 1; transform: translate3d(1%,1%,0); } }
+@keyframes menu-dust-drift { 0% { opacity: 0; transform: translate3d(0,30px,0); } 20% { opacity: .55; } 80% { opacity: .22; } 100% { opacity: 0; transform: translate3d(-28px,-110px,0); } }
+#text-game { z-index: 1; background-position: center, center, center, center; background-size: cover, cover, cover, auto; }
+@media (max-width: 600px) {
+  .loading-brand strong { font-size: 36px; }
+  .loading-status { max-width: 80vw; line-height: 1.7; }
+  .keter-loading::after { inset: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-mark, .loading-mark::before, .loading-mark::after, .loading-track span, .loading-foot i,
+  .keter-loading::before, .menu-atmosphere::before, .dust { animation: none !important; }
+  .loading-track span { width: 60%; }
+}
