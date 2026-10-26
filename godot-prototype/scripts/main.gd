@@ -25,6 +25,67 @@ func _ready() -> void:
 	_build_player()
 	_build_hud()
 
+func _load_game_state() -> void:
+	var config := ConfigFile.new()
+	if config.load("user://keter_breach_save.cfg") != OK:
+		return
+	has_l1 = bool(config.get_value("progress", "has_l1", false))
+	has_l2 = bool(config.get_value("progress", "has_l2", false))
+	archive_read = bool(config.get_value("progress", "archive_read", false))
+	reactor_disabled = bool(config.get_value("progress", "reactor_disabled", false))
+	comms_restored = bool(config.get_value("progress", "comms_restored", false))
+	loop_count = int(config.get_value("progress", "loop_count", 0))
+	opened_doors = config.get_value("progress", "opened_doors", {}) as Dictionary
+	triggered_events = config.get_value("events", "triggered", {}) as Dictionary
+
+func _save_game_state() -> void:
+	var config := ConfigFile.new()
+	config.set_value("progress", "has_l1", has_l1)
+	config.set_value("progress", "has_l2", has_l2)
+	config.set_value("progress", "archive_read", archive_read)
+	config.set_value("progress", "reactor_disabled", reactor_disabled)
+	config.set_value("progress", "comms_restored", comms_restored)
+	config.set_value("progress", "loop_count", loop_count)
+	config.set_value("progress", "opened_doors", opened_doors)
+	config.set_value("events", "triggered", triggered_events)
+	if player_ref != null:
+		config.set_value("player", "flashlight_charge", float(player_ref.get("flashlight_charge")))
+	config.save("user://keter_breach_save.cfg")
+
+func _apply_loaded_state() -> void:
+	if has_l1:
+		_remove_saved_item("card_l1", "L1 card visual")
+	if has_l2:
+		_remove_saved_item("card_l2", "L2 card visual")
+	if archive_read:
+		_remove_saved_item("archive_log", "Archive terminal")
+	if reactor_disabled:
+		_remove_saved_item("reactor", "Emergency generator")
+	if comms_restored:
+		_remove_saved_item("comms", "Channel 7 terminal")
+	if opened_doors.has("L1 security door"):
+		_set_door_open("L1 security door")
+	if opened_doors.has("L2 security door"):
+		_set_door_open("L2 security door")
+	if opened_doors.has("Surface exit door"):
+		_set_door_open("Surface exit door")
+
+func _remove_saved_item(interaction_id: String, visual_name: String) -> void:
+	var target := facility_ref.find_child("Interact_" + interaction_id, true, false)
+	if target:
+		target.queue_free()
+	var visual := facility_ref.find_child(visual_name, true, false) as Node3D
+	if visual:
+		visual.visible = false
+
+func _set_door_open(door_name: String) -> void:
+	var door := facility_ref.find_child(door_name, true, false) as Node3D
+	if door:
+		door.visible = false
+		var shape := door.find_child("CollisionShape3D", true, false) as CollisionShape3D
+		if shape:
+			shape.disabled = true
+
 func _material(color: Color, metallic: float = 0.0, roughness: float = 0.82) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = color
@@ -101,6 +162,7 @@ func _check_story_triggers() -> void:
 		if Vector2(p.x, p.z).distance_to(Vector2(event_pos.x, event_pos.z)) <= float(event["radius"]):
 			triggered_events[event_id] = true
 			_show_status(str(event["message"]))
+			_save_game_state()
 			if event_id == "workshop_arc" or event_id == "keter_motion":
 				_flash_alarm()
 
@@ -202,22 +264,20 @@ func _interact() -> void:
 			_show_status("НАЙДЕНА ЗАПАСНАЯ БАТАРЕЯ. Заряд фонаря восстановлен на 40%.")
 		_:
 			_show_status("Объект пока не реагирует.")
+	_save_game_state()
 
 func _open_door(door_name: String) -> void:
 	if opened_doors.has(door_name):
 		return
 	opened_doors[door_name] = true
-	var door := facility_ref.find_child(door_name, true, false) as Node3D
-	if door:
-		door.visible = false
-		var shape := door.find_child("CollisionShape3D", true, false) as CollisionShape3D
-		if shape:
-			shape.disabled = true
+	_set_door_open(door_name)
+	_save_game_state()
 
 func _show_status(message: String) -> void:
 	if status_label:
 		status_label.text = message
 	_refresh_objective()
+	_save_game_state()
 
 func _trigger_mirror_loop() -> void:
 	loop_count += 1
@@ -228,6 +288,7 @@ func _trigger_mirror_loop() -> void:
 	if camera:
 		camera.rotation.x = 0.0
 	_show_status("ОШИБКА ПРОСТРАНСТВА / ЦИКЛ %02d — ты снова в грузовом лифте. Состояние комплекса не совпадает с воспоминаниями." % loop_count)
+	_save_game_state()
 
 func _refresh_objective() -> void:
 	if objective_label == null:
@@ -331,6 +392,9 @@ func _build_player() -> void:
 	player.rotation.y = PI
 	add_child(player)
 	player_ref = player
+	var config := ConfigFile.new()
+	if config.load("user://keter_breach_save.cfg") == OK:
+		player.set("flashlight_charge", clampf(float(config.get_value("player", "flashlight_charge", 100.0)), 0.0, 100.0))
 
 func _build_hud() -> void:
 	var layer := CanvasLayer.new()
