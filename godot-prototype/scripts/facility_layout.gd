@@ -143,6 +143,34 @@ func _build_walls() -> void:
  _wall_line("z",83,16,36,[[24,28]])
  _wall_line("x",36,61,83)
 
+func _cylinder(n: String,radius: float,height: float,p: Vector3,m: Material,solid: bool=true) -> Node3D:
+ var node: Node3D
+ var mesh:=CylinderMesh.new()
+ mesh.top_radius=radius
+ mesh.bottom_radius=radius
+ mesh.height=height
+ if solid:
+  node=StaticBody3D.new()
+  var cs:=CollisionShape3D.new()
+  var shape:=CylinderShape3D.new()
+  shape.radius=radius
+  shape.height=height
+  cs.shape=shape
+  node.add_child(cs)
+  var visual:=MeshInstance3D.new()
+  visual.mesh=mesh
+  visual.material_override=m
+  node.add_child(visual)
+ else:
+  node=MeshInstance3D.new()
+  var visual:=node as MeshInstance3D
+  visual.mesh=mesh
+  visual.material_override=m
+ node.name=n
+ node.position=p
+ add_child(node)
+ return node
+
 func _table(p: Vector3) -> void:
  _box("Table top",Vector3(2.4,0.1,1.2),p+Vector3(0,0.75,0),metal_mat)
  for dx in [-1.1,1.1]:
@@ -180,6 +208,35 @@ func _build_props() -> void:
  _box("L1 security door",Vector3(2,2.8,0.2),Vector3(0,1.4,24),door_mat)
  _box("L2 security door",Vector3(2,2.8,0.2),Vector3(0,1.4,60),door_mat)
  _box("Surface exit door",Vector3(2,2.8,0.2),Vector3(0,1.4,80),door_mat)
+
+ # D-class bunks and a spare battery from the original coordinates.
+ for z in [-7.0, -4.0, -1.0]:
+  _box("D-class bunk", Vector3(0.9,1.6,2.0), Vector3(-13,0.8,z), metal_mat)
+  _box("Bunk mattress", Vector3(0.8,0.12,1.8), Vector3(-13,1.66,z), _mat(Color(0.28,0.19,0.13)), false)
+ _table(Vector3(-8,0,-7))
+ _box("D-class spare battery", Vector3(0.22,0.28,0.16), Vector3(-6,0.3,-2), _mat(Color(0.1,0.55,0.3)), false)
+ # Laboratory benches and sample tanks.
+ for z in [30.0,36.0]:
+  _box("Lab workbench", Vector3(3,0.9,1), Vector3(8.5,0.45,z), metal_mat)
+ for z in [29.0,33.0,37.0]:
+  _cylinder("Sample tank",0.65,2.5,Vector3(13.8,1.25,z),_mat(Color(0.18,0.25,0.23),0.45,0.3))
+  _cylinder("Sample fluid",0.5,2.2,Vector3(13.8,1.25,z),_mat(Color(0.07,0.24,0.16),0.2,0.25),false)
+  _box("Anomalous sample",Vector3(0.36,0.36,0.36),Vector3(13.8,1.2,z),red_mat,false)
+ # Security post, containment partitions and status lights.
+ for i in range(6):
+  _box("Security locker",Vector3(0.6,2,0.9),Vector3(-13.5,1,64+i*1.1),metal_mat)
+ _table(Vector3(-9,0,75))
+ _box("Camera monitor",Vector3(0.45,0.28,0.04),Vector3(-9,1.3,74.55),_mat(Color(0.02,0.12,0.09)),false)
+ _box("Camera monitor red",Vector3(0.45,0.28,0.04),Vector3(-8.2,1.3,74.55),red_mat,false)
+ for p in [Vector3(-5,1.6,48),Vector3(5,1.6,48),Vector3(-5,1.6,56),Vector3(5,1.6,56)]:
+  _box("Containment column",Vector3(1,3.2,1),p,wall_mat)
+ for side in [-1.0,1.0]:
+  for z in [46.5,51.5,57.0]:
+   _box("Containment partition",Vector3(0.1,2.8,4.2),Vector3(side*11,1.4,z),_mat(Color(0.18,0.22,0.22),0.35,0.24))
+  _box("Sealed anomaly container",Vector3(1.2,2.2,1.2),Vector3(side*14.2,1.1,56.0 if side<0 else 51.5),_mat(Color(0.045,0.05,0.055),0.35,0.48))
+  _box("Containment status light",Vector3(0.06,0.06,0.06),Vector3(side*13.58,1.7,56.0 if side<0 else 51.5),red_mat,false)
+ for p in [Vector3(-1.75,0.018,18.6),Vector3(1.65,0.018,47.2),Vector3(-2.15,0.018,56.8),Vector3(1.8,0.018,66.1)]:
+  _box("Dried blood trace",Vector3(1.5,0.012,0.85),p,_mat(Color(0.12,0.012,0.016),0.0,0.98),false)
 
 func _build_lights() -> void:
  _add_light(Vector3(0,2.8,-4),Color(0.9,0.3,0.2),0.65,7)
