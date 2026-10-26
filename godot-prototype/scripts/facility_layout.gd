@@ -158,6 +158,9 @@ func _build_walls() -> void:
  _wall_line("x",-15,83,105)
  _wall_line("x",15,83,105)
  _wall_line("z",105,-15,15)
+ # За эвакуационным шлюзом начинается визуально повторённый коридор Протокола «Зеркало».
+ _wall_line("x",-4,80,105)
+ _wall_line("x",4,80,105)
 
 func _cylinder(n: String,radius: float,height: float,p: Vector3,m: Material,solid: bool=true) -> Node3D:
  var node: Node3D
@@ -275,6 +278,8 @@ func _build_lights() -> void:
  _add_light(Vector3(-10.8,2.8,33),Color(0.95,0.3,0.08),0.7,6)
  _add_light(Vector3(-10.5,2.8,40.5),Color(0.9,0.025,0.02),0.7,6)
  _add_light(Vector3(0,2.8,88),Color(0.2,0.3,0.85),0.6,8)
+ _add_light(Vector3(0,2.8,86),Color(0.72,0.08,0.06),0.48,7)
+ _add_light(Vector3(0,2.8,96),Color(0.12,0.18,0.32),0.42,7)
 
 func _add_light(p: Vector3,c: Color,e: float,r: float) -> void:
  var light:=OmniLight3D.new()
@@ -297,6 +302,7 @@ func _build_labels() -> void:
  _label("KETER CONTAINMENT",Vector3(0,2.7,48),Color(0.9,0.08,0.05))
  _label("EVACUATION",Vector3(0,2.7,68),Color(0.85,0.6,0.3))
  _label("COMMS / CHANNEL 7",Vector3(-2,2.7,76.4),Color(0.35,0.5,0.95))
+ _label("MIRROR PROTOCOL",Vector3(0,2.7,84),Color(0.9,0.08,0.05))
 
 func _label(t: String,p: Vector3,c: Color) -> void:
  var l:=Label3D.new()
