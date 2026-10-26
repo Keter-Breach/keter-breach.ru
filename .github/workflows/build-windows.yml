@@ -2,7 +2,9 @@ name: Build Windows desktop app
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feat/windows-desktop-build]
+  push:
+    branches: [feat/windows-desktop-build, fix/offline-exe-build]
   workflow_dispatch:
   push:
     tags:
