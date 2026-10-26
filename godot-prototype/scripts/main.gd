@@ -242,6 +242,85 @@ func _check_story_triggers() -> void:
 			_save_game_state()
 			if event_id == "workshop_arc" or event_id == "keter_motion" or event_id == "sample_reaction" or event_id == "mirror_mismatch":
 				_flash_alarm()
+			if event_id == "mirror_mismatch":
+				_spawn_mirror_apparition()
+
+
+func _trigger_power_failure() -> void:
+	# The reactor shutdown changes the actual facility lights, not just the objective text.
+	if facility_ref == null:
+		return
+	for child in facility_ref.get_children():
+		if not child is OmniLight3D:
+			continue
+		var light := child as OmniLight3D
+		var z := light.position.z
+		if z < 26.0 or z > 56.0:
+			continue
+		if light.light_color.r > light.light_color.g * 1.8:
+			# Keep emergency-red fixtures alive, but make them pulse more visibly.
+			var emergency_tween := create_tween().set_loops()
+			emergency_tween.tween_property(light, "light_energy", 0.22, 0.42)
+			emergency_tween.tween_property(light, "light_energy", 0.82, 0.18)
+		else:
+			var tween := create_tween()
+			tween.set_trans(Tween.TRANS_SINE)
+			tween.set_ease(Tween.EASE_IN_OUT)
+			tween.tween_property(light, "light_energy", 0.06, randf_range(0.35, 1.1))
+			light.set_meta("reactor_power_cut", true)
+	var ambience := get_tree().get_first_node_in_group("facility_audio")
+	if ambience and ambience.has_method("trigger_metal_event"):
+		ambience.trigger_metal_event(1.0)
+
+func _spawn_mirror_apparition() -> void:
+	# A fleeting silhouette appears ahead in the wrong corridor, then dissolves.
+	var apparition := Node3D.new()
+	apparition.name = "MirrorProtocolApparition"
+	apparition.position = player_ref.global_position + (-player_ref.global_transform.basis.z * 5.5)
+	facility_ref.add_child(apparition)
+	var shadow_mat := StandardMaterial3D.new()
+	shadow_mat.albedo_color = Color(0.006, 0.008, 0.009, 0.0)
+	shadow_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	shadow_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var body_mesh := CapsuleMesh.new()
+	body_mesh.radius = 0.28
+	body_mesh.height = 1.55
+	var body_visual := MeshInstance3D.new()
+	body_visual.name = "Human silhouette"
+	body_visual.mesh = body_mesh
+	body_visual.material_override = shadow_mat
+	body_visual.position.y = 0.93
+	apparition.add_child(body_visual)
+	var head_mesh := SphereMesh.new()
+	head_mesh.radius = 0.19
+	head_mesh.height = 0.38
+	var head_visual := MeshInstance3D.new()
+	head_visual.name = "Featureless head"
+	head_visual.mesh = head_mesh
+	head_visual.material_override = shadow_mat
+	head_visual.position.y = 1.82
+	apparition.add_child(head_visual)
+	var eye_mat := StandardMaterial3D.new()
+	eye_mat.albedo_color = Color(0.34, 0.012, 0.008)
+	eye_mat.emission_enabled = true
+	eye_mat.emission = Color(0.5, 0.012, 0.004)
+	eye_mat.emission_energy_multiplier = 0.45
+	for x in [-0.075, 0.075]:
+		var eye := MeshInstance3D.new()
+		var eye_mesh := SphereMesh.new()
+		eye_mesh.radius = 0.025
+		eye_mesh.height = 0.05
+		eye.mesh = eye_mesh
+		eye.material_override = eye_mat
+		eye.position = Vector3(x, 1.84, -0.17)
+		apparition.add_child(eye)
+	var fade := create_tween()
+	fade.tween_interval(0.22)
+	fade.tween_property(shadow_mat, "albedo_color:a", 0.92, 0.18)
+	fade.tween_interval(0.45)
+	fade.tween_property(shadow_mat, "albedo_color:a", 0.0, 0.42)
+	fade.parallel().tween_property(apparition, "position:y", 0.22, 1.05)
+	fade.tween_callback(apparition.queue_free)
 
 func _flash_alarm() -> void:
 	var layer := get_node_or_null("HUD") as CanvasLayer
@@ -337,7 +416,8 @@ func _interact() -> void:
 		"reactor":
 			reactor_disabled = true
 			target.queue_free()
-			_show_status("ГЕНЕРАТОР ОТКЛЮЧЁН. Аварийное питание снято; в секторе стало подозрительно тихо.")
+			_trigger_power_failure()
+			_show_status("ГЕНЕРАТОР ОТКЛЮЧЁН. Свет в соседних секторах гаснет по цепочке; аварийные контуры переходят на резервное питание.")
 		"comms":
 			if comms_restored:
 				_show_status("КАНАЛ 7 / АРХИВ: последнее сообщение Гирса сохранено. «Не верь двери с табличкой ВЫХОД. Я уже проходил её. Дважды».")
