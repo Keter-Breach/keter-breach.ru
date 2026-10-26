@@ -8,7 +8,7 @@ var can_look: bool = true
 var camera: Camera3D
 var flashlight: SpotLight3D
 var flashlight_charge: float = 100.0
-var flashlight_drain_rate: float = 2.8
+var flashlight_drain_rate: float = 0.16
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -21,10 +21,11 @@ func _ready() -> void:
 	flashlight.name = "PlayerFlashlight"
 	flashlight.position = Vector3(0.18, -0.12, -0.25)
 	flashlight.light_color = Color(0.82, 0.88, 1.0)
-	flashlight.light_energy = 2.8
-	flashlight.spot_range = 20.0
-	flashlight.spot_angle = 32.0
+	flashlight.light_energy = 5.2
+	flashlight.spot_range = 28.0
+	flashlight.spot_angle = 44.0
 	flashlight.shadow_enabled = true
+	flashlight.shadow_bias = 0.08
 	camera.add_child(flashlight)
 	_add_action("move_forward", KEY_W)
 	_add_action("move_back", KEY_S)
