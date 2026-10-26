@@ -1,310 +1,90 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
 <defs>
- <linearGradient id="air" x2="0" y2="1"><stop stop-color="#202729"/><stop offset=".42" stop-color="#0b1012"/><stop offset="1" stop-color="#020303"/></linearGradient>
- <linearGradient id="leftWall" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#080c0d"/><stop offset=".48" stop-color="#272e30"/><stop offset=".82" stop-color="#111719"/><stop offset="1" stop-color="#07090a"/></linearGradient>
- <linearGradient id="rightWall" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#080b0c"/><stop offset=".42" stop-color="#202729"/><stop offset="1" stop-color="#090c0d"/></linearGradient>
- <linearGradient id="floor" x2="0" y2="1"><stop stop-color="#252b2c"/><stop offset=".3" stop-color="#151a1b"/><stop offset="1" stop-color="#030405"/></linearGradient>
- <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#080b0c"/><stop offset=".12" stop-color="#3b4244"/><stop offset=".2" stop-color="#171c1e"/><stop offset=".53" stop-color="#343a3c"/><stop offset=".72" stop-color="#101415"/><stop offset=".9" stop-color="#42494a"/><stop offset="1" stop-color="#080a0b"/></linearGradient>
- <linearGradient id="doorL" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#080b0c"/><stop offset=".5" stop-color="#42494b"/><stop offset=".58" stop-color="#22282a"/><stop offset="1" stop-color="#080a0b"/></linearGradient>
- <linearGradient id="doorR" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#090b0c"/><stop offset=".42" stop-color="#303638"/><stop offset=".7" stop-color="#151a1b"/><stop offset="1" stop-color="#050607"/></linearGradient>
- <radialGradient id="redGlow"><stop stop-color="#ff342b" stop-opacity=".8"/><stop offset=".34" stop-color="#a41412" stop-opacity=".28"/><stop offset="1" stop-color="#a41412" stop-opacity="0"/></radialGradient>
- <radialGradient id="coldGlow"><stop stop-color="#b9d1c6" stop-opacity=".2"/><stop offset="1" stop-color="#b9d1c6" stop-opacity="0"/></radialGradient>
- <radialGradient id="vignette"><stop offset=".1" stop-color="#000" stop-opacity="0"/><stop offset=".65" stop-color="#000" stop-opacity=".18"/><stop offset="1" stop-color="#000" stop-opacity=".9"/></radialGradient>
- <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".62" numOctaves="3" seed="12" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="table" tableValues="0 .12"/></feComponentTransfer><feBlend in="SourceGraphic" mode="soft-light"/></filter>
- <filter id="soft"><feGaussianBlur stdDeviation="30"/></filter>
- <filter id="haze"><feGaussianBlur stdDeviation="7"/></filter>
- <pattern id="concrete" width="120" height="96" patternUnits="userSpaceOnUse"><path d="M0 24H120M22 0V24M82 24V96M0 68H82" fill="none" stroke="#9da7a5" stroke-opacity=".07" stroke-width="2"/><path d="M7 12l18 -3M67 54l13 4M96 82l15 -2" stroke="#b5bdb8" stroke-opacity=".07" stroke-width="1"/></pattern>
- <pattern id="floorLines" width="160" height="110" patternUnits="userSpaceOnUse"><path d="M0 0H160M0 0V110" stroke="#a4afac" stroke-opacity=".07" stroke-width="2"/></pattern>
- <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="1" fill="#d8e1dc" opacity=".09"/></pattern>
+  <linearGradient id="ceiling" x2="0" y2="1"><stop stop-color="#171d20"/><stop offset="1" stop-color="#050708"/></linearGradient>
+  <linearGradient id="left-wall" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#050708"/><stop offset=".55" stop-color="#151c1f"/><stop offset="1" stop-color="#080b0d"/></linearGradient>
+  <linearGradient id="right-wall" x1="0" y1="0" x2="1" y2=".1"><stop stop-color="#090d0f"/><stop offset=".6" stop-color="#242b2e"/><stop offset="1" stop-color="#080a0b"/></linearGradient>
+  <linearGradient id="floor" x2="0" y2="1"><stop stop-color="#303638"/><stop offset=".3" stop-color="#151a1c"/><stop offset="1" stop-color="#020303"/></linearGradient>
+  <linearGradient id="door" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#080b0c"/><stop offset=".24" stop-color="#333a3d"/><stop offset=".48" stop-color="#111719"/><stop offset=".7" stop-color="#3b4245"/><stop offset="1" stop-color="#07090a"/></linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#273c40" stop-opacity=".82"/><stop offset=".5" stop-color="#10191c" stop-opacity=".8"/><stop offset="1" stop-color="#090d0f" stop-opacity=".96"/></linearGradient>
+  <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ff342d" stop-opacity=".45"/><stop offset="1" stop-color="#ff342d" stop-opacity="0"/></linearGradient>
+  <radialGradient id="alarm-glow"><stop stop-color="#ff342d" stop-opacity=".75"/><stop offset=".35" stop-color="#9f1714" stop-opacity=".24"/><stop offset="1" stop-color="#9f1714" stop-opacity="0"/></radialGradient>
+  <radialGradient id="vignette"><stop offset=".1" stop-color="#000" stop-opacity="0"/><stop offset=".62" stop-color="#000" stop-opacity=".18"/><stop offset="1" stop-color="#000" stop-opacity=".88"/></radialGradient>
+  <linearGradient id="wet-reflection" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#bd2b26" stop-opacity=".34"/><stop offset="1" stop-color="#bd2b26" stop-opacity="0"/></linearGradient>
+  <pattern id="panels" width="160" height="120" patternUnits="userSpaceOnUse"><path d="M0 0H160M0 0V120" stroke="#aab5b4" stroke-opacity=".08" stroke-width="2"/><path d="M22 25h38M105 83h28" stroke="#bac4c0" stroke-opacity=".07" stroke-width="2"/></pattern>
+  <filter id="blur"><feGaussianBlur stdDeviation="34"/></filter>
+  <filter id="haze"><feGaussianBlur stdDeviation="8"/></filter>
+  <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="2" seed="18"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="table" tableValues="0 .1"/></feComponentTransfer></filter>
 </defs>
-<!-- Empty industrial corridor, security-camera still frame -->
-<rect width="1920" height="1080" fill="url(#air)"/>
-<path d="M0 0H1920L1338 326H582Z" fill="#151b1d"/>
-<path d="M0 0L582 326V786L0 1080Z" fill="url(#leftWall)"/>
-<path d="M1920 0L1338 326V786L1920 1080Z" fill="url(#rightWall)"/>
-<path d="M0 0L582 326V786L0 1080Z" fill="url(#concrete)" opacity=".8"/>
-<path d="M1920 0L1338 326V786L1920 1080Z" fill="url(#concrete)" opacity=".62"/>
-<path d="M582 326H1338V786H582Z" fill="#070a0b"/>
-<!-- far wall and sealed access doors -->
-<rect x="710" y="385" width="500" height="355" fill="#111719" stroke="#4b5355" stroke-width="10"/>
-<rect x="732" y="405" width="456" height="317" fill="#080b0c" stroke="#23292b" stroke-width="5"/>
-<path d="M732 405L950 423V708L732 722Z" fill="url(#doorL)" stroke="#555d5f" stroke-width="3"/>
-<path d="M1188 405L970 423V708L1188 722Z" fill="url(#doorR)" stroke="#454d4f" stroke-width="3"/>
-<path d="M950 423L970 423V708L950 708Z" fill="#020303"/>
-<path d="M950 423H970M950 708H970" stroke="#a6b0ab" stroke-opacity=".35" stroke-width="3"/>
-<rect x="957" y="455" width="7" height="220" fill="#030505"/>
-<path d="M710 740H1210" stroke="#7e8584" stroke-opacity=".28" stroke-width="4"/>
-<!-- emergency red lamp and diffuse spill -->
-<ellipse cx="963" cy="390" rx="350" ry="230" fill="url(#redGlow)" filter="url(#soft)"/>
-<rect x="925" y="367" width="78" height="15" rx="2" fill="#ff4339" opacity=".88"/>
-<rect x="917" y="359" width="94" height="30" fill="#fa211b" opacity=".3" filter="url(#haze)"/>
-<path d="M960 383L885 750H1040Z" fill="#8e1b18" opacity=".07"/>
-<!-- ceiling cable trays, pipes and fluorescent light -->
-<path d="M0 96H1920M0 130H1920" stroke="#020404" stroke-width="16" opacity=".85"/>
-<path d="M0 93H1920M0 127H1920" stroke="#535c5c" stroke-opacity=".35" stroke-width="3"/>
-<path d="M170 0L582 326M1740 0L1338 326" stroke="#040606" stroke-width="24"/>
-<path d="M170 0L582 326M1740 0L1338 326" stroke="#626a69" stroke-opacity=".26" stroke-width="3"/>
-<path d="M150 145L410 145L520 170L235 170Z" fill="#a8b5ad" opacity=".3"/>
-<path d="M235 170L520 170L535 181L250 181Z" fill="#d8e0d8" opacity=".08"/>
-<ellipse cx="330" cy="185" rx="210" ry="115" fill="url(#coldGlow)" filter="url(#soft)"/>
-<!-- wall seams, damaged paint and cable runs -->
-<g fill="none" stroke="#8b9593" stroke-opacity=".2" stroke-width="3">
- <path d="M0 150L582 370M0 300L582 440M0 465L582 520M0 650L582 612M0 830L582 710"/>
- <path d="M1920 150L1338 370M1920 300L1338 440M1920 465L1338 520M1920 650L1338 612M1920 830L1338 710"/>
- <path d="M90 215L120 208L136 226L165 222M180 610L205 602L220 620M1500 245L1530 252L1550 240M1650 560L1680 568L1690 553"/>
-</g>
-<g fill="none" stroke="#030505" stroke-width="12" opacity=".8">
- <path d="M70 0V280L160 315V480M1850 0V260L1740 305V420"/>
- <path d="M65 278L160 313M1854 258L1740 303"/>
-</g>
-<!-- floor perspective, worn tiles and oily reflections -->
-<path d="M0 1080L582 786H1338L1920 1080Z" fill="url(#floor)"/>
-<path d="M0 1080L582 786H1338L1920 1080Z" fill="url(#floorLines)" opacity=".9"/>
-<g stroke="#687271" stroke-opacity=".2" fill="none" stroke-width="3">
- <path d="M0 890L582 805H1338L1920 890"/>
- <path d="M0 980L582 830H1338L1920 980"/>
- <path d="M210 1080L720 786M520 1080L840 786M850 1080L930 786M1250 1080L1050 786M1640 1080L1200 786"/>
-</g>
-<path d="M310 1000L590 875L720 870L500 1030Z" fill="#aab4ae" opacity=".09"/>
-<path d="M1180 1040L1350 850L1410 860L1300 1080Z" fill="#b7c1b9" opacity=".07"/>
-<path d="M855 1080L940 805L1000 805L1015 1080Z" fill="#b21d19" opacity=".13"/>
-<path d="M815 1040L920 820L938 820L885 1050Z" fill="#d83b31" opacity=".09"/>
-<!-- small dirty puddles and boot scuffs -->
-<g fill="#9da8a1" opacity=".11">
- <path d="M420 955q62 -28 125 -6t-20 23t-105 -2t0 -15Z"/>
- <path d="M1390 970q48 -32 100 -5t-28 24t-72 -4t0 -15Z"/>
- <path d="M760 895q22 -10 49 0t-10 11t-39 -11Z"/>
-</g>
-<g stroke="#050708" stroke-width="9" stroke-linecap="round" opacity=".55"><path d="M430 950l48 -8M460 965l55 -7M1400 964l42 -9M1430 981l49 -7"/></g>
-<!-- wall-mounted containment access panel -->
-<g transform="translate(1450 430)">
- <rect width="115" height="240" fill="#080b0c" stroke="#50585a" stroke-width="5"/>
- <rect x="12" y="15" width="91" height="53" fill="#141a1b" stroke="#2d3537" stroke-width="2"/>
- <rect x="22" y="26" width="70" height="9" fill="#8b211d"/>
- <path d="M22 45H90" stroke="#4c5555" stroke-width="3"/>
- <circle cx="57" cy="112" r="13" fill="#6e1715" stroke="#9a2b25" stroke-width="3"/>
- <circle cx="57" cy="159" r="9" fill="#14241b" stroke="#34483a" stroke-width="3"/>
- <path d="M20 199H95M20 211H70" stroke="#66706c" stroke-opacity=".4" stroke-width="3"/>
-</g>
-<!-- chipped paint / old warning stripe near floor -->
-<path d="M0 775L582 680V704L0 806Z" fill="#b18a42" opacity=".13"/>
-<path d="M1920 775L1338 680V704L1920 806Z" fill="#b18a42" opacity=".12"/>
-<g stroke="#b8a16c" stroke-opacity=".16" stroke-width="8"><path d="M60 775L112 767M148 760L200 751M236 746L288 737M1540 716L1590 724M1640 732L1690 740M1740 748L1790 756"/></g>
-<!-- photorealism pass: layered mineral stains, damp concrete, oxidized steel and lens haze -->
-<defs>
- <filter id="wallPatina" x="-10%" y="-10%" width="120%" height="120%">
-  <feTurbulence type="fractalNoise" baseFrequency="0.018 0.09" numOctaves="4" seed="27" result="noise"/>
-  <feColorMatrix in="noise" type="saturate" values="0" result="mono"/>
-  <feComponentTransfer in="mono" result="contrast"><feFuncR type="gamma" amplitude="1.7" exponent="1.5" offset="-.25"/><feFuncG type="gamma" amplitude="1.7" exponent="1.5" offset="-.25"/><feFuncB type="gamma" amplitude="1.7" exponent="1.5" offset="-.25"/></feComponentTransfer>
-  <feBlend in="SourceGraphic" in2="contrast" mode="soft-light"/>
- </filter>
- <filter id="microNoise">
-  <feTurbulence type="fractalNoise" baseFrequency=".42" numOctaves="2" seed="81" stitchTiles="stitch" result="n"/>
-  <feColorMatrix in="n" type="saturate" values="0" result="g"/>
-  <feComponentTransfer in="g"><feFuncA type="table" tableValues="0 .18"/></feComponentTransfer>
- </filter>
- <linearGradient id="wetFloor" x1="0" y1="0" x2=".15" y2="1"><stop stop-color="#a8b7b1" stop-opacity=".13"/><stop offset=".35" stop-color="#64716e" stop-opacity=".04"/><stop offset="1" stop-color="#030405" stop-opacity="0"/></linearGradient>
- <radialGradient id="lensMist"><stop stop-color="#b9c9c1" stop-opacity=".10"/><stop offset="1" stop-color="#b9c9c1" stop-opacity="0"/></radialGradient>
-</defs>
-<!-- broad irregular damp marks and concrete pores follow the perspective planes -->
-<g opacity=".24" filter="url(#wallPatina)">
- <path d="M0 90L582 326V786L0 1080Z" fill="#89918e"/>
- <path d="M1920 35L1338 326V786L1920 1080Z" fill="#747e7b"/>
-</g>
-<g fill="none" stroke-linecap="round">
- <path d="M35 188l34 15 -7 42 21 18 -4 38M125 365l-14 38 19 22 -8 40M350 490l-19 22 5 36M1780 180l-28 31 6 26 -17 22M1650 390l19 18 -9 37" stroke="#020404" stroke-width="20" opacity=".34"/>
- <path d="M35 188l34 15 -7 42M125 365l-14 38M1780 180l-28 31" stroke="#7c8580" stroke-width="3" opacity=".18"/>
- <path d="M605 352H1315M600 368H1320M600 756H1320" stroke="#030505" stroke-width="5" opacity=".5"/>
-</g>
-<!-- door leaf machining, scratches, grime around the seal -->
-<g fill="none" stroke-linecap="round">
- <path d="M770 447l120 7M780 453l67 4M1000 462l120 -9M1040 468l82 -6M780 690l95 -5M1040 684l110 8" stroke="#a6b0aa" stroke-width="2" opacity=".16"/>
- <path d="M750 430V704M1170 430V704M945 430V704M978 430V704" stroke="#020303" stroke-width="7" opacity=".42"/>
- <path d="M751 434V700M1169 434V700" stroke="#929b95" stroke-width="2" opacity=".13"/>
- <path d="M812 477l28 -2M830 484l18 -1M1080 520l34 -3M1060 530l20 -2M840 650l43 -2M1035 646l24 2" stroke="#b1b9b2" stroke-width="1.5" opacity=".2"/>
-</g>
-<!-- damp sheen catches only the overhead spill; reflections break across floor seams -->
-<path d="M0 1080L582 786H1338L1920 1080Z" fill="url(#wetFloor)"/>
-<g fill="#a6b9af" opacity=".055">
- <path d="M260 1080L560 930L655 916L430 1080Z"/>
- <path d="M1080 1080L1260 900L1320 910L1210 1080Z"/>
- <path d="M700 1020L840 860L860 860L790 1030Z"/>
-</g>
-<g fill="none" stroke-linecap="round">
- <path d="M300 1015q80 -22 135 -8M350 1024l44 -4M1280 1010q45 -17 92 -6M1325 1020l36 -3" stroke="#c1ccc4" stroke-width="2" opacity=".13"/>
- <path d="M40 720l160 -26M220 687l88 -13M1580 690l130 22M1740 718l80 13" stroke="#020303" stroke-width="13" opacity=".3"/>
-</g>
-<!-- cinematic pass: alarm haze, lens grime, deeper corners, and an uncertain silhouette -->
-<defs>
- <radialGradient id="deepBlack"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".72"/></radialGradient>
- <linearGradient id="alarmSweep" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#6f0909" stop-opacity="0"/><stop offset=".5" stop-color="#b51e18" stop-opacity=".18"/><stop offset="1" stop-color="#6f0909" stop-opacity="0"/></linearGradient>
- <filter id="silhouetteBlur"><feGaussianBlur stdDeviation="11"/></filter>
-</defs>
-<!-- a barely visible human-shaped shadow behind observation glass -->
-<g opacity=".22" filter="url(#silhouetteBlur)" fill="#010202">
- <ellipse cx="1000" cy="505" rx="42" ry="64"/>
- <path d="M950 566Q1000 535 1045 570L1072 690L1040 714L1022 625L1014 752H985L978 630L955 710L929 697Z"/>
-</g>
-<rect width="1920" height="1080" fill="url(#alarmSweep)"/>
-<rect width="1920" height="1080" fill="url(#deepBlack)"/>
-<!-- corner-lens smears and faint vertical water tracks -->
-<g fill="none" stroke="#aab4ad" stroke-linecap="round" opacity=".07">
- <path d="M70 0Q82 90 61 180T72 350M110 0Q125 70 104 145T112 260M1830 0Q1814 115 1836 205T1825 390M1880 0Q1868 95 1892 160T1875 280" stroke-width="5"/>
- <path d="M20 470l36 -9M1840 520l44 11M1660 90l28 -7M210 800l52 -10" stroke-width="2"/>
-</g>
-<!-- fine sensor noise and shallow lens fog, intentionally restrained -->
-<rect width="1920" height="1080" fill="#9eaaa3" opacity=".10" filter="url(#microNoise)"/>
-<ellipse cx="450" cy="500" rx="420" ry="290" fill="url(#lensMist)"/>
-<ellipse cx="1480" cy="600" rx="360" ry="280" fill="url(#lensMist)" opacity=".6"/>
-
-<!-- SCP lore pass: containment signage, observation glass, and abandoned site infrastructure -->
-<!-- reinforced observation booth above the sealed blast door -->
-<g opacity=".82">
- <path d="M760 300H1160V365H760Z" fill="#050809" stroke="#3d4647" stroke-width="7"/>
- <path d="M775 312H946V351H775Z" fill="#111b1d" stroke="#65716d" stroke-width="3"/>
- <path d="M974 312H1145V351H974Z" fill="#10191a" stroke="#65716d" stroke-width="3"/>
- <path d="M785 319H937M984 319H1136" stroke="#a9c0b5" stroke-opacity=".13" stroke-width="2"/>
- <path d="M950 307V358" stroke="#020303" stroke-width="10"/>
- <path d="M790 346L915 316M1000 346L1125 316" stroke="#8a9d95" stroke-opacity=".08" stroke-width="3"/>
-</g>
-<!-- faded SCP Foundation seal on the wall, worn into the paint -->
-<g transform="translate(960 270)" opacity=".48">
- <circle r="37" fill="#111718" stroke="#8a9690" stroke-width="2.5"/>
- <circle r="29" fill="none" stroke="#8a9690" stroke-width="2"/>
- <circle r="7" fill="#8a9690"/>
- <path d="M0 -26L-6 -7L0 -2L6 -7Z M23 13L5 8L2 14L10 20Z M-23 13L-5 8L-2 14L-10 20Z" fill="#8a9690"/>
- <path d="M-48 45H48M-39 51H39" stroke="#8a9690" stroke-width="2" opacity=".5"/>
-</g>
-<!-- containment labels and faded hazard bands on side walls -->
-<g font-family="monospace" fill="#b4bdb6" opacity=".38" letter-spacing="2">
- <g transform="translate(225 425) rotate(-10)">
-  <rect x="-5" y="-30" width="176" height="76" fill="#080c0d" stroke="#78817d" stroke-opacity=".55" stroke-width="2"/>
-  <text x="8" y="-8" font-size="13">SCP FOUNDATION</text>
-  <text x="8" y="12" font-size="11">SECTOR D / LEVEL B2</text>
-  <text x="8" y="31" font-size="10" fill="#b83a31">CONTAINMENT AREA</text>
- </g>
- <g transform="translate(1515 350) rotate(9)">
-  <rect x="-8" y="-26" width="150" height="70" fill="#080c0d" stroke="#78817d" stroke-opacity=".45" stroke-width="2"/>
-  <text x="4" y="-5" font-size="12">ACCESS RESTRICTED</text>
-  <text x="4" y="15" font-size="10">CLEARANCE 3+</text>
-  <text x="4" y="32" font-size="10" fill="#bd4338">LOCKDOWN READY</text>
- </g>
-</g>
-<!-- old cable conduit, junction boxes and a failed red status strip -->
+<!-- D-12 containment corridor, framed from a low security-camera angle -->
+<rect width="1920" height="1080" fill="#030506"/>
+<path d="M0 0H1920L1390 350H620Z" fill="url(#ceiling)"/>
+<path d="M0 0L620 350V790L0 1080Z" fill="url(#left-wall)"/>
+<path d="M1920 0L1390 350V790L1920 1080Z" fill="url(#right-wall)"/>
+<path d="M620 350H1390V790H620Z" fill="#060809"/>
+<path d="M0 1080L620 790H1390L1920 1080Z" fill="url(#floor)"/>
+<path d="M0 0L620 350V790L0 1080ZM1920 0L1390 350V790L1920 1080Z" fill="url(#panels)" opacity=".72"/>
+<!-- Long ceiling rails and hanging service conduits -->
 <g fill="none" stroke-linecap="square">
- <path d="M0 360H235V398H300M1920 300H1690V338H1630" stroke="#030506" stroke-width="16" opacity=".78"/>
- <path d="M0 355H235V393H300M1920 295H1690V333H1630" stroke="#707a75" stroke-opacity=".24" stroke-width="3"/>
- <path d="M265 385V420M1680 325V365" stroke="#050707" stroke-width="9"/>
+ <path d="M0 105H1920M0 136H1920" stroke="#020303" stroke-width="18"/>
+ <path d="M0 104H1920M0 136H1920" stroke="#657071" stroke-opacity=".3" stroke-width="3"/>
+ <path d="M140 0L620 350M1780 0L1390 350" stroke="#030405" stroke-width="28"/>
+ <path d="M140 0L620 350M1780 0L1390 350" stroke="#7a8584" stroke-opacity=".23" stroke-width="3"/>
+ <path d="M0 230L620 430M0 480L620 545M0 700L620 660M1920 220L1390 425M1920 490L1390 550M1920 720L1390 660" stroke="#8b9692" stroke-opacity=".15" stroke-width="3"/>
 </g>
-<g transform="translate(302 394)" opacity=".55">
- <rect width="58" height="48" fill="#090d0e" stroke="#59625e" stroke-width="3"/>
- <path d="M10 12H48M10 21H37M10 30H43" stroke="#6f7b74" stroke-width="2"/>
- <circle cx="46" cy="38" r="3" fill="#a12a24"/>
-</g>
-<g transform="translate(1595 330)" opacity=".52">
- <rect width="54" height="44" fill="#090d0e" stroke="#59625e" stroke-width="3"/>
- <path d="M8 10H46M8 18H33M8 26H41" stroke="#6f7b74" stroke-width="2"/>
- <circle cx="42" cy="34" r="3" fill="#a12a24"/>
-</g>
-<!-- small emergency beacon reflections across the wet floor -->
-<path d="M930 805L950 805L820 1080H760Z" fill="#c32620" opacity=".045"/>
-<path d="M1005 805L1020 805L1135 1080H1085Z" fill="#c32620" opacity=".035"/>
-
-<!-- surveillance artifacts -->
-<rect width="1920" height="1080" fill="url(#vignette)"/>
-<rect width="1920" height="1080" fill="#8aaca0" opacity=".025" filter="url(#grain)"/>
-<rect width="1920" height="1080" fill="url(#scan)" opacity=".25"/>
-<g font-family="monospace" fill="#a8b8ae" opacity=".42" font-size="18" letter-spacing="3">
- <text x="58" y="60">FACILITY D-12 / CAM 01</text><text x="58" y="88" font-size="13">SIGNAL: UNSTABLE</text>
- <text x="1860" y="60" text-anchor="end">REC ● 00:17:42</text><text x="1860" y="88" text-anchor="end" font-size="13">NIGHT SHIFT / 03</text>
- <text x="58" y="1025" font-size="13">AUTHORIZED PERSONNEL ONLY</text><text x="1860" y="1025" text-anchor="end" font-size="13">ARCHIVE COPY // DO NOT DISTRIBUTE</text>
-</g>
-<g fill="none" stroke="#a8b8ae" stroke-opacity=".22" stroke-width="2"><path d="M40 112V40H112M1808 40H1880V112M40 968V1040H112M1808 1040H1880V968"/></g>
-<rect width="1920" height="1080" fill="none" stroke="#000" stroke-width="80" opacity=".38"/>
-
-<!-- Realism pass v2: layered service infrastructure, practical light, airborne dust -->
-<defs>
- <linearGradient id="steelEdge" x1="0" y1="0" x2="0" y2="1">
-  <stop stop-color="#7d8985" stop-opacity=".42"/><stop offset=".16" stop-color="#222a2b" stop-opacity=".22"/><stop offset=".8" stop-color="#030506" stop-opacity=".72"/><stop offset="1" stop-color="#64706b" stop-opacity=".18"/>
- </linearGradient>
- <radialGradient id="lampSpill">
-  <stop stop-color="#d5dfd4" stop-opacity=".34"/><stop offset=".18" stop-color="#a8b9ad" stop-opacity=".12"/><stop offset="1" stop-color="#9fb3a8" stop-opacity="0"/>
- </radialGradient>
- <linearGradient id="redBounce" x1="0" y1="0" x2="0" y2="1">
-  <stop stop-color="#f23a30" stop-opacity=".42"/><stop offset="1" stop-color="#a31411" stop-opacity="0"/>
- </linearGradient>
- <filter id="dustBlur"><feGaussianBlur stdDeviation="2.8"/></filter>
- <filter id="beamBlur"><feGaussianBlur stdDeviation="18"/></filter>
- <pattern id="fineSteel" width="48" height="64" patternUnits="userSpaceOnUse">
-  <path d="M7 0V64M9 0V64M34 0V64" stroke="#d4dbd4" stroke-opacity=".035" stroke-width="1"/>
-  <path d="M0 21H48M0 52H48" stroke="#000" stroke-opacity=".12" stroke-width="2"/>
- </pattern>
-</defs>
-<!-- Recessed service channels and structural ribs on the side walls -->
-<g fill="none">
- <path d="M28 0L588 324M1892 0L1332 324" stroke="#020404" stroke-width="36" opacity=".8"/>
- <path d="M28 0L588 324M1892 0L1332 324" stroke="url(#steelEdge)" stroke-width="21" opacity=".82"/>
- <path d="M64 0L594 322M1856 0L1326 322" stroke="#87928b" stroke-width="2" stroke-opacity=".18"/>
- <path d="M80 0L80 245L174 286L174 420M1840 0L1840 245L1746 286L1746 420" stroke="#080b0c" stroke-width="19"/>
- <path d="M87 0L87 241L181 282L181 412M1833 0L1833 241L1739 282L1739 412" stroke="#69736e" stroke-width="3" stroke-opacity=".2"/>
-</g>
-<!-- Ceiling fluorescent fixture, aged diffuser and a weak cold spill -->
-<ellipse cx="350" cy="188" rx="320" ry="175" fill="url(#lampSpill)" filter="url(#beamBlur)"/>
-<g transform="translate(205 143)">
- <path d="M-40 0L210 0L260 27L10 27Z" fill="#020404" opacity=".85"/>
- <path d="M-28 2L205 2L239 20L7 20Z" fill="#48524e" opacity=".6" stroke="#7b8780" stroke-opacity=".3" stroke-width="2"/>
- <path d="M-12 7L199 7L222 16L11 16Z" fill="#c3d0c6" opacity=".26"/>
- <path d="M8 22L238 22" stroke="#020303" stroke-width="5"/>
- <path d="M24 3L34 18M76 3L86 18M128 3L138 18M180 3L190 18" stroke="#121817" stroke-width="2" opacity=".7"/>
-</g>
-<!-- Maintenance conduits with clamps and shadowed joints -->
-<g fill="none" stroke-linecap="square">
- <path d="M0 215H198Q213 215 213 231V282H310M1920 190H1732Q1718 190 1718 206V260H1638" stroke="#020303" stroke-width="22" opacity=".88"/>
- <path d="M0 210H198Q208 210 208 228V276H310M1920 185H1732Q1723 185 1723 203V254H1638" stroke="#68736d" stroke-opacity=".28" stroke-width="4"/>
- <path d="M160 203V221M183 203V221M1750 178V196M1774 178V196" stroke="#8a948e" stroke-opacity=".2" stroke-width="5"/>
- <path d="M300 269V285M320 269V285M1600 247V263M1620 247V263" stroke="#030505" stroke-width="8"/>
-</g>
-<!-- More convincing blast-door gasket, bolts, inspection windows and floor track -->
+<!-- New focal point: reinforced containment airlock, set to the right of the menu panel -->
 <g>
- <rect x="700" y="376" width="520" height="376" fill="none" stroke="#050708" stroke-width="15"/>
- <rect x="704" y="379" width="512" height="367" fill="none" stroke="#75807a" stroke-opacity=".19" stroke-width="2"/>
- <path d="M718 390H1202M718 731H1202" stroke="#020303" stroke-width="9"/>
- <path d="M718 392H1202M718 729H1202" stroke="#a6b0a8" stroke-opacity=".14" stroke-width="2"/>
- <g fill="#080b0c" stroke="#929c94" stroke-opacity=".25" stroke-width="2">
-  <circle cx="720" cy="398" r="5"/><circle cx="1200" cy="398" r="5"/>
-  <circle cx="720" cy="727" r="5"/><circle cx="1200" cy="727" r="5"/>
-  <circle cx="742" cy="557" r="4"/><circle cx="1178" cy="557" r="4"/>
+ <rect x="1060" y="350" width="430" height="440" fill="#080b0c" stroke="#4b5557" stroke-width="12"/>
+ <rect x="1082" y="370" width="386" height="398" fill="#030506" stroke="#202729" stroke-width="8"/>
+ <rect x="1100" y="388" width="350" height="360" fill="url(#door)" stroke="#596164" stroke-opacity=".5" stroke-width="3"/>
+ <path d="M1272 389V748" stroke="#020303" stroke-width="17"/>
+ <path d="M1265 394V744M1280 394V744" stroke="#9aa5a1" stroke-opacity=".17" stroke-width="2"/>
+ <path d="M1120 408H1240V730H1120ZM1300 408H1430V730H1300Z" fill="none" stroke="#090c0d" stroke-width="8"/>
+ <path d="M1112 418H1247M1297 418H1438M1112 720H1247M1297 720H1438" stroke="#aab3ae" stroke-opacity=".16" stroke-width="3"/>
+ <rect x="1248" y="520" width="14" height="100" fill="#030405"/>
+ <rect x="1282" y="520" width="14" height="100" fill="#030405"/>
+ <path d="M1250 530H1260M1284 530H1294" stroke="#c5d0ca" stroke-opacity=".25" stroke-width="2"/>
+ <rect x="1212" y="338" width="122" height="20" rx="2" fill="#fa3028"/>
+ <rect x="1180" y="326" width="186" height="42" fill="#f52a23" opacity=".24" filter="url(#haze)"/>
+ <ellipse cx="1274" cy="360" rx="330" ry="180" fill="url(#alarm-glow)" filter="url(#blur)"/>
+ <path d="M1210 363L1030 820H1510L1330 363Z" fill="url(#beam)" opacity=".4"/>
+ <path d="M1070 785H1480L1450 806H1100Z" fill="#020303" stroke="#68716f" stroke-opacity=".25" stroke-width="3"/>
+ <g fill="#0a0d0e" stroke="#b0bbb4" stroke-opacity=".35" stroke-width="2">
+  <circle cx="1075" cy="370" r="5"/><circle cx="1475" cy="370" r="5"/>
+  <circle cx="1075" cy="765" r="5"/><circle cx="1475" cy="765" r="5"/>
  </g>
- <rect x="935" y="431" width="13" height="278" fill="#030404" opacity=".85"/>
- <rect x="976" y="431" width="13" height="278" fill="#030404" opacity=".85"/>
- <path d="M942 438V702M982 438V702" stroke="#aeb8b0" stroke-opacity=".1" stroke-width="2"/>
- <path d="M690 758H1230L1210 771H710Z" fill="#030405" stroke="#4a5350" stroke-opacity=".45" stroke-width="2"/>
- <path d="M730 765H1190" stroke="#aeb8b0" stroke-opacity=".15" stroke-width="2"/>
 </g>
-<!-- Faded service stencil, worn paint and small bolts on the right-side access cabinet -->
-<g transform="translate(1450 430)" opacity=".65">
- <rect x="6" y="7" width="103" height="226" fill="url(#fineSteel)" opacity=".75"/>
- <path d="M8 76H107M8 181H107" stroke="#020303" stroke-width="5"/>
- <g fill="#8a9690" opacity=".55"><circle cx="7" cy="8" r="2"/><circle cx="108" cy="8" r="2"/><circle cx="7" cy="232" r="2"/><circle cx="108" cy="232" r="2"/></g>
- <path d="M18 87H95M18 94H70" stroke="#8a9690" stroke-opacity=".3" stroke-width="2"/>
- <path d="M18 218l20 -2M54 215l30 -3" stroke="#b0b8b0" stroke-opacity=".22" stroke-width="2"/>
+<!-- Observation glass and warning panel on the far-right wall -->
+<g>
+ <path d="M1540 380H1795V660H1540Z" fill="#080b0d" stroke="#535d5e" stroke-width="10"/>
+ <rect x="1555" y="395" width="225" height="250" fill="url(#glass)" stroke="#121a1c" stroke-width="5"/>
+ <path d="M1560 410L1775 620M1610 398L1780 565" stroke="#b7d0c9" stroke-opacity=".08" stroke-width="12"/>
+ <path d="M1665 398V642M1557 520H1778" stroke="#647474" stroke-opacity=".3" stroke-width="3"/>
+ <rect x="1585" y="674" width="170" height="12" fill="#080b0c" stroke="#56615e" stroke-opacity=".35" stroke-width="2"/>
+ <path d="M1590 680H1630M1640 680H1680M1690 680H1730M1740 680H1750" stroke="#bd332c" stroke-width="5"/>
+ <rect x="1570" y="716" width="200" height="72" fill="#080b0c" stroke="#3f4949" stroke-width="4"/>
+ <path d="M1590 737H1750M1590 751H1690M1590 765H1725" stroke="#7c8985" stroke-opacity=".24" stroke-width="3"/>
 </g>
-<!-- Broken red beacon spill reflects diffusely across the damp concrete -->
-<ellipse cx="960" cy="820" rx="150" ry="38" fill="#c42a22" opacity=".055" filter="url(#beamBlur)"/>
-<path d="M900 786L945 786L830 1080H735Z" fill="url(#redBounce)" opacity=".55"/>
-<path d="M985 786L1020 786L1170 1080H1090Z" fill="url(#redBounce)" opacity=".38"/>
-<!-- Subtle airborne dust: tiny, irregular particles rather than decorative stars -->
-<g fill="#c4cec5" opacity=".22">
- <circle cx="252" cy="354" r="1.2"/><circle cx="410" cy="285" r=".9"/><circle cx="534" cy="612" r="1.1"/>
- <circle cx="670" cy="480" r=".8"/><circle cx="742" cy="330" r="1.1"/><circle cx="1140" cy="365" r=".8"/>
- <circle cx="1275" cy="525" r="1.1"/><circle cx="1388" cy="300" r=".8"/><circle cx="1542" cy="475" r="1.2"/>
- <circle cx="1682" cy="392" r=".8"/><circle cx="1760" cy="622" r="1.1"/><circle cx="1180" cy="660" r=".7"/>
+<!-- Floor drainage channels, wet reflections and perspective guides -->
+<g fill="none" stroke-linecap="round">
+ <path d="M620 790L0 1080M1390 790L1920 1080" stroke="#737e7c" stroke-opacity=".18" stroke-width="5"/>
+ <path d="M720 804L380 1080M1290 804L1580 1080" stroke="#8c9893" stroke-opacity=".1" stroke-width="3"/>
+ <path d="M0 930H1920M0 1000H1920" stroke="#020303" stroke-width="8"/>
+ <path d="M0 932H1920M0 1002H1920" stroke="#77827d" stroke-opacity=".08" stroke-width="2"/>
+ <path d="M1120 812L1010 1080H1300L1330 812Z" fill="url(#wet-reflection)" stroke="none"/>
+ <path d="M1135 842L1080 1010M1170 858L1130 1030M1330 865L1380 1020" stroke="#d14a3f" stroke-opacity=".12" stroke-width="5"/>
+ <path d="M150 1010L330 1005M460 960L590 957M1460 955L1590 961M1680 1020L1840 1025" stroke="#9ba6a0" stroke-opacity=".14" stroke-width="3"/>
 </g>
-<!-- Thin moisture streaks catch the distant emergency lamp -->
-<g fill="none" stroke-linecap="round" opacity=".1">
- <path d="M278 340l-5 48M291 348l-3 24M1580 296l-7 52M1595 302l-4 31M430 565l-4 27M1460 535l-3 38" stroke="#aab7ae" stroke-width="2"/>
+<!-- Tiny status LEDs, hanging cables and atmospheric particles -->
+<g fill="none" stroke="#798581" stroke-opacity=".25" stroke-width="3">
+ <path d="M1700 0V90L1712 106V170M1740 0V66L1728 84V142M270 0V68L284 82V145"/>
+ <path d="M155 260l38 12M165 278l24 7M1640 290l45 -12M1660 307l27 -8"/>
 </g>
-<!-- Fine metal grain only on the steel surfaces, preserving deep shadows -->
-<path d="M710 385H1210V740H710Z" fill="url(#fineSteel)" opacity=".36"/>
-
+<g fill="#d1dcd4" opacity=".25">
+ <circle cx="240" cy="310" r="1.4"/><circle cx="425" cy="490" r="1"/><circle cx="550" cy="370" r="1.2"/>
+ <circle cx="820" cy="460" r=".9"/><circle cx="990" cy="310" r="1.1"/><circle cx="1500" cy="325" r="1"/>
+ <circle cx="1630" cy="480" r="1.3"/><circle cx="1780" cy="550" r=".9"/><circle cx="910" cy="710" r="1.1"/>
+ <circle cx="1450" cy="735" r="1.2"/><circle cx="720" cy="600" r=".8"/><circle cx="1850" cy="830" r="1"/>
+</g>
+<rect width="1920" height="1080" fill="url(#vignette)"/>
+<rect width="1920" height="1080" filter="url(#grain)" opacity=".16"/>
 </svg>
