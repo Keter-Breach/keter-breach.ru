@@ -2,6 +2,9 @@ extends Node3D
 
 const PlayerScript = preload("res://scripts/player.gd")
 const FacilityLayout = preload("res://scripts/facility_layout.gd")
+var player_ref: CharacterBody3D
+var map_panel: ColorRect
+var map_dot: ColorRect
 
 func _ready() -> void:
 	_build_environment()
@@ -48,6 +51,14 @@ func _build_facility() -> void:
 	facility.name = "FacilityD12"
 	facility.set_script(FacilityLayout)
 	add_child(facility)
+
+func _process(_delta: float) -> void:
+ if player_ref == null or map_panel == null or map_dot == null:
+  return
+ var p := player_ref.global_position
+ var px := clampf((p.x + 40.0) / 80.0, 0.0, 1.0) * map_panel.size.x
+ var py := clampf((p.z + 10.0) / 110.0, 0.0, 1.0) * map_panel.size.y
+ map_dot.position = Vector2(px - map_dot.size.x * 0.5, py - map_dot.size.y * 0.5)
 
 func _build_environment() -> void:
 	var world := WorldEnvironment.new()
@@ -132,6 +143,7 @@ func _build_player() -> void:
 	player.position = Vector3(0, 0.1, -7.8)
 	player.rotation.y = PI
 	add_child(player)
+	player_ref = player
 
 func _build_hud() -> void:
 	var layer := CanvasLayer.new()
@@ -164,3 +176,35 @@ func _build_hud() -> void:
 	objective.add_theme_font_size_override("font_size", 14)
 	objective.add_theme_color_override("font_color", Color(0.85, 0.12, 0.1))
 	layer.add_child(objective)
+	map_panel = ColorRect.new()
+	map_panel.name = "FacilityMinimap"
+	map_panel.color = Color(0.025, 0.035, 0.04, 0.92)
+	map_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	map_panel.offset_left = -194
+	map_panel.offset_top = 22
+	map_panel.offset_right = -22
+	map_panel.offset_bottom = 238
+	map_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(map_panel)
+	var map_title := Label.new()
+	map_title.text = "D-12 / MAP"
+	map_title.position = Vector2(8, 5)
+	map_title.add_theme_font_size_override("font_size", 12)
+	map_title.add_theme_color_override("font_color", Color(0.78, 0.22, 0.18))
+	map_panel.add_child(map_title)
+	var route := ColorRect.new()
+	route.color = Color(0.28, 0.32, 0.33, 0.8)
+	route.position = Vector2(82, 25)
+	route.size = Vector2(3, 178)
+	map_panel.add_child(route)
+	for marker_pos in [Vector2(78, 52), Vector2(92, 78), Vector2(80, 108), Vector2(72, 145), Vector2(80, 177)]:
+		var marker := ColorRect.new()
+		marker.color = Color(0.55, 0.16, 0.12, 0.85)
+		marker.position = marker_pos
+		marker.size = Vector2(12, 3)
+		map_panel.add_child(marker)
+	map_dot = ColorRect.new()
+	map_dot.name = "PlayerPosition"
+	map_dot.color = Color(0.2, 1.0, 0.55)
+	map_dot.size = Vector2(8, 8)
+	map_panel.add_child(map_dot)
