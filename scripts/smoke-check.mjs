@@ -51,3 +51,11 @@ assert.match(html, /gameScript\.onerror = showError/, "startup failure should sh
 assert.match(html, /loadThree\("\.\/node_modules\/three\/build\/three\.min\.js", function \(\)/, "desktop build should prefer the bundled Three.js runtime");
 assert.match(html, /loadThree\("https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.128\.0\/build\/three\.min\.js", showError\)/, "browser build should have a pinned CDN fallback");
 assert.doesNotMatch(html, /<script src="script\.js"><\/script>/, "game script must not be loaded twice");
+
+assert.match(script, /document\.pointerLockElement === canvas/, "pointer lock state should recognize the game canvas");
+assert.match(script, /renderer\.domElement\.addEventListener\("click", requestGamePointerLock\)/, "game canvas should request pointer lock from one click handler");
+assert.doesNotMatch(script, /container\.addEventListener\("click", requestGamePointerLock\)/, "pointer lock must not be requested twice by bubbling clicks");
+assert.match(script, /className = 'keter-vhs-overlay'/, "gameplay should mount its VHS overlay");
+assert.match(css, /keter-game-vhs-track/, "gameplay should have animated VHS tracking bands");
+assert.match(css, /repeating-linear-gradient\(0deg, rgba\(190,220,211,\.16\)/, "gameplay should have visible VHS scanlines");
+assert.match(css, /background:[\s\S]{0,180}#000 !important/, "boot screen should use a true black base");
