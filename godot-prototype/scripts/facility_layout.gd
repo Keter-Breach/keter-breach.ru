@@ -224,9 +224,9 @@ func _build_props() -> void:
  _box("Personnel locker",Vector3(0.55,1.9,0.65),Vector3(-31,0.95,84),metal_mat)
  _box("Personnel table",Vector3(1.2,0.12,0.65),Vector3(-25,0.8,86),metal_mat)
  _box("Observation console",Vector3(2,1.1,0.65),Vector3(25,0.55,70),metal_mat)
- _box("Channel 7 terminal",Vector3(1.8,1.25,0.16),Vector3(0,1.35,88.8),metal_mat)
- _box("Channel 7 screen",Vector3(1.52,0.9,0.035),Vector3(0,1.37,88.69),_mat(Color(0.04,0.07,0.16)),false)
- _add_interaction("comms",Vector3(0,1.4,87.8),Vector3(2.4,2.2,2.2),"Терминал связи: канал 7")
+ _box("Channel 7 terminal",Vector3(1.8,1.25,0.16),Vector3(-2,1.35,74.5),metal_mat)
+ _box("Channel 7 screen",Vector3(1.52,0.9,0.035),Vector3(-2,1.37,74.39),_mat(Color(0.04,0.07,0.16)),false)
+ _add_interaction("comms",Vector3(-2,1.4,73.2),Vector3(2.4,2.2,2.2),"Терминал связи: канал 7")
  _box("L1 security door",Vector3(2,2.8,0.2),Vector3(0,1.4,24),door_mat)
  _add_interaction("door_l1",Vector3(0,1.4,22.8),Vector3(3,2.6,2.2),"Шлюз L1")
  _box("L2 security door",Vector3(2,2.8,0.2),Vector3(0,1.4,60),door_mat)
@@ -296,7 +296,7 @@ func _build_labels() -> void:
  _label("DATA NODE",Vector3(0,2.7,34),Color(0.15,0.85,0.75))
  _label("KETER CONTAINMENT",Vector3(0,2.7,48),Color(0.9,0.08,0.05))
  _label("EVACUATION",Vector3(0,2.7,68),Color(0.85,0.6,0.3))
- _label("COMMS / CHANNEL 7",Vector3(0,2.7,91),Color(0.35,0.5,0.95))
+ _label("COMMS / CHANNEL 7",Vector3(-2,2.7,76.4),Color(0.35,0.5,0.95))
 
 func _label(t: String,p: Vector3,c: Color) -> void:
  var l:=Label3D.new()
