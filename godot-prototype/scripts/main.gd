@@ -157,7 +157,7 @@ func _build_hud() -> void:
 	crosshair.add_theme_color_override("font_color", Color(0.85, 0.82, 0.78, 0.8))
 	layer.add_child(crosshair)
 	var info := Label.new()
-	info.text = "KETER BREACH  //  D-12\nWASD — движение   SHIFT — бег\nМышь — осмотр   ESC — отпустить мышь"
+	info.text = "KETER BREACH  //  D-12\nWASD — движение   SHIFT — бег\nF — фонарь   Мышь — осмотр\nESC — отпустить мышь"
 	info.position = Vector2(24, 22)
 	info.add_theme_font_size_override("font_size", 15)
 	info.add_theme_color_override("font_color", Color(0.78, 0.78, 0.76, 0.9))
