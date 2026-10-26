@@ -20,6 +20,15 @@ func _ready() -> void:
  if floor_texture: floor_mat.albedo_texture = floor_texture
  if metal_texture: metal_mat.albedo_texture = metal_texture
  if metal_texture: door_mat.albedo_texture = metal_texture
+ # Scale the tiling so large architectural surfaces retain visible material detail.
+ wall_mat.uv1_scale = Vector3(3.0, 2.0, 1.0)
+ floor_mat.uv1_scale = Vector3(18.0, 18.0, 1.0)
+ metal_mat.uv1_scale = Vector3(2.5, 2.5, 1.0)
+ door_mat.uv1_scale = Vector3(1.2, 1.5, 1.0)
+ wall_mat.roughness = 0.96
+ floor_mat.roughness = 0.38
+ metal_mat.roughness = 0.34
+ door_mat.roughness = 0.42
  _box("Facility floor",Vector3(180,0.3,240),Vector3(0,-0.18,30),floor_mat)
  _box("Facility ceiling",Vector3(180,0.28,240),Vector3(0,3.34,30),metal_mat)
  _build_elevator()
