@@ -16,6 +16,7 @@ var archive_read: bool = false
 var reactor_disabled: bool = false
 var comms_restored: bool = false
 var opened_doors: Dictionary = {}
+var loop_count: int = 0
 
 func _ready() -> void:
 	_build_environment()
@@ -76,6 +77,8 @@ func _process(_delta: float) -> void:
 		interaction_hint.text = "[E]  " + str(target.get_meta("interaction_title", "Взаимодействовать")) if target != null else ""
 	if battery_label:
 		battery_label.text = "ФОНАРЬ: %d%%" % roundi(float(player_ref.get("flashlight_charge")))
+	if opened_doors.has("Surface exit door") and player_ref.global_position.z > 99.0:
+		_trigger_mirror_loop()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
@@ -138,7 +141,8 @@ func _interact() -> void:
 				_show_status("Канал 7 молчит. Проверь терминал связи перед выходом.")
 			else:
 				_open_door("Surface exit door")
-				_show_status("ШЛЮЗ ОТКРЫТ. За ним коридор повторяется… ЦИКЛ 01 ЗАВЕРШЁН.")
+				target.queue_free()
+				_show_status("ШЛЮЗ ОТКРЫТ. За ним коридор повторяется… ПРОТОКОЛ «ЗЕРКАЛО» АКТИВЕН.")
 		"archive_log":
 			archive_read = true
 			target.queue_free()
@@ -174,6 +178,16 @@ func _show_status(message: String) -> void:
 	if status_label:
 		status_label.text = message
 	_refresh_objective()
+
+func _trigger_mirror_loop() -> void:
+	loop_count += 1
+	player_ref.global_position = Vector3(0, 0.1, -7.8)
+	player_ref.velocity = Vector3.ZERO
+	player_ref.rotation.y = PI
+	var camera := player_ref.get_node_or_null("PlayerCamera") as Camera3D
+	if camera:
+		camera.rotation.x = 0.0
+	_show_status("ОШИБКА ПРОСТРАНСТВА / ЦИКЛ %02d — ты снова в грузовом лифте. Состояние комплекса не совпадает с воспоминаниями." % loop_count)
 
 func _refresh_objective() -> void:
 	if objective_label == null:
