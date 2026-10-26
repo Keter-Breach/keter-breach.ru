@@ -303,14 +303,20 @@ func _interact() -> void:
 		"incident_memo":
 			evidence_found["incident_memo"] = true
 			target.queue_free()
+			var memo_visual := facility_ref.find_child("Incident memo paper", true, false) as Node3D
+			if memo_visual: memo_visual.visible = false
 			_show_status("ДОКАЗАТЕЛЬСТВО / СЛУЖЕБНАЯ ЗАПИСКА: «В 03:17 наблюдение показало коридор на 12 метров длиннее чертежа. При повторном замере длина вернулась к норме. Запись удалить по приказу Гирса»." )
 		"camera_tape":
 			evidence_found["camera_tape"] = true
 			target.queue_free()
+			var tape_visual := facility_ref.find_child("Channel 7 recovered tape", true, false) as Node3D
+			if tape_visual: tape_visual.visible = false
 			_show_status("КАССЕТА №6: на записи пустой коридор. На последнем кадре отражение оператора поворачивает голову раньше самого оператора." )
 		"sample_label":
 			evidence_found["sample_label"] = true
 			target.queue_free()
+			var sample_visual := facility_ref.find_child("KETER-19 sample label", true, false) as Node3D
+			if sample_visual: sample_visual.visible = false
 			_show_status("МАРКИРОВКА KETER-19: «Образец не должен отражать свет. Если отражение появилось — немедленно закрыть контейнер»." )
 		_:
 			_show_status("Объект пока не реагирует.")
