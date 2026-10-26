@@ -8,10 +8,10 @@ var door_mat: StandardMaterial3D
 var red_mat: StandardMaterial3D
 
 func _ready() -> void:
- wall_mat = _mat(Color(0.19,0.20,0.20),0.12,0.92)
- floor_mat = _mat(Color(0.09,0.095,0.10),0.22,0.55)
- metal_mat = _mat(Color(0.075,0.085,0.09),0.72,0.4)
- door_mat = _mat(Color(0.16,0.17,0.17),0.48,0.56)
+ wall_mat = _mat(Color(0.92,0.92,0.90),0.12,0.92)
+ floor_mat = _mat(Color(0.92,0.92,0.92),0.22,0.55)
+ metal_mat = _mat(Color(0.90,0.92,0.92),0.72,0.4)
+ door_mat = _mat(Color(0.96,0.96,0.94),0.48,0.56)
  red_mat = _mat(Color(0.55,0.025,0.02),0.18,0.45)
  var concrete_texture := load("res://assets/textures/keter-concrete.svg") as Texture2D
  var floor_texture := load("res://assets/textures/keter-industrial-floor.svg") as Texture2D
@@ -26,9 +26,9 @@ func _ready() -> void:
  metal_mat.uv1_scale = Vector3(2.5, 2.5, 1.0)
  door_mat.uv1_scale = Vector3(1.2, 1.5, 1.0)
  wall_mat.roughness = 0.96
- floor_mat.roughness = 0.38
- metal_mat.roughness = 0.34
- door_mat.roughness = 0.42
+ floor_mat.roughness = 0.52
+ metal_mat.roughness = 0.42
+ door_mat.roughness = 0.48
  _box("Facility floor",Vector3(180,0.3,240),Vector3(0,-0.18,30),floor_mat)
  _box("Facility ceiling",Vector3(180,0.28,240),Vector3(0,3.34,30),metal_mat)
  _build_elevator()
@@ -240,10 +240,13 @@ func _build_props() -> void:
  _box("Channel 7 screen",Vector3(1.52,0.9,0.035),Vector3(0,1.37,88.69),_mat(Color(0.04,0.07,0.16)),false)
  _add_interaction("comms",Vector3(0,1.4,87.8),Vector3(2.4,2.2,2.2),"Терминал связи: канал 7")
  _box("L1 security door",Vector3(2,2.8,0.2),Vector3(0,1.4,24),door_mat)
+ _door_frame(24.0, "L1")
  _add_interaction("door_l1",Vector3(0,1.4,22.8),Vector3(3,2.6,2.2),"Шлюз L1")
  _box("L2 security door",Vector3(2,2.8,0.2),Vector3(0,1.4,60),door_mat)
+ _door_frame(60.0, "L2")
  _add_interaction("door_l2",Vector3(0,1.4,58.8),Vector3(3,2.6,2.2),"Шлюз L2")
  _box("Surface exit door",Vector3(2,2.8,0.2),Vector3(0,1.4,80),door_mat)
+ _door_frame(80.0, "EXIT")
  _add_interaction("exit_door",Vector3(0,1.4,78.8),Vector3(3,2.6,2.2),"Эвакуационный шлюз")
 
  # Repeating red floor marks make the Mirror corridor feel like a corrupted copy.
@@ -280,20 +283,31 @@ func _build_props() -> void:
  for p in [Vector3(-1.75,0.018,18.6),Vector3(1.65,0.018,47.2),Vector3(-2.15,0.018,56.8),Vector3(1.8,0.018,66.1)]:
   _box("Dried blood trace",Vector3(1.5,0.012,0.85),p,_mat(Color(0.12,0.012,0.016),0.0,0.98),false)
 
+func _door_frame(z: float, code: String) -> void:
+ # Contrasting physical frame makes the shutter readable even in low light.
+ var frame_mat := _mat(Color(0.36, 0.39, 0.40), 0.72, 0.38)
+ var hazard_mat := _mat(Color(0.95, 0.52, 0.045), 0.12, 0.5)
+ for side in [-1.0, 1.0]:
+  _box(code + " door guide rail", Vector3(0.16, 3.0, 0.34), Vector3(side * 1.13, 1.48, z + 0.16), frame_mat, false)
+  _box(code + " door warning lamp", Vector3(0.08, 0.11, 0.08), Vector3(side * 1.13, 2.88, z + 0.37), red_mat, false)
+ _box(code + " door top frame", Vector3(2.42, 0.18, 0.36), Vector3(0, 2.98, z + 0.16), frame_mat, false)
+ for i in range(7):
+  _box(code + " hazard stripe", Vector3(0.22, 0.055, 0.025), Vector3(-0.66 + i * 0.22, 3.09, z + 0.37), hazard_mat, false)
+
 func _build_lights() -> void:
- _add_light(Vector3(0,2.8,-4),Color(0.9,0.3,0.2),0.65,7)
- _add_light(Vector3(0,2.8,13),Color(0.85,0.035,0.025),0.85,10)
- _add_light(Vector3(-10,2.8,10),Color(0.12,0.35,0.85),0.55,7)
- _add_light(Vector3(10,2.8,10),Color(0.25,0.8,0.55),0.55,7)
- _add_light(Vector3(0,2.8,34),Color(0.08,0.65,0.65),0.7,9)
- _add_light(Vector3(0,2.8,52),Color(0.9,0.035,0.02),0.9,9)
- _add_light(Vector3(0,2.8,70),Color(0.85,0.58,0.28),0.65,8)
- _add_light(Vector3(-11,2.8,27.5),Color(0.9,0.58,0.3),0.6,6)
- _add_light(Vector3(-10.8,2.8,33),Color(0.95,0.3,0.08),0.7,6)
- _add_light(Vector3(-10.5,2.8,40.5),Color(0.9,0.025,0.02),0.7,6)
- _add_light(Vector3(0,2.8,88),Color(0.2,0.3,0.85),0.6,8)
- _add_light(Vector3(0,2.8,112),Color(0.72,0.08,0.06),0.48,7)
- _add_light(Vector3(0,2.8,124),Color(0.12,0.18,0.32),0.42,7)
+ _add_light(Vector3(0,2.8,-4),Color(0.9,0.3,0.2),1.15,9)
+ _add_light(Vector3(0,2.8,13),Color(0.85,0.035,0.025),1.45,12)
+ _add_light(Vector3(-10,2.8,10),Color(0.12,0.35,0.85),0.95,9)
+ _add_light(Vector3(10,2.8,10),Color(0.25,0.8,0.55),0.95,9)
+ _add_light(Vector3(0,2.8,34),Color(0.08,0.65,0.65),1.2,11)
+ _add_light(Vector3(0,2.8,52),Color(0.9,0.035,0.02),1.45,11)
+ _add_light(Vector3(0,2.8,70),Color(0.85,0.58,0.28),1.1,10)
+ _add_light(Vector3(-11,2.8,27.5),Color(0.9,0.58,0.3),1.05,8)
+ _add_light(Vector3(-10.8,2.8,33),Color(0.95,0.3,0.08),1.15,8)
+ _add_light(Vector3(-10.5,2.8,40.5),Color(0.9,0.025,0.02),1.1,8)
+ _add_light(Vector3(0,2.8,88),Color(0.2,0.3,0.85),1.0,10)
+ _add_light(Vector3(0,2.8,112),Color(0.72,0.08,0.06),0.8,9)
+ _add_light(Vector3(0,2.8,124),Color(0.12,0.18,0.32),0.75,9)
 
 func _add_light(p: Vector3,c: Color,e: float,r: float) -> void:
  var light:=OmniLight3D.new()
@@ -301,7 +315,7 @@ func _add_light(p: Vector3,c: Color,e: float,r: float) -> void:
  light.light_color=c
  light.light_energy=e
  light.omni_range=r
- light.omni_attenuation=1.7
+ light.omni_attenuation=1.2
  add_child(light)
  _box("Lamp housing",Vector3(0.72,0.09,0.3),Vector3(p.x,3.08,p.z),metal_mat,false)
 
