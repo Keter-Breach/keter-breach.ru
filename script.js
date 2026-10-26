@@ -127,7 +127,7 @@ function renderChapter(chapNum) {
   if (data.is3D) { init3DMode(); return; }
 
   document.getElementById("chapter-title").textContent = data.title;
-  document.getElementById("current-location").textContent = data.location || "SCP Facility";
+  document.getElementById("current-location").textContent = data.location || "KETER Facility";
   document.getElementById("description").textContent = data.desc;
   document.getElementById("loop-count").textContent = `#${loopCount}`;
 
@@ -148,7 +148,7 @@ function generateKeycardTexture(levelStr, colorHex) {
   ctx.fillStyle = '#111'; ctx.fillRect(0, 20, 256, 30);
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 22px Courier New';
-  ctx.fillText("SCP SECURITY", 20, 85);
+  ctx.fillText("FACILITY SECURITY", 20, 85);
   ctx.font = 'bold 18px Courier New';
   ctx.fillText(`LEVEL ${levelStr}`, 20, 125);
   const tex = new THREE.CanvasTexture(canvas);
@@ -1282,7 +1282,7 @@ function build10ZonesMap() {
 
   // --- Лаборатория: столы, ёмкости с образцами ---
   addPointLight(10, 33, 0x33ff88);
-  addSign(['ЛАБОРАТОРИЯ', 'ИССЛЕДОВАНИЯ SCP'], 4.72, 2.75, 33, -Math.PI / 2, '#66ffaa');
+  addSign(['ЛАБОРАТОРИЯ', 'АНАЛИЗ НЕИЗВЕСТНОГО ОБРАЗЦА'], 4.72, 2.75, 33, -Math.PI / 2, '#9ba8a5');
   [30, 36].forEach(z => box(MAT.cab, 3, 0.9, 1, 8.5, 0.45, z, true));
   [29, 33, 37].forEach(z => {
     const t = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 2.5, 16), MAT.tank); t.position.set(13.8, 1.25, z); solid(t);
@@ -1358,7 +1358,7 @@ function build10ZonesMap() {
     box(new THREE.MeshBasicMaterial({ color: 0xff3322 }), 0.08, 0.08, 0.08, -29.85, 1.7, z, false);
   }
   // Дальняя исследовательская галерея и вспомогательные отсеки делают комплекс глубже.
-  room(25, 70, 24, 24, 'ГАЛЕРЕЯ НАБЛЮДЕНИЯ', 'НЕ СМОТРЕТЬ В СТЕКЛО', 0x7c3f3f);
+  room(25, 70, 24, 24, 'ГАЛЕРЕЯ НАБЛЮДЕНИЯ', 'СТЕКЛО ПОВРЕЖДЕНО ИЗНУТРИ', 0x6a7778);
   for (let z = 62; z <= 78; z += 4) {
     box(MAT.cab, 2.8, 2.1, 0.35, 18.5, 1.05, z, true);
     box(MAT.glass, 0.08, 1.8, 2.8, 20.0, 1.15, z + 1.2, false);
@@ -1372,6 +1372,37 @@ function build10ZonesMap() {
   box(wallMaterial, 0.5, 3.2, 20, 13, 1.6, 38, true);
   box(wallMaterial, 18, 3.2, 0.5, -25, 1.6, 50, true);
   addSign(['ЗАПАСНОЙ МАРШРУТ', 'СЛУЖЕБНЫЙ КОРИДОР'], -6.5, 2.55, 86, 0, '#ffb45e');
+
+  // Дополнительные архитектурные детали: техпанели, напольные решётки и следы эвакуации.
+  const panelMat = new THREE.MeshStandardMaterial({ color: 0x202729, roughness: 0.88, metalness: 0.32 });
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0x485052, roughness: 0.76, metalness: 0.48 });
+  const warningMat = new THREE.MeshBasicMaterial({ color: 0x76251f });
+  [-1, 1].forEach(side => {
+    for (let z = 18; z <= 78; z += 12) {
+      box(panelMat, 0.08, 0.9, 1.4, side * 5.55, 1.65, z, false);
+      box(trimMat, 0.09, 0.035, 1.46, side * 5.55, 2.12, z, false);
+      box(warningMat, 0.025, 0.07, 0.12, side * 5.49, 1.45, z - 0.38, false);
+    }
+  });
+  for (let z = 22; z <= 82; z += 15) {
+    box(grateMat, 1.25, 0.025, 0.42, 0, 0.025, z, false);
+    for (let x = -0.52; x <= 0.53; x += 0.21) {
+      box(trimMat, 0.025, 0.012, 0.36, x, 0.041, z, false);
+    }
+  }
+  // Комната персонала: столы, брошенные папки и журнал последней смены.
+  room(-25, 88, 20, 18, 'КОМНАТА ПЕРСОНАЛА', 'СМЕНА НЕ ЗАВЕРШЕНА', 0x697a78);
+  box(MAT.cab, 3.2, 0.12, 1.25, -25, 0.82, 87, true);
+  box(MAT.cab, 0.12, 0.8, 0.12, -26.4, 0.4, 86.5, true);
+  box(MAT.cab, 0.12, 0.8, 0.12, -23.6, 0.4, 86.5, true);
+  box(MAT.bed, 0.7, 0.08, 0.95, -27.4, 0.42, 89, false);
+  box(MAT.bed, 0.7, 0.08, 0.95, -22.8, 0.42, 85.5, false);
+  addSign(['ЖУРНАЛ СМЕНЫ', 'ПОСЛЕДНЯЯ ЗАПИСЬ: 03:17'], -25, 2.55, 80.5, 0, '#b5c0bd');
+  for (let x = -34; x <= 34; x += 17) {
+    box(trimMat, 5.2, 0.07, 0.08, x, 2.92, 53, false);
+    box(panelMat, 1.3, 2.3, 0.12, x, 1.15, 52.2, false);
+    box(warningMat, 0.12, 0.12, 0.035, x - 0.42, 2.55, 52.1, false);
+  }
 }
 
 function spawnKeycard(x, y, z, level, colorHex, type) {
@@ -1482,46 +1513,13 @@ let apparitionFired = false;
 let apparitionCueFired = false;
 
 function createDistantApparition() {
-  if (!world) return;
-  const figure = new THREE.Group();
-  figure.name = "KETER_DistantApparition";
-
-  const shadowMat = new THREE.MeshStandardMaterial({
-    color: 0x050809, roughness: 1, metalness: 0,
-    transparent: true, opacity: 0, depthWrite: false
-  });
-  const eyeMat = new THREE.MeshBasicMaterial({
-    color: 0xb9ffdf, transparent: true, opacity: 0,
-    blending: THREE.AdditiveBlending, depthWrite: false
-  });
-  const addPart = (geometry, material, x, y, z, rx = 0, ry = 0, rz = 0) => {
-    const part = new THREE.Mesh(geometry, material);
-    part.position.set(x, y, z);
-    part.rotation.set(rx, ry, rz);
-    part.castShadow = false;
-    part.receiveShadow = false;
-    figure.add(part);
-  };
-
-  // Incomplete human proportions make a readable silhouette without blocking movement.
-  addPart(new THREE.SphereGeometry(0.23, 8, 6), shadowMat, 0, 1.72, 0);
-  addPart(new THREE.BoxGeometry(0.52, 0.78, 0.25), shadowMat, 0, 1.12, 0);
-  addPart(new THREE.CylinderGeometry(0.075, 0.11, 0.72, 6), shadowMat, -0.24, 1.13, 0, 0, 0, -0.12);
-  addPart(new THREE.CylinderGeometry(0.075, 0.11, 0.72, 6), shadowMat, 0.24, 1.13, 0, 0, 0, 0.12);
-  addPart(new THREE.CylinderGeometry(0.09, 0.12, 0.78, 6), shadowMat, -0.13, 0.42, 0);
-  addPart(new THREE.CylinderGeometry(0.09, 0.12, 0.78, 6), shadowMat, 0.13, 0.42, 0);
-  addPart(new THREE.SphereGeometry(0.035, 6, 4), eyeMat, -0.085, 1.75, -0.205);
-  addPart(new THREE.SphereGeometry(0.035, 6, 4), eyeMat, 0.085, 1.75, -0.205);
-
-  figure.position.set(0, 0, 29);
-  figure.visible = false;
-  world.add(figure);
-  distantApparition = { group: figure, shadowMat, eyeMat };
+  // Временно отключены монстры и гуманоидные явления; атмосферу создают свет, звук и окружение.
+  distantApparition = null;
   apparitionClock = 0;
   apparitionFired = false;
   apparitionCueFired = false;
+  return;
 }
-
 function updateDistantApparition(delta, locked) {
   if (!distantApparition || !locked || apparitionFired) return;
   apparitionClock += delta;
