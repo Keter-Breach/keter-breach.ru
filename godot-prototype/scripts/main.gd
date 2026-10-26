@@ -677,7 +677,7 @@ func _update_intro_page() -> void:
 	var page: Dictionary = pages[intro_page]
 	header.text = str(page["header"])
 	text_label.text = str(page["text"])
-	button.text = "ВОЙТИ В КОМПЛЕКС  →" if intro_page == pages.size() - 1 else "ДАЛЕЕ  →"
+	button.text = "ПРОПУСТИТЬ ИНТРО  →"
 
 func _advance_intro() -> void:
 	# Kept as a safe fallback for any legacy button connection.
