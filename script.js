@@ -174,47 +174,94 @@ function dataTexture(size, draw) {
 // Procedural PBR detail maps: grayscale bump + roughness maps, kept separate
 // from the albedo texture so color noise never becomes exaggerated relief.
 function makeSurfaceMaps(kind) {
-  const bump = dataTexture(256, (g, size) => {
-    const base = kind === 'concrete' ? 116 : kind === 'steel' ? 132 : kind === 'paint' ? 124 : 120;
+  // Layered procedural PBR maps: broad stains, fine aggregate, scratches and edge wear.
+  // Keep these maps generated locally so the browser build has no external texture dependency.
+  const bump = dataTexture(512, (g, size) => {
+    const base = kind === 'concrete' ? 118 : kind === 'steel' ? 132 : kind === 'paint' ? 124 : 120;
     g.fillStyle = 'rgb(' + base + ',' + base + ',' + base + ')';
     g.fillRect(0, 0, size, size);
-    for (let i = 0; i < (kind === 'concrete' ? 1700 : 900); i++) {
-      const v = Math.max(0, Math.min(255, base + (Math.random() - 0.5) * (kind === 'concrete' ? 66 : 34)));
-      const a = kind === 'concrete' ? 0.22 : 0.16;
-      g.fillStyle = 'rgba(' + Math.round(v) + ',' + Math.round(v) + ',' + Math.round(v) + ',' + a + ')';
+
+    // Fine grain and pits at several scales.
+    for (let i = 0; i < (kind === 'concrete' ? 4200 : 2400); i++) {
+      const v = Math.max(0, Math.min(255, base + (Math.random() - 0.5) * (kind === 'concrete' ? 76 : 48)));
+      const alpha = kind === 'concrete' ? 0.18 : 0.13;
+      g.fillStyle = 'rgba(' + Math.round(v) + ',' + Math.round(v) + ',' + Math.round(v) + ',' + alpha + ')';
       const w = 1 + Math.random() * (kind === 'concrete' ? 4 : 2);
-      const h = kind === 'steel' ? 3 + Math.random() * 34 : 1 + Math.random() * 4;
-      const x = Math.random() * size, y = Math.random() * size;
-      g.fillRect(x, y, w, h);
+      const h = kind === 'steel' ? 4 + Math.random() * 42 : 1 + Math.random() * 4;
+      g.fillRect(Math.random() * size, Math.random() * size, w, h);
     }
+
+    // Cloudy discoloration and damp marks for plaster/concrete/paint.
     if (kind === 'concrete' || kind === 'paint') {
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 28; i++) {
         const x = Math.random() * size, y = Math.random() * size;
-        const r = 5 + Math.random() * 24;
-        const grad = g.createRadialGradient(x, y, 0, x, y, r);
-        grad.addColorStop(0, 'rgba(45,45,45,0.16)');
+        const rx = 8 + Math.random() * 54, ry = 6 + Math.random() * 38;
+        const grad = g.createRadialGradient(x, y, 0, x, y, Math.max(rx, ry));
+        grad.addColorStop(0, 'rgba(35,39,37,0.22)');
+        grad.addColorStop(0.62, 'rgba(65,68,64,0.09)');
         grad.addColorStop(1, 'rgba(190,190,190,0)');
-        g.fillStyle = grad; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+        g.fillStyle = grad;
+        g.save(); g.translate(x, y); g.scale(1, ry / Math.max(rx, ry));
+        g.beginPath(); g.arc(0, 0, Math.max(rx, ry), 0, Math.PI * 2); g.fill(); g.restore();
       }
     }
-    // Fine hairline scratches on steel, deliberately low contrast.
+
+    // Scratches, brushed metal grain, and occasional worn paint chips.
     if (kind === 'steel') {
-      g.lineWidth = 1;
-      for (let i = 0; i < 48; i++) {
+      for (let i = 0; i < 160; i++) {
         const x = Math.random() * size, y = Math.random() * size;
-        g.strokeStyle = Math.random() > 0.5 ? 'rgba(220,220,220,0.18)' : 'rgba(25,25,25,0.2)';
-        g.beginPath(); g.moveTo(x, y); g.lineTo(x + (Math.random() - 0.5) * 2, y + 8 + Math.random() * 48); g.stroke();
+        g.strokeStyle = Math.random() > 0.5 ? 'rgba(230,230,230,0.24)' : 'rgba(18,22,22,0.27)';
+        g.lineWidth = 0.5 + Math.random() * 1.5;
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + (Math.random() - 0.5) * 5, y + 8 + Math.random() * 70); g.stroke();
+      }
+      for (let i = 0; i < 30; i++) {
+        g.fillStyle = Math.random() > 0.5 ? 'rgba(115,65,32,0.3)' : 'rgba(15,19,20,0.3)';
+        g.fillRect(Math.random() * size, Math.random() * size, 2 + Math.random() * 8, 2 + Math.random() * 12);
+      }
+    } else if (kind === 'paint') {
+      for (let i = 0; i < 45; i++) {
+        const x = Math.random() * size, y = Math.random() * size;
+        g.fillStyle = Math.random() > 0.5 ? 'rgba(35,38,36,0.24)' : 'rgba(225,220,205,0.18)';
+        g.beginPath(); g.ellipse(x, y, 1 + Math.random() * 5, 1 + Math.random() * 3, Math.random(), 0, Math.PI * 2); g.fill();
+      }
+    }
+
+    // Fine cracks in concrete, with small branches.
+    if (kind === 'concrete') {
+      g.lineWidth = 0.8;
+      for (let i = 0; i < 24; i++) {
+        let x = Math.random() * size, y = Math.random() * size;
+        g.strokeStyle = Math.random() > 0.5 ? 'rgba(30,32,30,0.34)' : 'rgba(220,220,210,0.22)';
+        g.beginPath(); g.moveTo(x, y);
+        for (let k = 0; k < 7; k++) {
+          x += (Math.random() - 0.5) * 28;
+          y += 3 + Math.random() * 24;
+          g.lineTo(x, y);
+          if (k === 3 && Math.random() > 0.55) {
+            g.moveTo(x, y); g.lineTo(x + (Math.random() - 0.5) * 22, y + (Math.random() - 0.5) * 18); g.moveTo(x, y);
+          }
+        }
+        g.stroke();
       }
     }
   });
-  const roughness = dataTexture(128, (g, size) => {
-    const base = kind === 'steel' ? 145 : kind === 'paint' ? 188 : 205;
+
+  const roughness = dataTexture(256, (g, size) => {
+    const base = kind === 'steel' ? 142 : kind === 'paint' ? 184 : 204;
     g.fillStyle = 'rgb(' + base + ',' + base + ',' + base + ')';
     g.fillRect(0, 0, size, size);
-    for (let i = 0; i < 320; i++) {
-      const v = Math.max(0, Math.min(255, base + (Math.random() - 0.5) * 54));
-      g.fillStyle = 'rgba(' + Math.round(v) + ',' + Math.round(v) + ',' + Math.round(v) + ',0.22)';
-      g.fillRect(Math.random() * size, Math.random() * size, 2 + Math.random() * 5, 2 + Math.random() * 5);
+    for (let i = 0; i < 1800; i++) {
+      const v = Math.max(0, Math.min(255, base + (Math.random() - 0.5) * 72));
+      g.fillStyle = 'rgba(' + Math.round(v) + ',' + Math.round(v) + ',' + Math.round(v) + ',' + (kind === 'steel' ? 0.18 : 0.22) + ')';
+      g.fillRect(Math.random() * size, Math.random() * size, 1 + Math.random() * 4, 1 + Math.random() * 4);
+    }
+    // Greasy hand marks and worn patches make roughness vary instead of looking uniformly plastic.
+    for (let i = 0; i < 22; i++) {
+      const x = Math.random() * size, y = Math.random() * size, r = 3 + Math.random() * 18;
+      const grad = g.createRadialGradient(x, y, 0, x, y, r);
+      grad.addColorStop(0, 'rgba(30,30,30,0.22)');
+      grad.addColorStop(1, 'rgba(220,220,220,0)');
+      g.fillStyle = grad; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
     }
   });
   return { bump, roughness };
@@ -775,6 +822,57 @@ function init3DMode() {
     for (let k = 0; k < 7; k++) {
       box(edgeMat, 0.065, 0.035, 0.91, 4.66, 2.02 + k * 0.075, z, false);
     }
+  });
+
+  // --- Новый слой интерьерных объектов: лабораторные приборы, медоборудование и сервисные шкафы ---
+  const panelMat = new THREE.MeshStandardMaterial({ color: 0x343d40, roughness: 0.68, metalness: 0.42 });
+  const rubberMat = new THREE.MeshStandardMaterial({ color: 0x171b1c, roughness: 0.96, metalness: 0.02 });
+  const screenMat = new THREE.MeshStandardMaterial({ color: 0x142923, roughness: 0.35, metalness: 0.12, emissive: 0x0b3829, emissiveIntensity: 0.55 });
+  const ceramicMat = new THREE.MeshStandardMaterial({ color: 0x9ca6a3, roughness: 0.7, metalness: 0.05 });
+
+  // Lab bench: reagent holders, a sealed sample case, and a low-profile monitor.
+  box(panelMat, 0.12, 0.82, 1.15, 8.15, 1.35, 20.5, false);
+  box(screenMat, 0.045, 0.38, 0.66, 8.07, 1.65, 20.5, false);
+  box(rubberMat, 0.42, 0.035, 0.32, 7.8, 0.94, 20.1, false);
+  for (let i = 0; i < 4; i++) {
+    const vial = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.26, 10), i % 2 ? MAT.glass : ceramicMat);
+    vial.position.set(6.6 + i * 0.22, 0.9, 20.2);
+    world.add(vial);
+    box(edgeMat, 0.08, 0.035, 0.08, 6.6 + i * 0.22, 1.05, 20.2, false);
+  }
+
+  // Medical station: monitor arm, instrument trolley, and folded supply trays.
+  box(panelMat, 0.65, 0.08, 0.42, 13.2, 0.72, 15.5, false);
+  box(screenMat, 0.045, 0.36, 0.52, 13.18, 0.98, 15.5, false);
+  box(trimMat, 0.48, 0.045, 0.36, 13.2, 0.46, 15.5, false);
+  [13.0, 13.4].forEach(x => {
+    box(edgeMat, 0.035, 0.42, 0.035, x, 0.23, 15.5, false);
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.035, 10), rubberMat);
+    wheel.rotation.z = Math.PI / 2; wheel.position.set(x, 0.07, 15.5); world.add(wheel);
+  });
+
+  // Server aisle: recessed-looking service doors and small status indicators.
+  [-1, 1].forEach(side => {
+    for (let i = 0; i < 4; i++) {
+      const x = side * 4.1;
+      const z = 29.2 + i * 3;
+      box(panelMat, 0.035, 1.15, 0.55, x + side * 0.63, 1.45, z, false);
+      box(screenMat, 0.018, 0.18, 0.34, x + side * 0.65, 1.68, z, false);
+      for (let k = 0; k < 3; k++) {
+        box(k === 1 ? new THREE.MeshBasicMaterial({color:0xb44a2c}) : new THREE.MeshBasicMaterial({color:0x3aa982}),
+          0.022, 0.035, 0.035, x + side * 0.67, 1.42 - k * 0.09, z - 0.19, false);
+      }
+    }
+  });
+
+  // Containment cells: reinforced door frames, hinges and low warning beacons.
+  [-1, 1].forEach(side => {
+    [46.5, 51.5, 57].forEach(z => {
+      box(trimMat, 0.14, 2.85, 0.16, side * 10.92, 1.42, z - 1.25, false);
+      box(trimMat, 0.14, 2.85, 0.16, side * 10.92, 1.42, z + 1.25, false);
+      box(edgeMat, 0.16, 0.12, 2.66, side * 10.92, 2.88, z, false);
+      box(new THREE.MeshBasicMaterial({color:0xd09b36}), 0.055, 0.055, 0.055, side * 10.8, 2.65, z - 1.0, false);
+    });
   });
 }
 
