@@ -201,6 +201,7 @@ func _build_props() -> void:
  for z in [6.5,9.5,13.0]: _box("Medical bed",Vector3(0.9,0.5,2),Vector3(13.8,0.35,z),_mat(Color(0.24,0.26,0.25)))
  _box("Medical supply crate",Vector3(1,1,1),Vector3(7,0.5,14.5),metal_mat)
  _box("Battery visual",Vector3(0.22,0.28,0.16),Vector3(7,1.15,14.5),_mat(Color(0.1,0.55,0.3)),false)
+ _add_interaction("battery_pack",Vector3(7,1.1,14.5),Vector3(1.5,1.5,1.5),"Запасная батарея")
  for side in [-1.0,1.0]:
   for z in [28.0,31.0,34.0,37.0]:
    _box("Server rack",Vector3(1.2,2.4,0.8),Vector3(side*4.1,1.2,z),metal_mat)
