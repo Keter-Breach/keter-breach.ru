@@ -27,6 +27,7 @@
       "textures/**/*",
       "audio/**/*",
       "desktop/**/*",
+      "node_modules/three/build/three.min.js",
       "package.json"
     ],
     "win": {
@@ -45,5 +46,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }
+  },
+  "dependencies": {
+    "three": "0.128.0"
   }
 }
