@@ -15,7 +15,7 @@ const [html, script, css] = await Promise.all([
 
 assert.match(html, /id="text-game"/, "story/menu container should exist");
 assert.match(html, /id="three-container"/, "3D container should exist");
-assert.match(html, /src="script\.js"/, "page should load the game script");
+assert.match(html, /gameScript\.src = "\.\/script\.js"/, "page should load the game script after Three.js is ready");
 assert.match(html, /loadThree\("\.\/node_modules\/three\/build\/three\.min\.js", function \(\)/, "desktop build should prefer the bundled local Three.js runtime");
 assert.match(html, /loadThree\("https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.128\.0\/build\/three\.min\.js", showError\)/, "browser deployment should fall back to a version-pinned Three.js CDN when node_modules is not published");
 assert.match(html, /threeScript\.onload = loadGame/, "game script must load only after Three.js is ready");
