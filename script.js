@@ -768,6 +768,7 @@ function init3DMode() {
   world = new THREE.Group();
   scene.add(world);
   build10ZonesMap();
+  createDistantApparition();
 
   battery = 100; flashlightOn = true; flashlight.intensity = 5.0;
   if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0.3;
@@ -1388,6 +1389,80 @@ function collides(x, z) {
   return false;
 }
 
+// One scripted apparition: a low-poly silhouette that fades in and out down the main corridor.
+let distantApparition = null;
+let apparitionClock = 0;
+let apparitionFired = false;
+let apparitionCueFired = false;
+
+function createDistantApparition() {
+  if (!world) return;
+  const figure = new THREE.Group();
+  figure.name = "KETER_DistantApparition";
+
+  const shadowMat = new THREE.MeshStandardMaterial({
+    color: 0x050809, roughness: 1, metalness: 0,
+    transparent: true, opacity: 0, depthWrite: false
+  });
+  const eyeMat = new THREE.MeshBasicMaterial({
+    color: 0xb9ffdf, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  const addPart = (geometry, material, x, y, z, rx = 0, ry = 0, rz = 0) => {
+    const part = new THREE.Mesh(geometry, material);
+    part.position.set(x, y, z);
+    part.rotation.set(rx, ry, rz);
+    part.castShadow = false;
+    part.receiveShadow = false;
+    figure.add(part);
+  };
+
+  // Incomplete human proportions make a readable silhouette without blocking movement.
+  addPart(new THREE.SphereGeometry(0.23, 8, 6), shadowMat, 0, 1.72, 0);
+  addPart(new THREE.BoxGeometry(0.52, 0.78, 0.25), shadowMat, 0, 1.12, 0);
+  addPart(new THREE.CylinderGeometry(0.075, 0.11, 0.72, 6), shadowMat, -0.24, 1.13, 0, 0, 0, -0.12);
+  addPart(new THREE.CylinderGeometry(0.075, 0.11, 0.72, 6), shadowMat, 0.24, 1.13, 0, 0, 0, 0.12);
+  addPart(new THREE.CylinderGeometry(0.09, 0.12, 0.78, 6), shadowMat, -0.13, 0.42, 0);
+  addPart(new THREE.CylinderGeometry(0.09, 0.12, 0.78, 6), shadowMat, 0.13, 0.42, 0);
+  addPart(new THREE.SphereGeometry(0.035, 6, 4), eyeMat, -0.085, 1.75, -0.205);
+  addPart(new THREE.SphereGeometry(0.035, 6, 4), eyeMat, 0.085, 1.75, -0.205);
+
+  figure.position.set(0, 0, 29);
+  figure.visible = false;
+  world.add(figure);
+  distantApparition = { group: figure, shadowMat, eyeMat };
+  apparitionClock = 0;
+  apparitionFired = false;
+  apparitionCueFired = false;
+}
+
+function updateDistantApparition(delta, locked) {
+  if (!distantApparition || !locked || apparitionFired) return;
+  apparitionClock += delta;
+  if (apparitionClock < 18) return;
+
+  const elapsed = apparitionClock - 18;
+  const fadeIn = Math.min(1, elapsed / 1.4);
+  const fadeOut = Math.max(0, 1 - Math.max(0, elapsed - 3.4) / 1.8);
+  const opacity = Math.min(fadeIn, fadeOut) * 0.82;
+  distantApparition.group.visible = opacity > 0.015;
+  distantApparition.shadowMat.opacity = opacity;
+  distantApparition.eyeMat.opacity = Math.min(1, opacity * 1.7);
+
+  if (elapsed < 1.5) {
+    distantApparition.group.position.x = Math.sin(elapsed * 1.7) * 0.045;
+  }
+  if (!apparitionCueFired && elapsed >= 0.05) {
+    apparitionCueFired = true;
+    showToast("ДВИЖЕНИЕ ЗАФИКСИРОВАНО В КОРИДОРЕ...", 4200);
+    playSound("deny");
+  }
+  if (elapsed >= 5.2) {
+    distantApparition.group.visible = false;
+    apparitionFired = true;
+  }
+}
+
 function animate3D() {
   if (document.getElementById("three-container").classList.contains("hidden")) return;
   requestAnimationFrame(animate3D);
@@ -1478,6 +1553,8 @@ function animate3D() {
       else if (s > 0) stepReady = true;
     }
   }
+
+  updateDistantApparition(delta, locked);
 
   // Сюжетные ивенты: каждый триггер срабатывает только один раз за запуск.
   if (locked && eventTriggers.length) {
