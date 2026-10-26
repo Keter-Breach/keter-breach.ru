@@ -283,6 +283,36 @@ func _build_props() -> void:
  for p in [Vector3(-1.75,0.018,18.6),Vector3(1.65,0.018,47.2),Vector3(-2.15,0.018,56.8),Vector3(1.8,0.018,66.1)]:
   _box("Dried blood trace",Vector3(1.5,0.012,0.85),p,_mat(Color(0.12,0.012,0.016),0.0,0.98),false)
 
+func _build_detail_pass() -> void:
+ var pipe_mat := _mat(Color(0.28, 0.33, 0.34), 0.68, 0.42)
+ var panel_mat := _mat(Color(0.12, 0.16, 0.18), 0.52, 0.38)
+ var screen_mat := _mat(Color(0.035, 0.20, 0.18), 0.15, 0.28)
+ var hazard_mat := _mat(Color(0.92, 0.48, 0.035), 0.12, 0.58)
+ var lamp_mat := _mat(Color(0.72, 0.84, 0.88), 0.08, 0.22)
+ lamp_mat.emission_enabled = true
+ lamp_mat.emission = Color(0.35, 0.62, 0.78)
+ lamp_mat.emission_energy_multiplier = 0.8
+ for z in range(-2, 106, 6):
+  _box("Ceiling light diffuser", Vector3(1.25, 0.035, 0.48), Vector3(0, 3.17, z), lamp_mat, false)
+  _box("Ceiling service tray", Vector3(0.16, 0.12, 5.4), Vector3(2.35, 3.03, z + 2.6), pipe_mat, false)
+  _box("Left service conduit", Vector3(0.09, 0.09, 5.4), Vector3(-2.67, 2.82, z + 2.6), pipe_mat, false)
+  _box("Right service conduit", Vector3(0.09, 0.09, 5.4), Vector3(2.67, 2.82, z + 2.6), pipe_mat, false)
+  if z >= 4:
+   _box("Yellow floor safety dash", Vector3(0.12, 0.018, 1.0), Vector3(-2.42, 0.018, z), hazard_mat, false)
+   _box("Yellow floor safety dash", Vector3(0.12, 0.018, 1.0), Vector3(2.42, 0.018, z), hazard_mat, false)
+ for p in [Vector3(-2.68, 1.65, 10), Vector3(2.68, 1.65, 14), Vector3(-2.68, 1.65, 45), Vector3(2.68, 1.65, 67), Vector3(-2.68, 1.65, 91)]:
+  _box("Wall electrical cabinet", Vector3(0.16, 0.82, 0.62), p, panel_mat, false)
+  _box("Cabinet status display", Vector3(0.035, 0.16, 0.28), p + Vector3(0.095, 0.16, 0), screen_mat, false)
+  _box("Cabinet warning light", Vector3(0.04, 0.055, 0.055), p + Vector3(0.1, -0.2, -0.18), red_mat, false)
+ for z in [28.0, 31.0, 34.0, 37.0]:
+  for side in [-1.0, 1.0]:
+   _box("Server rack ventilation", Vector3(0.78, 0.055, 0.025), Vector3(side * 4.1, 1.45, z - 0.22), pipe_mat, false)
+   for row in range(3):
+    _box("Server rack activity LED", Vector3(0.055, 0.035, 0.025), Vector3(side * 3.72, 1.78 - row * 0.12, z - 0.42), screen_mat if row != 1 else red_mat, false)
+ for z in [29.0, 33.0, 37.0]:
+  _cylinder("Sample tank upper collar", 0.69, 0.10, Vector3(13.8, 2.52, z), pipe_mat, false)
+  _cylinder("Sample tank lower collar", 0.69, 0.10, Vector3(13.8, 0.08, z), pipe_mat, false)
+
 func _door_frame(z: float, code: String) -> void:
  # Contrasting physical frame makes the shutter readable even in low light.
  var frame_mat := _mat(Color(0.36, 0.39, 0.40), 0.72, 0.38)
