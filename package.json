@@ -2,8 +2,48 @@
   "name": "project-keter",
   "version": "1.0.0",
   "private": true,
-  "description": "Browser-based VHS survival horror prototype",
+  "description": "PROJECT: KETER — VHS survival horror",
+  "main": "desktop/main.cjs",
   "scripts": {
-    "test": "node scripts/smoke-check.mjs"
+    "test": "node scripts/smoke-check.mjs",
+    "desktop:start": "electron .",
+    "desktop:win": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "ru.keterbreach.projectketer",
+    "productName": "PROJECT KETER",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "script.js",
+      "style.css",
+      "menu-background.svg",
+      "textures/**/*",
+      "audio/**/*",
+      "desktop/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

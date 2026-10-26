@@ -158,6 +158,7 @@ function generateKeycardTexture(levelStr, colorHex) {
 
 // === 2b. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ (рисуются на canvas, внешние файлы не нужны) ===
 let MAT = null, dust = null, flickers = [];
+let emergencyPulse = null;
 const rnd = Math.random;
 
 function dataTexture(size, draw) {
@@ -174,47 +175,94 @@ function dataTexture(size, draw) {
 // Procedural PBR detail maps: grayscale bump + roughness maps, kept separate
 // from the albedo texture so color noise never becomes exaggerated relief.
 function makeSurfaceMaps(kind) {
-  const bump = dataTexture(256, (g, size) => {
-    const base = kind === 'concrete' ? 116 : kind === 'steel' ? 132 : kind === 'paint' ? 124 : 120;
+  // Layered procedural PBR maps: broad stains, fine aggregate, scratches and edge wear.
+  // Keep these maps generated locally so the browser build has no external texture dependency.
+  const bump = dataTexture(512, (g, size) => {
+    const base = kind === 'concrete' ? 118 : kind === 'steel' ? 132 : kind === 'paint' ? 124 : 120;
     g.fillStyle = 'rgb(' + base + ',' + base + ',' + base + ')';
     g.fillRect(0, 0, size, size);
-    for (let i = 0; i < (kind === 'concrete' ? 1700 : 900); i++) {
-      const v = Math.max(0, Math.min(255, base + (Math.random() - 0.5) * (kind === 'concrete' ? 66 : 34)));
-      const a = kind === 'concrete' ? 0.22 : 0.16;
-      g.fillStyle = 'rgba(' + Math.round(v) + ',' + Math.round(v) + ',' + Math.round(v) + ',' + a + ')';
+
+    // Fine grain and pits at several scales.
+    for (let i = 0; i < (kind === 'concrete' ? 4200 : 2400); i++) {
+      const v = Math.max(0, Math.min(255, base + (Math.random() - 0.5) * (kind === 'concrete' ? 76 : 48)));
+      const alpha = kind === 'concrete' ? 0.18 : 0.13;
+      g.fillStyle = 'rgba(' + Math.round(v) + ',' + Math.round(v) + ',' + Math.round(v) + ',' + alpha + ')';
       const w = 1 + Math.random() * (kind === 'concrete' ? 4 : 2);
-      const h = kind === 'steel' ? 3 + Math.random() * 34 : 1 + Math.random() * 4;
-      const x = Math.random() * size, y = Math.random() * size;
-      g.fillRect(x, y, w, h);
+      const h = kind === 'steel' ? 4 + Math.random() * 42 : 1 + Math.random() * 4;
+      g.fillRect(Math.random() * size, Math.random() * size, w, h);
     }
+
+    // Cloudy discoloration and damp marks for plaster/concrete/paint.
     if (kind === 'concrete' || kind === 'paint') {
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 28; i++) {
         const x = Math.random() * size, y = Math.random() * size;
-        const r = 5 + Math.random() * 24;
-        const grad = g.createRadialGradient(x, y, 0, x, y, r);
-        grad.addColorStop(0, 'rgba(45,45,45,0.16)');
+        const rx = 8 + Math.random() * 54, ry = 6 + Math.random() * 38;
+        const grad = g.createRadialGradient(x, y, 0, x, y, Math.max(rx, ry));
+        grad.addColorStop(0, 'rgba(35,39,37,0.22)');
+        grad.addColorStop(0.62, 'rgba(65,68,64,0.09)');
         grad.addColorStop(1, 'rgba(190,190,190,0)');
-        g.fillStyle = grad; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+        g.fillStyle = grad;
+        g.save(); g.translate(x, y); g.scale(1, ry / Math.max(rx, ry));
+        g.beginPath(); g.arc(0, 0, Math.max(rx, ry), 0, Math.PI * 2); g.fill(); g.restore();
       }
     }
-    // Fine hairline scratches on steel, deliberately low contrast.
+
+    // Scratches, brushed metal grain, and occasional worn paint chips.
     if (kind === 'steel') {
-      g.lineWidth = 1;
-      for (let i = 0; i < 48; i++) {
+      for (let i = 0; i < 160; i++) {
         const x = Math.random() * size, y = Math.random() * size;
-        g.strokeStyle = Math.random() > 0.5 ? 'rgba(220,220,220,0.18)' : 'rgba(25,25,25,0.2)';
-        g.beginPath(); g.moveTo(x, y); g.lineTo(x + (Math.random() - 0.5) * 2, y + 8 + Math.random() * 48); g.stroke();
+        g.strokeStyle = Math.random() > 0.5 ? 'rgba(230,230,230,0.24)' : 'rgba(18,22,22,0.27)';
+        g.lineWidth = 0.5 + Math.random() * 1.5;
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + (Math.random() - 0.5) * 5, y + 8 + Math.random() * 70); g.stroke();
+      }
+      for (let i = 0; i < 30; i++) {
+        g.fillStyle = Math.random() > 0.5 ? 'rgba(115,65,32,0.3)' : 'rgba(15,19,20,0.3)';
+        g.fillRect(Math.random() * size, Math.random() * size, 2 + Math.random() * 8, 2 + Math.random() * 12);
+      }
+    } else if (kind === 'paint') {
+      for (let i = 0; i < 45; i++) {
+        const x = Math.random() * size, y = Math.random() * size;
+        g.fillStyle = Math.random() > 0.5 ? 'rgba(35,38,36,0.24)' : 'rgba(225,220,205,0.18)';
+        g.beginPath(); g.ellipse(x, y, 1 + Math.random() * 5, 1 + Math.random() * 3, Math.random(), 0, Math.PI * 2); g.fill();
+      }
+    }
+
+    // Fine cracks in concrete, with small branches.
+    if (kind === 'concrete') {
+      g.lineWidth = 0.8;
+      for (let i = 0; i < 24; i++) {
+        let x = Math.random() * size, y = Math.random() * size;
+        g.strokeStyle = Math.random() > 0.5 ? 'rgba(30,32,30,0.34)' : 'rgba(220,220,210,0.22)';
+        g.beginPath(); g.moveTo(x, y);
+        for (let k = 0; k < 7; k++) {
+          x += (Math.random() - 0.5) * 28;
+          y += 3 + Math.random() * 24;
+          g.lineTo(x, y);
+          if (k === 3 && Math.random() > 0.55) {
+            g.moveTo(x, y); g.lineTo(x + (Math.random() - 0.5) * 22, y + (Math.random() - 0.5) * 18); g.moveTo(x, y);
+          }
+        }
+        g.stroke();
       }
     }
   });
-  const roughness = dataTexture(128, (g, size) => {
-    const base = kind === 'steel' ? 145 : kind === 'paint' ? 188 : 205;
+
+  const roughness = dataTexture(256, (g, size) => {
+    const base = kind === 'steel' ? 142 : kind === 'paint' ? 184 : 204;
     g.fillStyle = 'rgb(' + base + ',' + base + ',' + base + ')';
     g.fillRect(0, 0, size, size);
-    for (let i = 0; i < 320; i++) {
-      const v = Math.max(0, Math.min(255, base + (Math.random() - 0.5) * 54));
-      g.fillStyle = 'rgba(' + Math.round(v) + ',' + Math.round(v) + ',' + Math.round(v) + ',0.22)';
-      g.fillRect(Math.random() * size, Math.random() * size, 2 + Math.random() * 5, 2 + Math.random() * 5);
+    for (let i = 0; i < 1800; i++) {
+      const v = Math.max(0, Math.min(255, base + (Math.random() - 0.5) * 72));
+      g.fillStyle = 'rgba(' + Math.round(v) + ',' + Math.round(v) + ',' + Math.round(v) + ',' + (kind === 'steel' ? 0.18 : 0.22) + ')';
+      g.fillRect(Math.random() * size, Math.random() * size, 1 + Math.random() * 4, 1 + Math.random() * 4);
+    }
+    // Greasy hand marks and worn patches make roughness vary instead of looking uniformly plastic.
+    for (let i = 0; i < 22; i++) {
+      const x = Math.random() * size, y = Math.random() * size, r = 3 + Math.random() * 18;
+      const grad = g.createRadialGradient(x, y, 0, x, y, r);
+      grad.addColorStop(0, 'rgba(30,30,30,0.22)');
+      grad.addColorStop(1, 'rgba(220,220,220,0)');
+      g.fillStyle = grad; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
     }
   });
   return { bump, roughness };
@@ -253,9 +301,78 @@ function cracks(g, s, n) {
   }
 }
 
+/**
+ * Lightweight procedural grime layer. All maps are generated locally at 256-512px,
+ * so the scene needs no extra downloads and has no third-party texture licensing burden.
+ */
+function distressSurface(g, s, kind) {
+  // Dusty, uneven mottling with no large repeated circular blobs.
+  const grimeCount = kind === 'concrete' ? 48 : 30;
+  for (let i = 0; i < grimeCount; i++) {
+    const x = rnd() * s, y = rnd() * s;
+    const rx = s * (0.012 + rnd() * 0.045), ry = s * (0.008 + rnd() * 0.035);
+    const gr = g.createRadialGradient(x, y, 0, x, y, Math.max(rx, ry));
+    gr.addColorStop(0, kind === 'metal' || kind === 'door'
+      ? 'rgba(65,24,8,0.36)' : 'rgba(8,9,8,0.34)');
+    gr.addColorStop(0.58, kind === 'metal' || kind === 'door'
+      ? 'rgba(83,37,13,0.18)' : 'rgba(10,12,11,0.17)');
+    gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr;
+    g.save(); g.translate(x, y); g.scale(1, ry / Math.max(rx, ry)); g.beginPath();
+    g.arc(0, 0, Math.max(rx, ry), 0, Math.PI * 2); g.fill(); g.restore();
+  }
+
+  // Rust: concentrated near seams and edges on painted/metal surfaces.
+  if (kind === 'metal' || kind === 'door' || kind === 'rack' || kind === 'cab') {
+    for (let i = 0; i < 18; i++) {
+      const x = rnd() * s, y = rnd() * s, len = s * (0.025 + rnd() * 0.14);
+      g.strokeStyle = ['rgba(112,48,15,0.62)','rgba(150,65,20,0.42)','rgba(49,25,13,0.55)'][i % 3];
+      g.lineWidth = 1 + rnd() * (kind === 'metal' ? 5 : 3);
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + (rnd() - 0.5) * 7, Math.min(s, y + len)); g.stroke();
+      g.fillStyle = 'rgba(128,55,18,0.25)';
+      g.fillRect(Math.max(0, x - 2), Math.max(0, y - 2), 3 + rnd() * 5, 4 + rnd() * 12);
+    }
+  }
+
+  // Dark dried blood smears and thin downward runs, deliberately restrained.
+  if (kind !== 'rack') {
+    for (let i = 0; i < (kind === 'concrete' ? 8 : 4); i++) {
+      const x = rnd() * s, y = s * (0.12 + rnd() * 0.72);
+      const len = s * (0.025 + rnd() * 0.12);
+      g.strokeStyle = ['rgba(72,5,8,0.48)','rgba(103,10,13,0.34)','rgba(35,3,5,0.46)'][i % 3];
+      g.lineWidth = 1 + rnd() * (kind === 'concrete' ? 5 : 3);
+      g.beginPath(); g.moveTo(x, y); g.bezierCurveTo(x + 2, y + len * .25, x - 2, y + len * .7, x + (rnd() - .5) * 4, Math.min(s, y + len)); g.stroke();
+      g.fillStyle = 'rgba(63,4,8,0.24)';
+      g.beginPath(); g.ellipse(x, y, 3 + rnd() * 8, 2 + rnd() * 5, rnd(), 0, Math.PI * 2); g.fill();
+    }
+  }
+
+  if (kind === 'concrete' || kind === 'door') {
+    // Hairline fractures with short branches, plus chipped plaster at edges.
+    g.strokeStyle = 'rgba(12,13,12,0.72)'; g.lineWidth = 1;
+    for (let i = 0; i < (kind === 'concrete' ? 10 : 5); i++) {
+      let x = rnd() * s, y = rnd() * s;
+      g.beginPath(); g.moveTo(x, y);
+      for (let k = 0; k < 5; k++) {
+        x += (rnd() - .5) * 22; y += (rnd() - .5) * 26;
+        g.lineTo(x, y);
+        if (k === 2 && rnd() > .45) {
+          g.moveTo(x, y); g.lineTo(x + (rnd() - .5) * 24, y + (rnd() - .5) * 20);
+          g.moveTo(x, y);
+        }
+      }
+      g.stroke();
+    }
+    g.fillStyle = 'rgba(12,12,11,0.28)';
+    g.fillRect(0, s * .88, s, s * .12);
+    g.fillStyle = 'rgba(150,145,130,0.08)';
+    for (let i = 0; i < 12; i++) g.fillRect(rnd() * s, rnd() * s, 2 + rnd() * 8, 1 + rnd() * 4);
+  }
+}
+
 const TEX = {
   concrete: () => canvasTex(512, (g, s) => {
-    fillBg(g, s, '#45494a'); speckle(g, s, 650, 0.035);
+    fillBg(g, s, '#393b39'); speckle(g, s, 650, 0.035); distressSurface(g, s, 'concrete');
     // Ровные бетонные панели вместо больших радиальных пятен, которые на стенах
     // выглядели как повторяющиеся белые круги при близкой раскладке UV.
     g.strokeStyle = 'rgba(15,18,18,0.22)'; g.lineWidth = 2;
@@ -273,14 +390,14 @@ const TEX = {
       g.fillStyle = '#15171a';
       [[14, 14], [p - 14, 14], [14, p - 14], [p - 14, p - 14]].forEach(([a, b]) => { g.beginPath(); g.arc(x + a, y + b, 4, 0, 7); g.fill(); });
     }
-    speckle(g, s, 650, 0.06);
+    speckle(g, s, 650, 0.06); distressSurface(g, s, 'metal');
     g.strokeStyle = 'rgba(255,255,255,0.1)';
     for (let i = 0; i < 14; i++) { const x = rnd() * s, y = rnd() * s; g.beginPath(); g.moveTo(x, y); g.lineTo(x + rnd() * 40 - 20, y + rnd() * 40 - 20); g.stroke(); }
   }),
   door: () => canvasTex(256, (g, s) => {
     fillBg(g, s, '#4a5750'); g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 4; g.strokeRect(24, 24, s - 48, s - 48);
     g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = 2; g.strokeRect(28, 28, s - 56, s - 56);
-    speckle(g, s, 700, 0.07); stains(g, s, 3, 'rgba(20,10,0,0.24)');
+    speckle(g, s, 700, 0.07); stains(g, s, 3, 'rgba(20,10,0,0.24)'); distressSurface(g, s, 'door');
     g.fillStyle = '#d9a400'; g.fillRect(0, s - 14, s, 8);
   }),
   wood: () => canvasTex(256, (g, s) => {
@@ -290,6 +407,7 @@ const TEX = {
       const x = rnd() * s; g.beginPath(); g.moveTo(x, 0); g.bezierCurveTo(x + rnd() * 14 - 7, s / 3, x + rnd() * 14 - 7, 2 * s / 3, x, s); g.stroke();
     }
     speckle(g, s, 1500, 0.25);
+    distressSurface(g, s, 'concrete');
   }),
   rack: () => canvasTex(256, (g, s) => {
     fillBg(g, s, '#1f2327');
@@ -298,7 +416,7 @@ const TEX = {
       for (let x = 22; x < s - 40; x += 7) { g.fillStyle = 'rgba(255,255,255,0.07)'; g.fillRect(x, y + 4, 3, 14); }
       g.fillStyle = rnd() < 0.5 ? '#0f0' : '#f80'; g.fillRect(s - 30, y + 8, 6, 6);
     }
-    speckle(g, s, 2000, 0.3);
+    speckle(g, s, 2000, 0.3); distressSurface(g, s, 'rack');
   }),
   cab: () => canvasTex(512, (g, s) => {
     // Сталь лифта: спокойная базовая поверхность, мелкие потёртости вместо
@@ -322,7 +440,7 @@ const TEX = {
       g.beginPath(); g.moveTo(x, y); g.lineTo(x + (rnd() - 0.5) * 3, Math.min(s, y + h)); g.stroke();
     }
     // Редкие пятна влаги и следы эксплуатации.
-    stains(g, s, 2, 'rgba(8,12,14,0.24)');
+    stains(g, s, 2, 'rgba(8,12,14,0.24)'); distressSurface(g, s, 'cab');
     speckle(g, s, 220, 0.035);
     // Технические панели и крепёж.
     g.fillStyle = 'rgba(0,0,0,0.25)';
@@ -336,7 +454,7 @@ const TEX = {
     fillBg(g, s, '#aeb6b4');
     for (let y = 0; y < s; y += 4) { g.fillStyle = 'rgba(0,0,0,0.05)'; g.fillRect(0, y, s, 1); }
     g.fillStyle = 'rgba(40,80,130,0.5)'; g.fillRect(0, s * 0.4, s, 16);
-    speckle(g, s, 2500, 0.25); stains(g, s, 3, 'rgba(120,20,15,0.3)');
+    speckle(g, s, 1800, 0.20); stains(g, s, 3, 'rgba(120,20,15,0.3)'); distressSurface(g, s, 'cloth');
   }),
   statue: () => canvasTex(256, (g, s) => { // SCP-173: бетон с потёками краски
     fillBg(g, s, '#8b8576'); speckle(g, s, 6000, 0.4);
@@ -358,7 +476,7 @@ const TEX = {
   ceil: () => canvasTex(256, (g, s) => {
     fillBg(g, s, '#23272b'); g.strokeStyle = 'rgba(0,0,0,0.7)'; g.lineWidth = 4; g.strokeRect(0, 0, s, s);
     g.strokeStyle = 'rgba(255,255,255,0.06)'; g.lineWidth = 2; g.strokeRect(6, 6, s - 12, s - 12);
-    speckle(g, s, 900, 0.08);
+    speckle(g, s, 900, 0.08); distressSurface(g, s, 'concrete');
   })
 };
 
@@ -392,9 +510,10 @@ function buildMaterials() {
   const M = (t, r, m = 0, detail = 'concrete', bumpScale = 0.035) => {
     const maps = makeSurfaceMaps(detail);
     return new THREE.MeshStandardMaterial({
-      map: t, roughness: r, metalness: m,
-      bumpMap: maps.bump, bumpScale,
-      roughnessMap: maps.roughness
+      map: t, roughness: Math.min(1, r), metalness: m,
+      bumpMap: maps.bump, bumpScale: bumpScale * 0.78,
+      roughnessMap: maps.roughness,
+      envMapIntensity: 0.32
     });
   };
   const fl = TEX.metal(); fl.repeat.set(18, 24);
@@ -465,7 +584,7 @@ function makeDust() { // мелкая пыль и редкие частицы в
 }
 
 // === 3. 3D ДВИЖОК ===
-let scene, camera, renderer, flashlight, world, hintEl, toastEl;
+let scene, camera, renderer, flashlight, world, hintEl, toastEl, firstPersonRig;
 let initialized = false;
 let flashlightOn = true, battery = 100;
 let lowBatteryStaticPlayed = false;
@@ -478,6 +597,7 @@ let headBobTimer = 0, stepReady = true, toastTimer = null;
 
 let walls = [];            // { mesh, box } — боксы считаются один раз
 let interactiveItems = [];
+let eventTriggers = [];
 let doors = {};
 let openingDoors = [];     // двери в процессе анимации
 let wallMaterial, floorMaterial, doorMaterial, tableMaterial, serverMaterial;
@@ -491,6 +611,91 @@ function showToast(text, ms = 2500) {
   toastTimer = setTimeout(() => (toastEl.style.opacity = 0), ms);
 }
 
+// === Персонаж от первого лица: рукава SCP-охраны, броня и ручной фонарь ===
+function createFirstPersonRig() {
+  const rig = new THREE.Group();
+  rig.name = 'KETER_FirstPerson_SCP_Security_Rig';
+
+  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x20272a, roughness: 0.94, metalness: 0.04 });
+  const armorMat = new THREE.MeshStandardMaterial({ color: 0x111719, roughness: 0.78, metalness: 0.22 });
+  const gloveMat = new THREE.MeshStandardMaterial({ color: 0x090d0e, roughness: 0.98 });
+  const seamMatFP = new THREE.MeshStandardMaterial({ color: 0x414a4b, roughness: 0.86, metalness: 0.12 });
+  const patchMat = new THREE.MeshStandardMaterial({ color: 0x8b1d20, roughness: 0.9 });
+  const lensMat = new THREE.MeshStandardMaterial({ color: 0x9aa9a4, roughness: 0.25, metalness: 0.7, emissive: 0x15201d, emissiveIntensity: 0.3 });
+
+  const addBox = (w, h, d, mat, x, y, z, rz = 0) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    mesh.position.set(x, y, z);
+    mesh.rotation.z = rz;
+    mesh.frustumCulled = false;
+    rig.add(mesh);
+    return mesh;
+  };
+
+  // Forearms sit low in frame so they don't cover the crosshair or exploration view.
+  addBox(0.23, 0.31, 0.62, sleeveMat, -0.48, -0.53, -1.03, -0.22);
+  addBox(0.24, 0.31, 0.62, sleeveMat,  0.43, -0.54, -0.98,  0.18);
+
+  // Reinforced elbow / wrist plates and muted red unit patch.
+  addBox(0.245, 0.09, 0.24, armorMat, -0.48, -0.42, -0.91, -0.22);
+  addBox(0.255, 0.085, 0.23, armorMat,  0.43, -0.43, -0.88,  0.18);
+  addBox(0.09, 0.07, 0.012, patchMat, -0.48, -0.49, -0.713, -0.22);
+  addBox(0.25, 0.08, 0.13, seamMatFP, -0.48, -0.67, -1.18, -0.22);
+  addBox(0.25, 0.08, 0.13, seamMatFP,  0.43, -0.67, -1.12,  0.18);
+
+  // Gloves and knuckle guards.
+  addBox(0.22, 0.16, 0.22, gloveMat, -0.43, -0.62, -1.32, -0.12);
+  addBox(0.23, 0.16, 0.22, gloveMat,  0.39, -0.62, -1.28,  0.10);
+  addBox(0.19, 0.045, 0.12, armorMat, -0.43, -0.55, -1.34, -0.12);
+  addBox(0.19, 0.045, 0.12, armorMat,  0.39, -0.55, -1.30,  0.10);
+
+  // Compact, low-poly handheld flashlight in the right hand.
+  const torch = new THREE.Group();
+  torch.position.set(0.38, -0.56, -1.42);
+  torch.rotation.x = -0.06;
+  torch.rotation.z = -0.08;
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.052, 0.34, 8), armorMat);
+  barrel.rotation.x = Math.PI / 2;
+  barrel.position.z = -0.04;
+  torch.add(barrel);
+  const head = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.052, 0.09, 8), seamMatFP);
+  head.rotation.x = Math.PI / 2;
+  head.position.z = -0.22;
+  torch.add(head);
+  const lens = new THREE.Mesh(new THREE.CircleGeometry(0.052, 10), lensMat);
+  lens.position.z = -0.268;
+  torch.add(lens);
+  const grip = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.09, 0.12), gloveMat);
+  grip.position.set(0, -0.075, 0.045);
+  torch.add(grip);
+  rig.add(torch);
+  rig.userData.torchLens = lens;
+
+  // Helmet lamp housing at the very top edge of the view, subtle and unobtrusive.
+  const helmetLamp = new THREE.Group();
+  helmetLamp.position.set(0, 0.39, -0.92);
+  const housing = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.055, 0.075), armorMat);
+  helmetLamp.add(housing);
+  const lampLens = new THREE.Mesh(new THREE.CircleGeometry(0.027, 8), lensMat);
+  lampLens.position.set(0, 0, -0.041);
+  helmetLamp.add(lampLens);
+  rig.add(helmetLamp);
+
+  rig.position.set(0, 0, 0);
+  rig.renderOrder = 2;
+  rig.traverse(obj => {
+    if (obj.isMesh) {
+      obj.frustumCulled = false;
+      obj.renderOrder = 2;
+      obj.castShadow = false;
+      obj.receiveShadow = false;
+      if (obj.material) obj.material.depthWrite = true;
+    }
+  });
+  camera.add(rig);
+  return rig;
+}
+
 function init3DMode() {
   document.getElementById("text-game").classList.add("hidden");
   const container = document.getElementById("three-container");
@@ -498,11 +703,11 @@ function init3DMode() {
 
   // Однократная инициализация: рендерер, слушатели, фонарик — не дублируются при рестарте
   if (!initialized) {
-    container.style.filter = "contrast(1.16) brightness(0.72) sepia(0.18) saturate(0.58)";
+    container.style.filter = "contrast(1.07) brightness(0.94) sepia(0.04) saturate(0.82)";
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x020305);
-    scene.fog = new THREE.FogExp2(0x030407, 0.065);
+    scene.background = new THREE.Color(0x101416);
+    scene.fog = new THREE.FogExp2(0x101416, 0.038);
 
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ'; // yaw отдельно от pitch: взгляд вверх не замедляет ходьбу
@@ -510,9 +715,8 @@ function init3DMode() {
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.72;
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMappingExposure = 0.92;
+    renderer.shadowMap.enabled = false; // Shadows disabled for cleaner image and better FPS.
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
 
@@ -520,15 +724,15 @@ function init3DMode() {
 
     flashlight = new THREE.SpotLight(0xddeeff, 5.0, 35, Math.PI / 3, 0.4, 1.5);
     flashlight.position.set(0, 0, 0);
-    flashlight.castShadow = true;
-    flashlight.shadow.mapSize.set(1024, 1024);
-    flashlight.shadow.bias = -0.0005;
-    flashlight.shadow.camera.near = 0.2;
-    flashlight.shadow.camera.far = 35;
+    flashlight.castShadow = false;
     flashlight.target.position.set(0, 0, -1); // камера смотрит в -Z
     camera.add(flashlight, flashlight.target);
     scene.add(camera);
-    scene.add(new THREE.AmbientLight(0x090d12, 0.16));
+    firstPersonRig = createFirstPersonRig();
+    flashlight.position.set(0.38, -0.48, -1.28);
+    flashlight.target.position.set(0.38, -0.44, -5.5);
+    scene.add(new THREE.HemisphereLight(0x9baeb8, 0x29221b, 1.05));
+    scene.add(new THREE.AmbientLight(0x879096, 0.38));
 
     // Подсказки поверх игры (вместо alert, который ломал pointer lock)
     const base = "position:absolute;left:50%;transform:translateX(-50%);padding:10px 18px;" +
@@ -539,8 +743,8 @@ function init3DMode() {
     hintEl.style.cssText = base + "top:50%;margin-top:40px;";
     hintEl.textContent = "Кликните, чтобы управлять";
     container.append(toastEl, hintEl);
-     const fx = document.createElement('div'); // тяжёлая виньетка и линии развёртки
-     fx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,.04) 18%,rgba(0,0,0,.82) 100%),repeating-linear-gradient(0deg,rgba(0,0,0,.075) 0 1px,transparent 1px 3px);';
+     const fx = document.createElement('div'); // subtle film grain without heavily darkening the room
+     fx.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 32%,rgba(0,0,0,.22) 100%),repeating-linear-gradient(0deg,rgba(0,0,0,.025) 0 1px,transparent 1px 4px);';
      container.append(fx);
 
     container.addEventListener('click', () => document.body.requestPointerLock());
@@ -566,10 +770,48 @@ function init3DMode() {
   scene.add(world);
   build10ZonesMap();
 
+  // The following detail props are assembled in init3DMode, outside the map
+  // builder's local helper scope, so give them a small equivalent box helper.
+  const box = (mat, w, h, d, x, y, z, solid = false) => {
+    const geo = new THREE.BoxGeometry(w, h, d);
+    scaleBoxUV(geo, w, h, d);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, y, z);
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    world.add(mesh);
+    if (solid) walls.push({ mesh, box: new THREE.Box3().setFromObject(mesh) });
+    return mesh;
+  };
+
+  // Emergency beacon: a restrained red pulse adds depth and a clear horror cue.
+  const beaconHousing = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.16, 0.2, 0.12, 10),
+    new THREE.MeshStandardMaterial({ color: 0x24292a, roughness: 0.72, metalness: 0.48 })
+  );
+  beaconHousing.position.set(0, 2.88, 12);
+  world.add(beaconHousing);
+  const beaconLens = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.115, 0.14, 0.08, 10),
+    new THREE.MeshStandardMaterial({
+      color: 0x4b1110, emissive: 0xff2418, emissiveIntensity: 0.55,
+      roughness: 0.35, metalness: 0.12
+    })
+  );
+  beaconLens.position.set(0, 2.78, 12);
+  world.add(beaconLens);
+  emergencyPulse = new THREE.PointLight(0xff2518, 0.2, 15, 2);
+  emergencyPulse.position.set(0, 2.68, 12);
+  world.add(emergencyPulse);
+
+  createDistantApparition();
+
   battery = 100; flashlightOn = true; flashlight.intensity = 5.0;
+  if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0.3;
   velocity.set(0, 0, 0); openingDoors = [];
   camera.position.set(0, 0.72, -8);
   camera.rotation.set(0.22, Math.PI, 0); // приходит в себя на полу лифта, затем поднимает голову
+  if (firstPersonRig) firstPersonRig.visible = true;
   wakeupProgress = 0;
   wakeupActive = true;
   showToast("Вы приходите в себя в остановившемся лифте...", 4200);
@@ -579,6 +821,96 @@ function init3DMode() {
   prevTime = performance.now();
   updateInventoryHUD();
   animate3D();
+
+  // --- Инженерные детали окружения: кабель-каналы, вентиляционные решётки и сливные трапы ---
+  // Мелкие геометрические элементы добавляют масштаб и читаемые силуэты без тяжёлых моделей.
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0x343b3d, roughness: 0.82, metalness: 0.38 });
+  const edgeMat = new THREE.MeshStandardMaterial({ color: 0x59615f, roughness: 0.7, metalness: 0.52 });
+  const grateMat = new THREE.MeshStandardMaterial({ color: 0x252b2c, roughness: 0.88, metalness: 0.28 });
+
+  // Длинные кабельные лотки под потолком главного коридора.
+  [-4.18, 4.18].forEach((x, i) => {
+    box(trimMat, 0.16, 0.13, 68, x, 2.92, 38, false);
+    box(edgeMat, 0.035, 0.035, 68, x + (i ? -0.1 : 0.1), 2.84, 38, false);
+    for (let z = 8; z < 72; z += 8) {
+      box(edgeMat, 0.24, 0.035, 0.12, x, 2.82, z, false);
+    }
+  });
+
+  // Защитные плинтусы по стенам, с перерывами у дверных проёмов.
+  [-4.72, 4.72].forEach(x => {
+    [[3, 24], [28, 31], [34, 38], [41, 76]].forEach(([z1, z2]) => {
+      box(trimMat, 0.055, 0.18, z2 - z1, x, 0.11, (z1 + z2) / 2, false);
+      box(edgeMat, 0.06, 0.025, z2 - z1, x, 0.19, (z1 + z2) / 2, false);
+    });
+  });
+
+  // Напольные сливные решётки — небольшие, тёмные и не перекрывают движение.
+  for (let z = 12; z <= 68; z += 14) {
+    box(grateMat, 1.05, 0.025, 0.34, 0, 0.025, z, false);
+    for (let k = -4; k <= 4; k++) {
+      box(edgeMat, 0.018, 0.012, 0.29, k * 0.11, 0.041, z, false);
+    }
+  }
+
+  // Вентиляционные панели на отдельных стенах, с настоящей глубиной между ламелями.
+  [17, 43, 63].forEach(z => {
+    box(trimMat, 0.045, 0.58, 1.05, 4.70, 2.25, z, false);
+    for (let k = 0; k < 7; k++) {
+      box(edgeMat, 0.065, 0.035, 0.91, 4.66, 2.02 + k * 0.075, z, false);
+    }
+  });
+
+  // --- Новый слой интерьерных объектов: лабораторные приборы, медоборудование и сервисные шкафы ---
+  const panelMat = new THREE.MeshStandardMaterial({ color: 0x343d40, roughness: 0.68, metalness: 0.42 });
+  const rubberMat = new THREE.MeshStandardMaterial({ color: 0x171b1c, roughness: 0.96, metalness: 0.02 });
+  const screenMat = new THREE.MeshStandardMaterial({ color: 0x142923, roughness: 0.35, metalness: 0.12, emissive: 0x0b3829, emissiveIntensity: 0.55 });
+  const ceramicMat = new THREE.MeshStandardMaterial({ color: 0x9ca6a3, roughness: 0.7, metalness: 0.05 });
+
+  // Lab bench: reagent holders, a sealed sample case, and a low-profile monitor.
+  box(panelMat, 0.12, 0.82, 1.15, 8.15, 1.35, 20.5, false);
+  box(screenMat, 0.045, 0.38, 0.66, 8.07, 1.65, 20.5, false);
+  box(rubberMat, 0.42, 0.035, 0.32, 7.8, 0.94, 20.1, false);
+  for (let i = 0; i < 4; i++) {
+    const vial = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.26, 10), i % 2 ? MAT.glass : ceramicMat);
+    vial.position.set(6.6 + i * 0.22, 0.9, 20.2);
+    world.add(vial);
+    box(edgeMat, 0.08, 0.035, 0.08, 6.6 + i * 0.22, 1.05, 20.2, false);
+  }
+
+  // Medical station: monitor arm, instrument trolley, and folded supply trays.
+  box(panelMat, 0.65, 0.08, 0.42, 13.2, 0.72, 15.5, false);
+  box(screenMat, 0.045, 0.36, 0.52, 13.18, 0.98, 15.5, false);
+  box(trimMat, 0.48, 0.045, 0.36, 13.2, 0.46, 15.5, false);
+  [13.0, 13.4].forEach(x => {
+    box(edgeMat, 0.035, 0.42, 0.035, x, 0.23, 15.5, false);
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.035, 10), rubberMat);
+    wheel.rotation.z = Math.PI / 2; wheel.position.set(x, 0.07, 15.5); world.add(wheel);
+  });
+
+  // Server aisle: recessed-looking service doors and small status indicators.
+  [-1, 1].forEach(side => {
+    for (let i = 0; i < 4; i++) {
+      const x = side * 4.1;
+      const z = 29.2 + i * 3;
+      box(panelMat, 0.035, 1.15, 0.55, x + side * 0.63, 1.45, z, false);
+      box(screenMat, 0.018, 0.18, 0.34, x + side * 0.65, 1.68, z, false);
+      for (let k = 0; k < 3; k++) {
+        box(k === 1 ? new THREE.MeshBasicMaterial({color:0xb44a2c}) : new THREE.MeshBasicMaterial({color:0x3aa982}),
+          0.022, 0.035, 0.035, x + side * 0.67, 1.42 - k * 0.09, z - 0.19, false);
+      }
+    }
+  });
+
+  // Containment cells: reinforced door frames, hinges and low warning beacons.
+  [-1, 1].forEach(side => {
+    [46.5, 51.5, 57].forEach(z => {
+      box(trimMat, 0.14, 2.85, 0.16, side * 10.92, 1.42, z - 1.25, false);
+      box(trimMat, 0.14, 2.85, 0.16, side * 10.92, 1.42, z + 1.25, false);
+      box(edgeMat, 0.16, 0.12, 2.66, side * 10.92, 2.88, z, false);
+      box(new THREE.MeshBasicMaterial({color:0xd09b36}), 0.055, 0.055, 0.055, side * 10.8, 2.65, z - 1.0, false);
+    });
+  });
 }
 
 function onMouseMove(e) {
@@ -604,6 +936,9 @@ function toggleFlashlight() {
   if (battery <= 0) { playSound('deny'); showToast("Батарея разряжена"); return; }
   flashlightOn = !flashlightOn;
   flashlight.intensity = flashlightOn ? 5.0 : 0;
+  if (firstPersonRig && firstPersonRig.userData.torchLens) {
+    firstPersonRig.userData.torchLens.material.emissiveIntensity = flashlightOn ? 0.3 : 0;
+  }
   playSound('click');
 }
 
@@ -636,7 +971,7 @@ function hazardStripe(x, z) {
 }
 
 function build10ZonesMap() {
-  walls = []; interactiveItems = []; doors = {}; flickers = [];
+  walls = []; interactiveItems = []; eventTriggers = []; doors = {}; flickers = [];
 
   const ceilingMat = MAT.ceil;
   const cabMat = MAT.cab;
@@ -655,7 +990,7 @@ function build10ZonesMap() {
     scaleBoxUV(geo, w, h, d);
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
-    if (mat.isMeshStandardMaterial && !mat.transparent) { m.castShadow = true; m.receiveShadow = true; }
+    if (mat.isMeshStandardMaterial && !mat.transparent) { m.castShadow = false; m.receiveShadow = false; }
     world.add(m);
     if (solid) walls.push({ mesh: m, box: new THREE.Box3().setFromObject(m) });
     return m;
@@ -743,7 +1078,7 @@ function build10ZonesMap() {
   wallLine('z', 24, -5, 5, [[-1, 1]]);               // дверь L-1
   wallLine('z', 4, -15, -5); wallLine('z', 16, -15, -5); wallLine('x', -15, 4, 16); // Администрация
   wallLine('z', 4, 5, 15); wallLine('z', 16, 5, 15); wallLine('x', 15, 4, 16);      // Медпункт
-  wallLine('x', -5, 24, 44); wallLine('x', 5, 24, 44, [[31, 35]]);
+  wallLine('x', -5, 24, 44, [[25, 28], [31, 34], [38, 41]]); wallLine('x', 5, 24, 44, [[31, 35]]);
   wallLine('z', 27, 5, 15); wallLine('z', 39, 5, 15); wallLine('x', 15, 27, 39); // Лаборатория                              // Узел данных
   wallLine('z', 44, -16, 16, [[-1.5, 1.5]]);         // узел -> зал содержания
   wallLine('x', -16, 44, 60); wallLine('x', 16, 44, 60);
@@ -751,6 +1086,56 @@ function build10ZonesMap() {
   wallLine('x', -4, 60, 80, [[66, 70]]); wallLine('x', 4, 60, 80);
   wallLine('z', 63, -14, -4); wallLine('z', 77, -14, -4); wallLine('x', -14, 63, 77); // Пост охраны
   wallLine('z', 80, -4, 4, [[-1, 1]]);               // выходная дверь
+
+  // --- Новое боковое крыло: архив, мастерская и изолятор ---
+  wallLine('x', -17, 24, 44);
+  wallLine('z', 24, -17, -5);
+  wallLine('z', 44, -17, -5);
+  wallLine('z', 30, -17, -5);
+  wallLine('z', 36, -17, -5);
+
+  // Архив 04: стеллажи и стол с повреждённым терминалом.
+  for (let i = 0; i < 5; i++) {
+    const z = 24.8 + i * 1.0;
+    box(cabMat, 0.55, 2.35, 0.82, -15.4, 1.18, z, true);
+    box(seamWingMat(), 0.58, 0.035, 0.76, -15.4, 2.0, z);
+  }
+  mkTable(-10.2, 27.8);
+  box(MAT.orange, 0.42, 0.06, 0.3, -10.2, 0.84, 27.8);
+  addPointLight(-11.3, 27.5, 0xffc477);
+
+  // Техническая мастерская: аварийный генератор, трубы и искрящий щиток.
+  box(cabMat, 1.25, 1.55, 1.0, -14.8, 0.78, 32.8, true);
+  box(seamWingMat(), 0.06, 0.42, 0.55, -14.12, 1.02, 32.8);
+  box(new THREE.MeshBasicMaterial({ color: 0xff6a18 }), 0.08, 0.08, 0.08, -14.05, 1.2, 32.55);
+  [-13.2, -12.7, -12.2].forEach((x) => {
+    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 3.0, 6), seamWingMat());
+    pipe.rotation.x = Math.PI / 2;
+    pipe.position.set(x, 2.85, 33);
+    world.add(pipe);
+  });
+  box(tableMaterial, 1.2, 0.12, 0.7, -8.5, 0.8, 32.8, true);
+  addPointLight(-10.8, 33.0, 0xff8b36);
+
+  // Изолятор: койка, крепления и аварийная лампа.
+  box(bedMat, 1.0, 0.42, 2.2, -14.1, 0.28, 38.2, true);
+  box(cabMat, 0.12, 0.7, 0.12, -14.5, 0.75, 37.4);
+  box(cabMat, 0.12, 0.7, 0.12, -13.7, 0.75, 37.4);
+  box(tableMaterial, 0.8, 0.75, 0.7, -9.3, 0.375, 41.1, true);
+  addPointLight(-10.5, 40.5, 0xff3322);
+
+  // Одноразовые сюжетные ивенты, запускаемые при входе в новые зоны.
+  eventTriggers = [
+    { x: -11.0, z: 27.0, radius: 2.8, message: 'АРХИВ 04: терминал печатает отчёт сам по себе. В записи указано: «НЕ СМОТРЕТЬ В КАМЕРУ 6».', sound: 'deny', fired: false },
+    { x: -11.0, z: 33.0, radius: 2.8, message: 'МАСТЕРСКАЯ: щиток выбивает дугой. На секунду все лампы комплекса гаснут, а в темноте кто-то проходит за спиной.', sound: 'deny', fired: false },
+    { x: -11.0, z: 39.5, radius: 2.8, message: 'ИЗОЛЯТОР: за дверью слышны три удара. Затем кто-то шепчет ваше имя по внутренней связи.', sound: 'door', fired: false },
+    { x: 0, z: 18.5, radius: 2.5, message: 'РАДИОПЕРЕХВАТ: «...эвакуация отменена. Персонал не покидал комплекс. Повторяю: персонал не покидал...»', sound: 'deny', fired: false },
+    { x: 0, z: 51.5, radius: 3.0, message: 'ПРОТОКОЛ KETER: датчик фиксирует движение внутри пустой камеры. Свет в секторе гаснет на секунду.', sound: 'door', fired: false }
+  ];
+
+  function seamWingMat() {
+    return new THREE.MeshStandardMaterial({ color: 0x252a28, roughness: 0.94 });
+  }
 
   // --- Освещение: у каждой зоны свой цвет ---
   addPointLight(0, -4);                    // шлюз, жёлтый
@@ -1040,6 +1425,80 @@ function collides(x, z) {
   return false;
 }
 
+// One scripted apparition: a low-poly silhouette that fades in and out down the main corridor.
+let distantApparition = null;
+let apparitionClock = 0;
+let apparitionFired = false;
+let apparitionCueFired = false;
+
+function createDistantApparition() {
+  if (!world) return;
+  const figure = new THREE.Group();
+  figure.name = "KETER_DistantApparition";
+
+  const shadowMat = new THREE.MeshStandardMaterial({
+    color: 0x050809, roughness: 1, metalness: 0,
+    transparent: true, opacity: 0, depthWrite: false
+  });
+  const eyeMat = new THREE.MeshBasicMaterial({
+    color: 0xb9ffdf, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  const addPart = (geometry, material, x, y, z, rx = 0, ry = 0, rz = 0) => {
+    const part = new THREE.Mesh(geometry, material);
+    part.position.set(x, y, z);
+    part.rotation.set(rx, ry, rz);
+    part.castShadow = false;
+    part.receiveShadow = false;
+    figure.add(part);
+  };
+
+  // Incomplete human proportions make a readable silhouette without blocking movement.
+  addPart(new THREE.SphereGeometry(0.23, 8, 6), shadowMat, 0, 1.72, 0);
+  addPart(new THREE.BoxGeometry(0.52, 0.78, 0.25), shadowMat, 0, 1.12, 0);
+  addPart(new THREE.CylinderGeometry(0.075, 0.11, 0.72, 6), shadowMat, -0.24, 1.13, 0, 0, 0, -0.12);
+  addPart(new THREE.CylinderGeometry(0.075, 0.11, 0.72, 6), shadowMat, 0.24, 1.13, 0, 0, 0, 0.12);
+  addPart(new THREE.CylinderGeometry(0.09, 0.12, 0.78, 6), shadowMat, -0.13, 0.42, 0);
+  addPart(new THREE.CylinderGeometry(0.09, 0.12, 0.78, 6), shadowMat, 0.13, 0.42, 0);
+  addPart(new THREE.SphereGeometry(0.035, 6, 4), eyeMat, -0.085, 1.75, -0.205);
+  addPart(new THREE.SphereGeometry(0.035, 6, 4), eyeMat, 0.085, 1.75, -0.205);
+
+  figure.position.set(0, 0, 29);
+  figure.visible = false;
+  world.add(figure);
+  distantApparition = { group: figure, shadowMat, eyeMat };
+  apparitionClock = 0;
+  apparitionFired = false;
+  apparitionCueFired = false;
+}
+
+function updateDistantApparition(delta, locked) {
+  if (!distantApparition || !locked || apparitionFired) return;
+  apparitionClock += delta;
+  if (apparitionClock < 18) return;
+
+  const elapsed = apparitionClock - 18;
+  const fadeIn = Math.min(1, elapsed / 1.4);
+  const fadeOut = Math.max(0, 1 - Math.max(0, elapsed - 3.4) / 1.8);
+  const opacity = Math.min(fadeIn, fadeOut) * 0.82;
+  distantApparition.group.visible = opacity > 0.015;
+  distantApparition.shadowMat.opacity = opacity;
+  distantApparition.eyeMat.opacity = Math.min(1, opacity * 1.7);
+
+  if (elapsed < 1.5) {
+    distantApparition.group.position.x = Math.sin(elapsed * 1.7) * 0.045;
+  }
+  if (!apparitionCueFired && elapsed >= 0.05) {
+    apparitionCueFired = true;
+    showToast("ДВИЖЕНИЕ ЗАФИКСИРОВАНО В КОРИДОРЕ...", 4200);
+    playSound("deny");
+  }
+  if (elapsed >= 5.2) {
+    distantApparition.group.visible = false;
+    apparitionFired = true;
+  }
+}
+
 function animate3D() {
   if (document.getElementById("three-container").classList.contains("hidden")) return;
   requestAnimationFrame(animate3D);
@@ -1077,6 +1536,7 @@ function animate3D() {
       if (battery <= 0) {
         flashlightOn = false;
         flashlight.intensity = 0;
+        if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0;
         showToast("Фонарь погас");
       } else if (battery < 15) {
         flashlight.intensity = Math.random() < 0.08 ? 1.0 : 5.0; // мерцание
@@ -1099,7 +1559,7 @@ function animate3D() {
     }
 
     // Движение относительно направления взгляда (только по горизонтали)
-    const speed = isSprinting ? 9.0 : 5.2;
+    const speed = isSprinting ? 11.5 : 7.0;
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
 
@@ -1130,6 +1590,20 @@ function animate3D() {
     }
   }
 
+  updateDistantApparition(delta, locked);
+
+  // Сюжетные ивенты: каждый триггер срабатывает только один раз за запуск.
+  if (locked && eventTriggers.length) {
+    for (const event of eventTriggers) {
+      if (!event.fired && Math.hypot(camera.position.x - event.x, camera.position.z - event.z) < event.radius) {
+        event.fired = true;
+        playSound(event.sound || 'deny');
+        showToast(event.message, 6500);
+        break;
+      }
+    }
+  }
+
   // Анимация открытия дверей
   for (let i = openingDoors.length - 1; i >= 0; i--) {
     const d = openingDoors[i];
@@ -1137,8 +1611,22 @@ function animate3D() {
     if (Math.abs(d.targetY - d.mesh.position.y) < 0.02) { d.mesh.position.y = d.targetY; openingDoors.splice(i, 1); }
   }
 
+  // Лёгкое покачивание рук и фонаря синхронно с шагами.
+  if (firstPersonRig) {
+    const moving = locked && (moveForward || moveBackward || moveLeft || moveRight);
+    const bob = moving ? Math.sin(headBobTimer * 0.5) : 0;
+    firstPersonRig.position.y = moving ? Math.abs(bob) * 0.018 : 0;
+    firstPersonRig.position.x = moving ? Math.sin(headBobTimer * 0.25) * 0.012 : 0;
+    firstPersonRig.rotation.z = moving ? Math.sin(headBobTimer * 0.25) * 0.012 : 0;
+  }
+
   // Пленочный дрифт камеры (не накапливается)
   camera.rotation.z = Math.sin(time * 0.0007) * 0.004 + (Math.random() - 0.5) * 0.0008;
+
+  if (emergencyPulse) {
+    const pulse = Math.max(0, Math.sin(time * 0.0019));
+    emergencyPulse.intensity = 0.18 + pulse * 1.25;
+  }
 
   flickers.forEach(f => {
     const outage = Math.random() < 0.065;
@@ -1978,8 +2466,8 @@ renderChapter(1);
 
       const profile = {
         low: { pixelRatio: 1, shadows: false },
-        medium: { pixelRatio: 1.5, shadows: true },
-        high: { pixelRatio: 2, shadows: true }
+        medium: { pixelRatio: 1.5, shadows: false },
+        high: { pixelRatio: 2, shadows: false }
       }[settings.quality];
 
       const ratio = Math.min(
@@ -1990,15 +2478,13 @@ renderChapter(1);
       renderer.setPixelRatio(ratio);
       renderer.setSize(window.innerWidth, window.innerHeight);
 
-      renderer.shadowMap.enabled =
-        settings.shadows && profile.shadows;
+      renderer.shadowMap.enabled = false;
 
       if (typeof flashlight !== "undefined" && flashlight) {
-        flashlight.castShadow = renderer.shadowMap.enabled;
-        flashlight.shadow.needsUpdate = true;
+        flashlight.castShadow = false;
       }
 
-      renderer.toneMappingExposure = settings.brightness * 0.76;
+      renderer.toneMappingExposure = settings.brightness * 0.92;
 
       const container = el("three-container");
       if (container) {
