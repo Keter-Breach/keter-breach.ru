@@ -80,7 +80,7 @@ const storyData = {
   1: {
     title: "ГЛАВА 1: НАРУШЕНИЕ СОДЕРЖАНИЯ",
     location: "Сектор D-12",
-    desc: "ИНЦИДЕНТ KETER-19 · 03:17. В секторе D-12 сорван протокол содержания. Связь с персоналом потеряна, камеры показывают пустые коридоры — даже там, где датчики фиксируют движение. Вы очнулись в грузовом лифте без воспоминаний о последних 47 минутах. Найдите карты доступа, исследуйте лаборатории, архив и технические уровни. Восстановите питание, прочитайте журнал дежурной смены и решите, верить ли голосу доктора Гирса: запись с вашим позывным датирована завтрашним днём.",
+    desc: "ИНЦИДЕНТ KETER-19 · 03:17. Сектор D-12 запечатан после исчезновения ночной смены. Ни в коридорах, ни в камерах содержания нет ни одного человека, но датчики продолжают считать шаги. Вы очнулись в грузовом лифте с провалом в памяти длиной 47 минут. Исследуйте административный блок, медпункт, архив-09, технический уровень и галерею наблюдения. Соберите журналы смены, найдите карты L-1/L-2 и доберитесь до узла связи. Канал 7 передаёт сообщения из завтрашнего дня — и голос в них принадлежит вам.",
     choices: [
       { text: "Войти в комплекс (3D)", nextChapter: 2 },
       { text: "Открыть досье ключевых сотрудников Фонда", nextChapter: "PERSONNEL_DOSSIER" }
@@ -90,7 +90,7 @@ const storyData = {
   3: {
     title: "ЭВАКУАЦИЯ · ПРОТОКОЛ «ЗЕРКАЛО»",
     location: "Внешний периметр / неизвестно",
-    desc: "Ворота открываются, но снаружи нет ни леса, ни эвакуационной группы — только копия вашего коридора, уходящая в темноту. По внутренней связи доктор Гирс сообщает, что вас не было в списках персонала, а камеры наблюдения показывают, как вы входите в лифт ещё до начала аварии. Последняя строка журнала: «Субъект успешно покинул комплекс. Начать следующий цикл».",
+    desc: "ПРОТОКОЛ «ЗЕРКАЛО» ЗАПУЩЕН. За шлюзом нет поверхности — только точная копия D-12, включая свежие следы ваших ботинок. Канал 7 наконец отвечает голосом доктора Гирса: «Вы не пропали во время аварии. Вы и есть запись, которую мы пытались остановить». На терминале появляется последняя строка: «Смена завершена в 03:17. Состав смены: шесть человек». В отражении экрана по-прежнему семеро. Вы можете начать цикл заново, но теперь знаете, какие помещения проверить первыми.",
     choices: [{ text: "Начать заново", nextChapter: 'RESET' }]
   }
 };
@@ -1107,19 +1107,20 @@ function build10ZonesMap() {
   wallLine('x', -4, -10, 2, [[-5, -1]]); wallLine('x', 4, -10, 2);
   wallLine('z', -9, -14, -4); wallLine('z', 1, -14, -4); wallLine('x', -14, -9, 1); // Блок D-класса
   wallLine('z', 2, -5, 5, [[-1.5, 1.5]]);            // шлюз -> холл
-  wallLine('x', -5, 2, 24, [[8, 12]]);               // холл (проём в Администрацию)
-  wallLine('x', 5, 2, 24, [[8, 12]]);                // холл (проём в Медпункт)
+  wallLine('x', -5, 2, 24, [[8, 12], [16.5, 19.5]]); // администрация + боковой архивный коридор
+  wallLine('x', 5, 2, 24, [[8, 12]]);                // холл -> медпункт
   wallLine('z', 24, -5, 5, [[-1, 1]]);               // дверь L-1
   wallLine('z', 4, -15, -5); wallLine('z', 16, -15, -5); wallLine('x', -15, 4, 16); // Администрация
   wallLine('z', 4, 5, 15); wallLine('z', 16, 5, 15); wallLine('x', 15, 4, 16);      // Медпункт
-  wallLine('x', -5, 24, 44, [[25, 28], [31, 34], [38, 41]]); wallLine('x', 5, 24, 44, [[31, 35]]);
+  wallLine('x', -5, 24, 44, [[25, 28], [31, 34], [38, 41]]); wallLine('x', 5, 24, 44, [[31, 35], [36.5, 39.5]]);
   wallLine('z', 27, 5, 15); wallLine('z', 39, 5, 15); wallLine('x', 15, 27, 39); // Лаборатория                              // Узел данных
   wallLine('z', 44, -16, 16, [[-1.5, 1.5]]);         // узел -> зал содержания
   wallLine('x', -16, 44, 60); wallLine('x', 16, 44, 60);
   wallLine('z', 60, -16, 16, [[-1, 1]]);             // дверь L-2
-  wallLine('x', -4, 60, 80, [[66, 70]]); wallLine('x', 4, 60, 80);
+  wallLine('x', -4, 60, 80, [[61, 64], [66, 70]]); wallLine('x', 4, 60, 80, [[68.5, 71.5]]);
   wallLine('z', 63, -14, -4); wallLine('z', 77, -14, -4); wallLine('x', -14, 63, 77); // Пост охраны
-  wallLine('z', 80, -4, 4, [[-1, 1]]);               // выходная дверь
+  wallLine('z', 80, -4, 4, [[-1, 1]]);               // шлюз в центральный узел связи
+  wallLine('z', 105, -15, 15, [[-1, 1]]);             // последний выход из узла связи
 
   // --- Новое боковое крыло: архив, мастерская и изолятор ---
   wallLine('x', -17, 24, 44);
@@ -1189,8 +1190,9 @@ function build10ZonesMap() {
     return m;
   };
   doors.doorL1 = makeDoor(24, ['ДОПУСК L-1', 'УЗЕЛ ДАННЫХ']);
-  doors.doorL2 = makeDoor(60, ['ДОПУСК L-2', 'ЭВАКУАЦИЯ']);
-  doors.doorExit = makeDoor(80, ['ВЫХОД', 'НА ПОВЕРХНОСТЬ']);
+  doors.doorL2 = makeDoor(60, ['ДОПУСК L-2', 'ЗОНА СОДЕРЖАНИЯ']);
+  doors.doorControl = makeDoor(80, ['ДОПУСК L-2', 'УЗЕЛ СВЯЗИ']);
+  doors.doorExit = makeDoor(105, ['ВЫХОД', 'НА ПОВЕРХНОСТЬ']);
 
   // --- Таблички зон ---
   addSign(['ФОНД SCP', 'ШЛЮЗ D-12'], 0, 2.75, 1.72);
@@ -1340,8 +1342,8 @@ function build10ZonesMap() {
       const z1 = zs[i], z2 = zs[i + 1], mid = (z1 + z2) / 2;
       if (type !== 'breach') box(glassMat, 0.1, 2.8, z2 - z1, s * 11, 1.4, mid, true);
       const label = {
-        statue: ['ОТСЕК ОПЕЧАТАН', 'ОБЪЕКТ УДАЛЁН'], breach: ['КАМЕРА ПУСТА', 'НАРУШЕНИЕ'],
-        keter: ['АРХИВ ЗАКРЫТ', 'ДОСТУП ЗАПРЕЩЁН'], empty: ['КАМЕРА СВОБОДНА', 'СТАТУС: РЕЗЕРВ']
+        statue: ['ОТСЕК ОПЕЧАТАН', 'ОБЪЕКТ НЕ ОБНАРУЖЕН'], breach: ['КАМЕРА ПУСТА', 'НАРУШЕНИЕ'],
+        keter: ['СИГНАЛ ЕСТЬ', 'ОБЪЕКТ НЕ ОБНАРУЖЕН'], empty: ['КАМЕРА СВОБОДНА', 'СТАТУС: РЕЗЕРВ']
       }[type];
       const col = type === 'keter' ? '#ff4444' : type === 'breach' ? '#ffaa33' : '#ffd34d';
       addSign(label, s * 10.85, 2.4, mid, -s * Math.PI / 2, col);
@@ -1349,10 +1351,10 @@ function build10ZonesMap() {
       if (type === 'breach') for (let k = 0; k < 4; k++)
         box(glassMat, 0.3, 0.02, 0.3, s * (10 + Math.random() * 1.2), 0.02, z1 + 1 + k * 1.1);
       if (type === 'keter') {
-        box(darkMat, 1.2, 2.2, 1.2, s * 14.2, 1.1, mid);
-        box(redMat(), 0.06, 0.06, 0.06, s * 13.58, 1.7, mid - 0.2);
-        box(redMat(), 0.06, 0.06, 0.06, s * 13.58, 1.7, mid + 0.2);
-        if (s < 0) { const l = new THREE.PointLight(0xff2200, 2, 9); l.position.set(s * 13, 2.2, mid); world.add(l); }
+        // Камера пуста: остались только стойка датчиков и красный статусный индикатор.
+        box(cabMat, 1.2, 2.2, 0.16, s * 14.2, 1.1, mid, false);
+        box(redMat(), 0.08, 0.08, 0.08, s * 13.58, 1.7, mid);
+        if (s < 0) { const l = new THREE.PointLight(0xff2200, 0.6, 7); l.position.set(s * 13, 2.2, mid); world.add(l); }
       }
     });
   });
@@ -1364,12 +1366,58 @@ function build10ZonesMap() {
     rf.rotation.x = -Math.PI / 2; rf.position.set(cx, 0.012, cz); world.add(rf);
     const rc = new THREE.Mesh(new THREE.PlaneGeometry(w, d), ceilingMat);
     rc.rotation.x = Math.PI / 2; rc.position.set(cx, 3.18, cz); world.add(rc);
-    box(wallMaterial, 0.45, 3.2, d, cx - w / 2, 1.6, cz, true);
-    box(wallMaterial, 0.45, 3.2, d, cx + w / 2, 1.6, cz, true);
-    box(wallMaterial, w, 3.2, 0.45, cx, 1.6, cz + d / 2, true);
+
+    // У боковых крыльев теперь есть настоящие дверные проёмы и коридоры,
+    // а не полностью запечатанные декорационные комнаты.
+    const gap = 1.45;
+    const xWall = (x, doorZ = null) => {
+      if (doorZ === null) {
+        box(wallMaterial, 0.45, 3.2, d, x, 1.6, cz, true);
+        return;
+      }
+      const start = cz - d / 2, end = cz + d / 2;
+      if (doorZ - gap > start) box(wallMaterial, 0.45, 3.2, doorZ - gap - start, x, 1.6, (start + doorZ - gap) / 2, true);
+      if (end > doorZ + gap) box(wallMaterial, 0.45, 3.2, end - doorZ - gap, x, 1.6, (doorZ + gap + end) / 2, true);
+      box(wallMaterial, 0.45, 0.8, gap * 2, x, 2.8, doorZ, false);
+    };
+    const zWall = (z, doorX = null) => {
+      if (doorX === null) {
+        box(wallMaterial, w, 3.2, 0.45, cx, 1.6, z, true);
+        return;
+      }
+      const start = cx - w / 2, end = cx + w / 2;
+      if (doorX - gap > start) box(wallMaterial, doorX - gap - start, 3.2, 0.45, (start + doorX - gap) / 2, 1.6, z, true);
+      if (end > doorX + gap) box(wallMaterial, end - doorX - gap, 3.2, 0.45, (doorX + gap + end) / 2, 1.6, z, true);
+      box(wallMaterial, gap * 2, 0.8, 0.45, doorX, 2.8, z, false);
+    };
+
+    if (cx < 0) {
+      xWall(cx - w / 2);
+      xWall(cx + w / 2, cz);
+    } else if (cx > 0) {
+      xWall(cx - w / 2, cz);
+      xWall(cx + w / 2);
+    } else {
+      xWall(cx - w / 2, cz === 94 ? 88 : null);
+      xWall(cx + w / 2);
+    }
+
+    if (cx === 0 && cz === 94) {
+      zWall(cz - d / 2, 0);
+      zWall(cz + d / 2, 0);
+    } else {
+      zWall(cz - d / 2);
+      zWall(cz + d / 2);
+    }
     addPointLight(cx, cz, lightColor, 2.65);
     addSign([title, subtitle], cx, 2.65, cz - d / 2 + 0.35, 0, '#9dffcb');
   };
+  // Коридоры связывают боковые крылья с основным маршрутом.
+  wallLine('z', 16.5, -13, -5); wallLine('z', 19.5, -13, -5);
+  wallLine('z', 36.5, 5, 13); wallLine('z', 39.5, 5, 13);
+  wallLine('z', 60.5, -13, -4); wallLine('z', 63.5, -13, -4);
+  wallLine('z', 68.5, 4, 13); wallLine('z', 71.5, 4, 13);
+
   room(-25, 18, 24, 24, 'АРХИВ-09', 'ЗАПИСИ ИНЦИДЕНТА', 0x5c9b87);
   room(25, 38, 24, 26, 'МЕДБЛОК', 'КАРАНТИН УРОВНЯ 4', 0x7b9dba);
   room(-25, 62, 24, 26, 'ТЕХНИЧЕСКИЙ УРОВЕНЬ', 'РЕАКТОР / НЕ ВХОДИТЬ', 0xff5533);
@@ -1383,11 +1431,13 @@ function build10ZonesMap() {
     box(MAT.cab, 0.18, 1.1, 0.18, 23.2, 0.55, z - 0.3, true);
   }
   for (let z = 55; z <= 70; z += 3) {
-    box(MAT.keter, 1.2, 2.5, 1.1, -30.5, 1.25, z, true);
+    // Только опечатанные контейнеры и аварийные индикаторы: модели существ не используются.
+    box(MAT.cab, 1.2, 2.5, 1.1, -30.5, 1.25, z, true);
     box(new THREE.MeshBasicMaterial({ color: 0xff3322 }), 0.08, 0.08, 0.08, -29.85, 1.7, z, false);
   }
   // Дальняя исследовательская галерея и вспомогательные отсеки делают комплекс глубже.
   room(25, 70, 24, 24, 'ГАЛЕРЕЯ НАБЛЮДЕНИЯ', 'СТЕКЛО ПОВРЕЖДЕНО ИЗНУТРИ', 0x6a7778);
+  wallLine('z', 85, -15, -4); wallLine('z', 91, -15, -4);
   for (let z = 62; z <= 78; z += 4) {
     box(MAT.cab, 2.8, 2.1, 0.35, 18.5, 1.05, z, true);
     box(MAT.glass, 0.08, 1.8, 2.8, 20.0, 1.15, z + 1.2, false);
@@ -1434,6 +1484,33 @@ function build10ZonesMap() {
     emissive: 0x164b3a, emissiveIntensity: 0.7
   });
   const loreFrameMat = new THREE.MeshStandardMaterial({ color: 0x252d2f, roughness: 0.76, metalness: 0.4 });
+  const spawnLoreTerminal = (x, z, type, color = 0x164b3a) => {
+    const frame = new THREE.Mesh(
+      new THREE.BoxGeometry(0.78, 0.58, 0.12),
+      loreFrameMat
+    );
+    frame.position.set(x, 1.35, z);
+    frame.userData = { type };
+    world.add(frame);
+    interactiveItems.push(frame);
+    const screen = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.62, 0.4),
+      new THREE.MeshStandardMaterial({
+        color: 0x14201d, roughness: 0.34, metalness: 0.18,
+        emissive: color, emissiveIntensity: 0.85
+      })
+    );
+    screen.position.set(x, 1.36, z - 0.066);
+    world.add(screen);
+  };
+
+  // У каждой зоны есть собственная улика — игрок собирает картину инцидента по частям.
+  spawnLoreTerminal(-25, 18.5, 'loreArchive', 0x174b36);
+  spawnLoreTerminal(-8.5, 12.7, 'loreAdmin', 0x164b3a);
+  spawnLoreTerminal(29, 38, 'loreMedical', 0x1a4055);
+  spawnLoreTerminal(-25, 62.5, 'loreReactor', 0x5a2118);
+  spawnLoreTerminal(29, 70, 'loreGallery', 0x173b58);
+
   const shiftTerminal = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.72, 0.12), loreFrameMat);
   shiftTerminal.position.set(-25, 1.55, 81.25);
   shiftTerminal.userData = { type: 'loreShift' };
@@ -1506,11 +1583,20 @@ function interact3D() {
       if (t === 'keycardL1') { window.playerState.keycardL1 = true; showToast("Получена карта L-1"); }
       else if (t === 'keycardL2') { window.playerState.keycardL2 = true; showToast("Получена карта L-2"); }
       else if (t === 'battery') { battery = Math.min(100, battery + 50); showToast("Батарея фонаря +50%"); }
-      else if (t === 'loreShift') {
-        showToast("ЖУРНАЛ СМЕНЫ · 03:17 — «Смена завершена. Нас шестеро в комнате, но в отражении монитора — семеро. Гирс приказал не смотреть на камеры. Если запись найдут: НЕ ВЫХОДИТЕ ЧЕРЕЗ ЛИФТ».", 9000);
-      }
-      else if (t === 'loreChannel7') {
-        showToast("КАНАЛ 7 · ВХОДЯЩЕЕ СООБЩЕНИЕ — «Не включайте резервное питание. Вы уже сделали это завтра. Когда услышите собственный голос — не отвечайте». ВРЕМЯ ПАКЕТА: ЗАВТРА, 03:17.", 9000);
+      else {
+        const loreMessages = {
+          loreArchive: "АРХИВ-09 · ДЕЛО K-19: пропускная ведомость отмечает шесть сотрудников. На бумажной копии — семь подписей. Седьмая выполнена вашим почерком, но дата стоит завтрашняя.",
+          loreAdmin: "СЛУЖЕБНАЯ ЗАПИСКА ГИРСА · «Не доверять лифту. Камеры показывают пустые коридоры, потому что запись отстаёт на 47 минут. Если услышите канал 7 — не отвечайте собственным голосом».",
+          loreMedical: "МЕДБЛОК · Пять коек заняты, шесть пульсов зарегистрированы. Седьмой сигнал идёт из помещения, в котором нет пациента. Время первого совпадения: 03:17.",
+          loreReactor: "ТЕХНИЧЕСКИЙ ЖУРНАЛ · Резервное питание было включено вручную. Код оператора совпадает с вашим пропуском, однако система утверждает, что команда поступила завтра.",
+          loreGallery: "ГАЛЕРЕЯ НАБЛЮДЕНИЯ · Все кадры пусты. На стекле изнутри остались отпечатки ладоней, а в отражении монитора оператор стоит за спиной наблюдателя. Запрет: не смотреть в камеру 6.",
+          loreShift: "ЖУРНАЛ СМЕНЫ · 03:17 — «Нас шестеро в комнате, но в отражении монитора — семеро. Гирс приказал не смотреть на камеры. Если запись найдут: НЕ ВЫХОДИТЕ ЧЕРЕЗ ЛИФТ».",
+          loreChannel7: "КАНАЛ 7 · «Не включайте резервное питание. Вы уже сделали это завтра. Когда услышите собственный голос — не отвечайте». ВРЕМЯ ПАКЕТА: ЗАВТРА, 03:17."
+        };
+        if (loreMessages[t]) {
+          if (!window.playerState.logsFound.includes(t)) window.playerState.logsFound.push(t);
+          showToast(loreMessages[t], 10000);
+        }
       }
       world.remove(item); interactiveItems.splice(i, 1);
       updateInventoryHUD();
@@ -1526,7 +1612,8 @@ function interact3D() {
   };
 
   tryDoor(doors.doorL1, 'keycardL1', "Нужна ключ-карта L-1 (кабинет администрации)") ||
-  tryDoor(doors.doorL2, 'keycardL2', "Нужна ключ-карта L-2 (серверная)") ||
+  tryDoor(doors.doorL2, 'keycardL2', "Нужна ключ-карта L-2 (узел данных)") ||
+  tryDoor(doors.doorControl, 'keycardL2', "Нужна карта L-2: доступ к узлу связи закрыт") ||
   tryDoor(doors.doorExit, 'keycardL2', "Выход заблокирован: нужна карта L-2", () => {
     document.exitPointerLock();
     document.getElementById("three-container").classList.add("hidden");
