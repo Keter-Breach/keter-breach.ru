@@ -706,8 +706,8 @@ function init3DMode() {
     container.style.filter = "contrast(1.07) brightness(0.94) sepia(0.04) saturate(0.82)";
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x101416);
-    scene.fog = new THREE.FogExp2(0x101416, 0.038);
+    scene.background = new THREE.Color(0x050708);
+    scene.fog = new THREE.FogExp2(0x070a0b, 0.052);
 
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ'; // yaw отдельно от pitch: взгляд вверх не замедляет ходьбу
@@ -715,24 +715,29 @@ function init3DMode() {
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.92;
-    renderer.shadowMap.enabled = false; // Shadows disabled for cleaner image and better FPS.
+    renderer.toneMappingExposure = 0.78;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.physicallyCorrectLights = true;
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
 
     buildMaterials();
 
-    flashlight = new THREE.SpotLight(0xddeeff, 5.0, 35, Math.PI / 3, 0.4, 1.5);
+    flashlight = new THREE.SpotLight(0xddeeff, 260, 32, Math.PI / 4.2, 0.58, 1.7);
     flashlight.position.set(0, 0, 0);
-    flashlight.castShadow = false;
+    flashlight.castShadow = true;
+    flashlight.shadow.mapSize.set(1024, 1024);
+    flashlight.shadow.bias = -0.00025;
+    flashlight.shadow.normalBias = 0.025;
     flashlight.target.position.set(0, 0, -1); // камера смотрит в -Z
     camera.add(flashlight, flashlight.target);
     scene.add(camera);
     firstPersonRig = createFirstPersonRig();
     flashlight.position.set(0.38, -0.48, -1.28);
     flashlight.target.position.set(0.38, -0.44, -5.5);
-    scene.add(new THREE.HemisphereLight(0x9baeb8, 0x29221b, 1.05));
-    scene.add(new THREE.AmbientLight(0x879096, 0.38));
+    scene.add(new THREE.HemisphereLight(0x71818b, 0x100f0d, 0.42));
+    scene.add(new THREE.AmbientLight(0x6d777b, 0.12));
 
     // Подсказки поверх игры (вместо alert, который ломал pointer lock)
     const base = "position:absolute;left:50%;transform:translateX(-50%);padding:10px 18px;" +
