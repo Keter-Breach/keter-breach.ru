@@ -192,7 +192,9 @@ func _trigger_mirror_loop() -> void:
 func _refresh_objective() -> void:
 	if objective_label == null:
 		return
-	if not has_l1:
+	if loop_count > 0:
+		objective_label.text = "ЗАДАЧА: ПРОТОКОЛ «ЗЕРКАЛО» — НАЙТИ ПРИЧИНУ ПОВТОРА КОРИДОРА"
+	elif not has_l1:
 		objective_label.text = "ЗАДАЧА: НАЙТИ КАРТУ L1 В АДМИНИСТРАЦИИ"
 	elif not archive_read:
 		objective_label.text = "ЗАДАЧА: ПРОЙТИ ШЛЮЗ L1 И ПРОЧИТАТЬ ЖУРНАЛ В АРХИВЕ"
