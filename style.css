@@ -145,11 +145,11 @@
   position: relative;
   isolation: isolate;
   background:
-    radial-gradient(ellipse at 50% 42%, rgba(25, 58, 34, .25), transparent 52%),
-    linear-gradient(rgba(74, 112, 82, .045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(74, 112, 82, .045) 1px, transparent 1px),
-    linear-gradient(135deg, #111a14, #030504 72%);
-  background-size: auto, 34px 34px, 34px 34px, auto;
+    linear-gradient(90deg, rgba(2, 4, 5, .62), rgba(2, 4, 5, .28) 48%, rgba(2, 4, 5, .7)),
+    radial-gradient(ellipse at 52% 46%, rgba(105, 20, 18, .14), transparent 48%),
+    url("./menu-background.svg") center / cover no-repeat,
+    linear-gradient(135deg, #111619, #020303 72%);
+  background-size: cover, auto, cover, auto;
   animation: keter-room-pulse 9s ease-in-out infinite alternate;
 }
 #text-game::before,
@@ -260,4 +260,43 @@
   #text-game, #text-game::before, #text-game > .card, .dossier-bar::after, .stamp, #chapter-title {
     animation: none !important;
   }
+}
+
+
+/* Cinematic containment dossier: cold steel, emergency spill, deep blacks. */
+#text-game {
+  background-attachment: fixed;
+}
+#text-game > .card {
+  background: linear-gradient(145deg, rgba(7, 11, 12, .94), rgba(3, 5, 6, .98));
+  border-color: rgba(115, 132, 132, .58);
+  box-shadow: 0 32px 100px rgba(0,0,0,.88), 0 0 50px rgba(120, 18, 16, .10);
+  backdrop-filter: blur(3px);
+}
+.dossier-bar {
+  background: rgba(4, 7, 8, .94);
+  border-bottom-color: rgba(117, 35, 31, .48);
+  color: #9aa8a5;
+}
+h1 {
+  border-bottom-color: rgba(134, 43, 38, .72);
+}
+#buttons-container button {
+  background: rgba(4, 7, 8, .52);
+  border-color: rgba(94, 111, 108, .7);
+}
+#buttons-container button:hover,
+#buttons-container button:focus-visible {
+  background: rgba(62, 17, 17, .72);
+  color: #f0d8d5;
+  border-color: #a64a43;
+  box-shadow: inset 3px 0 0 #b74239, 0 0 22px rgba(140, 22, 18, .16);
+}
+#buttons-container button:hover::before,
+#buttons-container button:focus-visible::before {
+  background: #b74239;
+  border-color: #b74239;
+}
+@media (prefers-reduced-motion: reduce) {
+  #text-game { background-attachment: scroll; }
 }
