@@ -15,9 +15,9 @@ const [html, script, css] = await Promise.all([
 
 assert.match(html, /id="text-game"/, "story/menu container should exist");
 assert.match(html, /id="three-container"/, "3D container should exist");
-assert.match(html, /src="script\\.js"/, "page should load the game script");
-assert.match(html, /src="\\.\/node_modules\/three\/build\/three\\.min\\.js"/, "desktop build should load the bundled local Three.js runtime");
-assert.doesNotMatch(html, /cdnjs\\.cloudflare\\.com\\/ajax\\/libs\\/three\\.js|fonts\\.googleapis\\.com/, "desktop runtime should not depend on CDN-hosted Three.js or fonts");
+assert.match(html, /src="script\.js"/, "page should load the game script");
+assert.match(html, /src="\.\/node_modules\/three\/build\/three\.min\.js"/, "desktop build should load the bundled local Three.js runtime");
+assert.doesNotMatch(html, /cdnjs\.cloudflare\.com\/ajax\/libs\/three\.js|fonts\.googleapis\.com/, "desktop runtime should not depend on CDN-hosted Three.js or fonts");
 assert.match(html, /href="style\.css"/, "page should load responsive styles");
 assert.match(script, /function renderChapter\(/, "chapter renderer should exist");
 assert.match(script, /function init3DMode\(/, "3D initialization should exist");
