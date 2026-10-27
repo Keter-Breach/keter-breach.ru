@@ -210,7 +210,7 @@ func _process(_delta: float) -> void:
 		return
 	var p := player_ref.global_position
 	var px := 8.0 + clampf((p.x + 40.0) / 80.0, 0.0, 1.0) * (map_panel.size.x - 16.0)
-	var py := 25.0 + clampf((p.z + 10.0) / 110.0, 0.0, 1.0) * (map_panel.size.y - 34.0)
+	var py := 25.0 + clampf((p.z + 10.0) / 140.0, 0.0, 1.0) * (map_panel.size.y - 34.0)
 	map_dot.position = Vector2(px - map_dot.size.x * 0.5, py - map_dot.size.y * 0.5)
 	var target := _get_interaction_target()
 	if interaction_hint:
@@ -1015,6 +1015,21 @@ func _finish_enter_game() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	_show_status("03:17 — грузовой лифт остановился. Последние 47 минут отсутствуют в памяти. Найди карту L1 в администрации.")
 
+func _add_map_room(room_name: String, x1: float, z1: float, x2: float, z2: float, tint: Color) -> void:
+	if map_panel == null:
+		return
+	var room := ColorRect.new()
+	room.name = "MapRoom_" + room_name.replace(" ", "")
+	room.color = tint
+	var left := 8.0 + ((x1 + 40.0) / 80.0) * 156.0
+	var right := 8.0 + ((x2 + 40.0) / 80.0) * 156.0
+	var top := 25.0 + ((z1 + 10.0) / 140.0) * 183.0
+	var bottom := 25.0 + ((z2 + 10.0) / 140.0) * 183.0
+	room.position = Vector2(left, top)
+	room.size = Vector2(maxf(2.0, right - left), maxf(2.0, bottom - top))
+	room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	map_panel.add_child(room)
+
 func _build_hud() -> void:
 	var layer := CanvasLayer.new()
 	layer.name = "HUD"
@@ -1076,17 +1091,21 @@ func _build_hud() -> void:
 	map_title.add_theme_font_size_override("font_size", 12)
 	map_title.add_theme_color_override("font_color", Color(0.78, 0.22, 0.18))
 	map_panel.add_child(map_title)
-	var route := ColorRect.new()
-	route.color = Color(0.28, 0.32, 0.33, 0.8)
-	route.position = Vector2(82, 25)
-	route.size = Vector2(3, 178)
-	map_panel.add_child(route)
-	for marker_pos in [Vector2(78, 52), Vector2(92, 78), Vector2(80, 108), Vector2(72, 145), Vector2(80, 177)]:
-		var marker := ColorRect.new()
-		marker.color = Color(0.55, 0.16, 0.12, 0.85)
-		marker.position = marker_pos
-		marker.size = Vector2(12, 3)
-		map_panel.add_child(marker)
+	# Schematic rooms are drawn from the same world coordinates as facility_layout.gd.
+	_add_map_room("Main spine", -4.0, -10.0, 4.0, 130.0, Color(0.20, 0.24, 0.26, 0.95))
+	_add_map_room("Start lift", -14.0, -10.0, -4.0, 2.0, Color(0.32, 0.35, 0.36, 0.95))
+	_add_map_room("Administration", -15.0, 4.0, -5.0, 16.0, Color(0.34, 0.30, 0.22, 0.95))
+	_add_map_room("Archive", -37.0, 6.0, -13.0, 30.0, Color(0.29, 0.27, 0.23, 0.95))
+	_add_map_room("West service wing", -17.0, 24.0, -5.0, 44.0, Color(0.30, 0.31, 0.32, 0.95))
+	_add_map_room("Laboratory", 5.0, 27.0, 15.0, 39.0, Color(0.18, 0.34, 0.29, 0.95))
+	_add_map_room("Medical block", 15.0, 25.0, 37.0, 51.0, Color(0.28, 0.34, 0.38, 0.95))
+	_add_map_room("Containment", -16.0, 44.0, 16.0, 60.0, Color(0.42, 0.19, 0.17, 0.95))
+	_add_map_room("Reactor", -37.0, 49.0, -13.0, 75.0, Color(0.43, 0.23, 0.13, 0.95))
+	_add_map_room("Security post", -14.0, 63.0, -4.0, 77.0, Color(0.36, 0.28, 0.20, 0.95))
+	_add_map_room("Observation gallery", 13.0, 58.0, 37.0, 82.0, Color(0.20, 0.30, 0.34, 0.95))
+	_add_map_room("Personnel", -35.0, 79.0, -15.0, 97.0, Color(0.31, 0.30, 0.27, 0.95))
+	_add_map_room("Channel 7", -15.0, 83.0, 15.0, 105.0, Color(0.18, 0.34, 0.29, 0.95))
+	_add_map_room("Mirror corridor", -4.0, 105.0, 4.0, 130.0, Color(0.40, 0.10, 0.10, 0.95))
 	map_dot = ColorRect.new()
 	map_dot.name = "PlayerPosition"
 	map_dot.color = Color(0.2, 1.0, 0.55)
