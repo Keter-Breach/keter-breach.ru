@@ -165,7 +165,8 @@ func _build_walls() -> void:
 	_wall_line("z",27,5,15)
 	_wall_line("z",39,5,15)
 	# Shared boundary of the lab wing and medical block is defined by the medical-room wall below.
-	_wall_line("z",44,-16,16,[[-1.5,1.5]])
+	# One continuous containment boundary; includes the west-wing edge to avoid overlapping duplicate colliders.
+	_wall_line("z",44,-17,16,[[-1.5,1.5]])
 	_wall_line("x",-16,44,75,[[55,63]])
 	_wall_line("x",16,44,60,[[55,60]])
 	_wall_line("z",60,-16,16,[[-1,1]])
@@ -178,7 +179,6 @@ func _build_walls() -> void:
 	# Боковое крыло: архив, мастерская, изолятор.
 	_wall_line("x",-17,24,44)
 	_wall_line("z",24,-17,-5)
-	_wall_line("z",44,-17,-5)
 	_wall_line("z",30,-17,-5,[[-8,-6]])
 	_wall_line("z",36,-17,-5,[[-8,-6]])
 	# Дополнительные комнаты: повторяем открытый фасад и глухую заднюю стену исходной room().
