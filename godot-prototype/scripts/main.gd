@@ -202,8 +202,8 @@ func _build_facility() -> void:
 func _process(_delta: float) -> void:
 	if menu_camera != null and not game_started:
 		var t := float(Time.get_ticks_msec()) * 0.001
-		menu_camera.position = Vector3(sin(t * 0.18) * 0.22, 2.22 + sin(t * 0.31) * 0.035, -14.0 + cos(t * 0.13) * 0.12)
-		menu_camera.look_at(Vector3(sin(t * 0.11) * 0.12, 1.55, 22.0), Vector3.UP)
+		menu_camera.position = Vector3(sin(t * 0.18) * 0.22, 2.22 + sin(t * 0.31) * 0.035, 31.0 + cos(t * 0.13) * 0.12)
+		menu_camera.look_at(Vector3(sin(t * 0.11) * 0.12, 1.55, 58.0), Vector3.UP)
 		if menu_alarm_light != null:
 			menu_alarm_light.light_energy = 0.35 + absf(sin(t * 1.7)) * 0.85
 	if not game_started or player_ref == null or map_panel == null or map_dot == null:
@@ -613,8 +613,8 @@ func _build_menu() -> void:
 	menu_camera = Camera3D.new()
 	menu_camera.name = "MenuCinematicCamera"
 	menu_camera.fov = 66.0
-	menu_camera.position = Vector3(0, 2.22, -14.0)
-	menu_camera.look_at(Vector3(0, 1.55, 22.0), Vector3.UP)
+	menu_camera.position = Vector3(0, 2.22, 31.0)
+	menu_camera.look_at(Vector3(0, 1.55, 58.0), Vector3.UP)
 	add_child(menu_camera)
 	menu_camera.current = true
 	var player_camera := player_ref.get_node_or_null("PlayerCamera") as Camera3D
@@ -622,7 +622,7 @@ func _build_menu() -> void:
 		player_camera.current = false
 	menu_alarm_light = OmniLight3D.new()
 	menu_alarm_light.name = "MenuAlarmPulse"
-	menu_alarm_light.position = Vector3(0, 2.8, 7.0)
+	menu_alarm_light.position = Vector3(0, 2.8, 47.0)
 	menu_alarm_light.light_color = Color(0.85, 0.025, 0.018)
 	menu_alarm_light.light_energy = 0.6
 	menu_alarm_light.omni_range = 10.0
@@ -641,10 +641,28 @@ func _build_menu() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	menu_root.add_child(shade)
+	var dossier_panel := Panel.new()
+	dossier_panel.name = "DossierBackdrop"
+	dossier_panel.anchor_left = 0.635
+	dossier_panel.anchor_right = 0.975
+	dossier_panel.anchor_top = 0.20
+	dossier_panel.anchor_bottom = 0.79
+	dossier_panel.offset_left = 0
+	dossier_panel.offset_right = 0
+	dossier_panel.offset_top = 0
+	dossier_panel.offset_bottom = 0
+	var dossier_style := StyleBoxFlat.new()
+	dossier_style.bg_color = Color(0.006, 0.012, 0.016, 0.62)
+	dossier_style.border_color = Color(0.22, 0.075, 0.065, 0.72)
+	dossier_style.set_border_width_all(1)
+	dossier_style.set_content_margin_all(18)
+	dossier_panel.add_theme_stylebox_override("panel", dossier_style)
+	dossier_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu_root.add_child(dossier_panel)
 	var menu_panel := Panel.new()
 	menu_panel.name = "MenuPanel"
 	menu_panel.anchor_left = 0.035
-	menu_panel.anchor_right = 0.425
+	menu_panel.anchor_right = 0.385
 	menu_panel.anchor_top = 0.055
 	menu_panel.anchor_bottom = 0.945
 	menu_panel.offset_left = 0
@@ -661,7 +679,7 @@ func _build_menu() -> void:
 	var column := VBoxContainer.new()
 	column.name = "MenuColumn"
 	column.anchor_left = 0.055
-	column.anchor_right = 0.405
+	column.anchor_right = 0.365
 	column.anchor_top = 0.105
 	column.anchor_bottom = 0.895
 	column.offset_left = 0
@@ -679,7 +697,7 @@ func _build_menu() -> void:
 	var title := Label.new()
 	title.text = "KETER BREACH"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 48)
+	title.add_theme_font_size_override("font_size", 44)
 	title.add_theme_color_override("font_color", Color(0.91, 0.9, 0.86))
 	column.add_child(title)
 	var title_rule := ColorRect.new()
@@ -701,7 +719,7 @@ func _build_menu() -> void:
 	_add_menu_button(column, "ПРОДОЛЖИТЬ", _continue_game)
 	_add_menu_button(column, "ДОСЬЕ ИНЦИДЕНТА", _show_dossier)
 	var footer := Label.new()
-	footer.text = "WASD — ДВИЖЕНИЕ   •   SHIFT — БЕГ\nF — ФОНАРЬ   •   E — ВЗАИМОДЕЙСТВИЕ\nСИСТЕМА D-12  //  ДОСТУП ОГРАНИЧЕН"
+	footer.text = "WASD / SHIFT — ДВИЖЕНИЕ И БЕГ\nF — ФОНАРЬ   •   E — ВЗАИМОДЕЙСТВИЕ"
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	footer.add_theme_font_size_override("font_size", 12)
 	footer.add_theme_color_override("font_color", Color(0.52, 0.55, 0.57))
@@ -848,7 +866,7 @@ func _build_menu() -> void:
 func _add_menu_button(parent: VBoxContainer, label_text: String, callback: Callable) -> void:
 	var button := Button.new()
 	button.text = label_text
-	button.custom_minimum_size = Vector2(390, 48)
+	button.custom_minimum_size = Vector2(360, 52)
 	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	button.pressed.connect(callback)
 	_style_menu_button(button)
@@ -859,7 +877,7 @@ func _style_menu_button(button: Button) -> void:
 	button.add_theme_color_override("font_color", Color(0.88, 0.87, 0.83))
 	button.add_theme_color_override("font_hover_color", Color(1.0, 0.25, 0.19))
 	button.add_theme_color_override("font_pressed_color", Color(1.0, 0.35, 0.24))
-	button.add_theme_stylebox_override("normal", _menu_button_style(Color(0.025, 0.032, 0.04, 0.88), Color(0.32, 0.08, 0.07, 0.9)))
+	button.add_theme_stylebox_override("normal", _menu_button_style(Color(0.018, 0.026, 0.032, 0.94), Color(0.28, 0.075, 0.065, 0.92)))
 	button.add_theme_stylebox_override("hover", _menu_button_style(Color(0.09, 0.025, 0.025, 0.96), Color(0.78, 0.12, 0.09, 1.0)))
 	button.add_theme_stylebox_override("pressed", _menu_button_style(Color(0.14, 0.025, 0.02, 1.0), Color(0.9, 0.16, 0.1, 1.0)))
 
@@ -868,7 +886,8 @@ func _menu_button_style(fill: Color, outline: Color) -> StyleBoxFlat:
 	style.bg_color = fill
 	style.border_color = outline
 	style.set_border_width_all(1)
-	style.set_content_margin_all(10)
+	style.set_border_width(SIDE_LEFT, 3)
+	style.set_content_margin_all(12)
 	return style
 
 func _start_intro() -> void:
