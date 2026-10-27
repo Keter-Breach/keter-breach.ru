@@ -189,7 +189,7 @@ func _build_walls() -> void:
  # Медблок: центр (25,38), 24x26.
  _wall_line("x",15,25,51,[[30,36]])
  _wall_line("x",37,25,51)
- _wall_line("z",51,13,37)
+ _wall_line("z",51,15,37)
  # Технический уровень/реактор: центр (-25,62), 24x26.
  _wall_line("x",-37,49,75)
  _wall_line("x",-13,49,75,[[56,63]])
@@ -290,12 +290,12 @@ func _build_props() -> void:
  _box("L2 card visual",Vector3(0.35,0.035,0.22),Vector3(2,0.82,40),_mat(Color(0.48,0.05,0.7)),false)
  _add_interaction("card_l2",Vector3(2,0.9,40),Vector3(1.6,1.2,1.6),"Ключ-карта L2")
  for i in range(5): _box("Archive shelf",Vector3(0.55,2.35,0.82),Vector3(-15.4,1.18,24.8+i),metal_mat)
- _table(Vector3(-10.2,0,27.8))
- _box("Archive terminal",Vector3(0.42,0.06,0.3),Vector3(-10.2,0.84,27.8),red_mat,false)
- _add_interaction("archive_log",Vector3(-10.2,1.1,27.8),Vector3(1.8,1.8,1.8),"Журнал архива")
- _box("Incident memo paper", Vector3(0.38, 0.018, 0.27), Vector3(-9.55, 0.83, 28.25), _mat(Color(0.66, 0.61, 0.48), 0.0, 0.96), false)
- _box("Incident memo red stamp", Vector3(0.12, 0.008, 0.07), Vector3(-9.55, 0.843, 28.25), red_mat, false)
- _add_interaction("incident_memo", Vector3(-9.55, 0.95, 28.25), Vector3(0.9, 0.8, 0.8), "Служебная записка")
+ _table(Vector3(-22.0,0,27.8))
+ _box("Archive terminal",Vector3(0.42,0.06,0.3),Vector3(-22.0,0.84,27.8),red_mat,false)
+ _add_interaction("archive_log",Vector3(-22.0,1.1,27.8),Vector3(1.8,1.8,1.8),"Журнал архива")
+ _box("Incident memo paper", Vector3(0.38, 0.018, 0.27), Vector3(-21.35, 0.83, 28.25), _mat(Color(0.66, 0.61, 0.48), 0.0, 0.96), false)
+ _box("Incident memo red stamp", Vector3(0.12, 0.008, 0.07), Vector3(-21.35, 0.843, 28.25), red_mat, false)
+ _add_interaction("incident_memo", Vector3(-21.35, 0.95, 28.25), Vector3(0.9, 0.8, 0.8), "Служебная записка")
  _box("Emergency generator",Vector3(1.25,1.55,1),Vector3(-25.0,0.78,62.8),metal_mat)
  _add_interaction("reactor",Vector3(-25.0,1.1,62.8),Vector3(2.2,2.2,2.2),"Аварийный генератор")
  _box("Sparking panel",Vector3(0.08,0.08,0.08),Vector3(-24.25,1.2,62.55),red_mat,false)
@@ -394,10 +394,10 @@ func _build_room_dressing() -> void:
  _box("Medical monitor screen", Vector3(0.34, 0.21, 0.025), Vector3(24.5, 1.1, 29.345), screen_mat, false)
  # Archive: numbered file boxes and a fallen stack of reports.
  for i in range(4):
-  _box("Archive labeled storage box", Vector3(0.38, 0.28, 0.42), Vector3(-15.1, 0.14 + i * 0.29, 30.2 + (i % 2) * 0.48), paper_mat, false)
-  _box("Archive box label", Vector3(0.018, 0.09, 0.18), Vector3(-14.9, 0.16 + i * 0.29, 30.2 + (i % 2) * 0.48), amber_mat, false)
+  _box("Archive labeled storage box", Vector3(0.38, 0.28, 0.42), Vector3(-25.1, 0.14 + i * 0.29, 27.2 + (i % 2) * 0.48), paper_mat, false)
+  _box("Archive box label", Vector3(0.018, 0.09, 0.18), Vector3(-24.9, 0.16 + i * 0.29, 27.2 + (i % 2) * 0.48), amber_mat, false)
  for i in range(3):
-  _box("Archive fallen report", Vector3(0.42, 0.018, 0.29), Vector3(-9.65 + i * 0.08, 0.82 + i * 0.02, 28.1 + i * 0.08), paper_mat, false)
+  _box("Archive fallen report", Vector3(0.42, 0.018, 0.29), Vector3(-21.65 + i * 0.08, 0.82 + i * 0.02, 28.1 + i * 0.08), paper_mat, false)
  # Workshop: tool chest, hazard beacon and cable drums.
  _box("Workshop tool chest", Vector3(0.82, 0.72, 0.52), Vector3(-12.8, 0.36, 35.0), dark_mat, false)
  for i in range(4):
@@ -417,8 +417,8 @@ func _build_room_dressing() -> void:
  _box("Security control desk", Vector3(2.2, 0.72, 0.8), Vector3(-9.0, 0.36, 75.5), dark_mat, false)
  for i in range(5):
   _box("Security console button", Vector3(0.12, 0.035, 0.12), Vector3(-9.72 + i * 0.34, 0.75, 75.25), amber_mat if i == 2 else screen_mat, false)
- _box("Security wall display", Vector3(0.06, 0.78, 1.25), Vector3(-15.7, 2.1, 70.0), dark_mat, false)
- _box("Security display image", Vector3(0.025, 0.62, 1.05), Vector3(-15.66, 2.1, 70.0), screen_mat, false)
+ _box("Security wall display", Vector3(0.06, 0.78, 1.25), Vector3(-10.5, 2.1, 70.0), dark_mat, false)
+ _box("Security display image", Vector3(0.025, 0.62, 1.05), Vector3(-10.46, 2.1, 70.0), screen_mat, false)
  # Personnel area: chair, locker labels and a damaged ceiling panel.
  _box("Personnel chair seat", Vector3(0.48, 0.12, 0.48), Vector3(-23.7, 0.52, 86.7), dark_mat, false)
  _box("Personnel chair back", Vector3(0.48, 0.55, 0.1), Vector3(-23.7, 0.82, 86.92), dark_mat, false)
