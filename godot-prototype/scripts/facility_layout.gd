@@ -464,7 +464,7 @@ func _build_detail_pass() -> void:
 		for side in [-1.0, 1.0]:
 			_box("Server rack ventilation", Vector3(0.78, 0.055, 0.025), Vector3(side * 4.1, 1.45, z - 0.22), pipe_mat, false)
 			for row in range(3):
-	_box("Server rack activity LED", Vector3(0.055, 0.035, 0.025), Vector3(side * 3.72, 1.78 - row * 0.12, z - 0.42), screen_mat if row != 1 else red_mat, false)
+				_box("Server rack activity LED", Vector3(0.055, 0.035, 0.025), Vector3(side * 3.72, 1.78 - row * 0.12, z - 0.42), screen_mat if row != 1 else red_mat, false)
 	for z in [29.0, 33.0, 37.0]:
 		_cylinder("Sample tank upper collar", 0.69, 0.10, Vector3(13.8, 2.52, z), pipe_mat, false)
 		_cylinder("Sample tank lower collar", 0.69, 0.10, Vector3(13.8, 0.08, z), pipe_mat, false)
