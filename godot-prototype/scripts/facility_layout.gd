@@ -170,7 +170,7 @@ func _build_walls() -> void:
  _wall_line("x",16,44,60,[[55,60]])
  _wall_line("z",60,-16,16,[[-1,1]])
  _wall_line("x",-4,60,80,[[66,70]])
- _wall_line("x",4,60,80,[[65,73]])
+ _wall_line("x",4,60,80)
  _wall_line("z",63,-14,-4)
  _wall_line("z",77,-14,-4)
  _wall_line("x",-14,63,77)
