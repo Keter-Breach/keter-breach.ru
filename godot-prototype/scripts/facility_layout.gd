@@ -212,7 +212,6 @@ func _build_walls() -> void:
 
 func _build_restricted_observation_room() -> void:
  # Compact annex off the evacuation corridor: a control desk, reinforced glass and restrained red lighting.
- _wall_line("x",14,65,75)
  _wall_line("z",65,4,14)
  _wall_line("z",75,4,14)
  var dark_panel := _mat(Color(0.045, 0.06, 0.065), 0.55, 0.42)
@@ -223,9 +222,9 @@ func _build_restricted_observation_room() -> void:
  _box("Observation control desk", Vector3(2.8, 0.82, 0.82), Vector3(10.6, 0.41, 72.4), dark_panel)
  _box("Observation console screen", Vector3(1.45, 0.62, 0.06), Vector3(10.6, 1.18, 71.95), monitor_mat, false)
  _box("Observation file cabinet", Vector3(0.72, 1.65, 0.62), Vector3(6.0, 0.825, 67.5), metal_mat)
- _box("Observation window frame", Vector3(0.08, 1.1, 2.0), Vector3(13.72, 1.75, 70.0), metal_mat, false)
+ _box("Observation window frame", Vector3(0.08, 1.1, 2.0), Vector3(12.72, 1.75, 70.0), metal_mat, false)
  var glass_mat := _mat(Color(0.025, 0.095, 0.11, 0.78), 0.35, 0.18)
- _box("Observation reinforced glass", Vector3(0.035, 0.88, 1.72), Vector3(13.66, 1.75, 70.0), glass_mat, false)
+ _box("Observation reinforced glass", Vector3(0.035, 0.88, 1.72), Vector3(12.66, 1.75, 70.0), glass_mat, false)
  _box("Observation warning beacon", Vector3(0.18, 0.12, 0.18), Vector3(10.6, 1.0, 72.0), red_mat, false)
  var room_label := Label3D.new()
  room_label.name = "Observation room sign"
@@ -233,7 +232,7 @@ func _build_restricted_observation_room() -> void:
  room_label.font_size = 28
  room_label.pixel_size = 0.008
  room_label.modulate = Color(0.88, 0.12, 0.08)
- room_label.position = Vector3(13.68, 2.55, 70.0)
+ room_label.position = Vector3(12.68, 2.55, 70.0)
  room_label.rotation.y = -PI / 2.0
  add_child(room_label)
  _add_light(Vector3(9.2, 2.65, 70.5), Color(0.72, 0.045, 0.025), 0.72, 7.0)
