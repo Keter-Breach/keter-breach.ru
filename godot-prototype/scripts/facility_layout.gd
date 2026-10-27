@@ -166,11 +166,11 @@ func _build_walls() -> void:
  _wall_line("z",39,5,15)
  _wall_line("x",15,27,39)
  _wall_line("z",44,-16,16,[[-1.5,1.5]])
- _wall_line("x",-16,44,60)
- _wall_line("x",16,44,60)
+ _wall_line("x",-16,44,60,[[55,60]])
+ _wall_line("x",16,44,60,[[55,60]])
  _wall_line("z",60,-16,16,[[-1,1]])
  _wall_line("x",-4,60,80,[[66,70]])
- _wall_line("x",4,60,80,[[65,70]])
+ _wall_line("x",4,60,80,[[65,73]])
  _wall_line("z",63,-14,-4)
  _wall_line("z",77,-14,-4)
  _wall_line("x",-14,63,77)
@@ -184,23 +184,23 @@ func _build_walls() -> void:
  # Дополнительные комнаты: повторяем открытый фасад и глухую заднюю стену исходной room().
  # Архив-09: центр (-25,18), 24x24; вход со стороны меньшего Z.
  _wall_line("x",-37,6,30)
- _wall_line("x",-13,6,30)
+ _wall_line("x",-13,6,30,[[24,29]])
  _wall_line("z",30,-37,-13)
  # Медблок: центр (25,38), 24x26.
- _wall_line("x",13,25,51)
+ _wall_line("x",13,25,51,[[30,36]])
  _wall_line("x",37,25,51)
  _wall_line("z",51,13,37)
  # Технический уровень/реактор: центр (-25,62), 24x26.
  _wall_line("x",-37,49,75)
- _wall_line("x",-13,49,75)
+ _wall_line("x",-13,49,75,[[56,63]])
  _wall_line("z",75,-37,-13)
  # Галерея наблюдения: центр (25,70), 24x24.
- _wall_line("x",13,58,82)
+ _wall_line("x",13,58,82,[[58,63]])
  _wall_line("x",37,58,82)
  _wall_line("z",82,13,37)
  # Комната персонала: центр (-25,88), 20x18.
  _wall_line("x",-35,79,97)
- _wall_line("x",-15,79,97)
+ _wall_line("x",-15,79,97,[[86,92]])
  _wall_line("z",97,-35,-15)
  # Узел связи: центр (0,94), 30x22.
  _wall_line("x",-15,83,105)
@@ -211,31 +211,33 @@ func _build_walls() -> void:
  _wall_line("x",4,105,130)
 
 func _build_restricted_observation_room() -> void:
- # Compact annex off the evacuation corridor: a control desk, reinforced glass and restrained red lighting.
- _wall_line("z",65,4,14)
- _wall_line("z",75,4,14)
+ # Internal observation booth inside the east gallery; it does not intrude into the main corridor.
+ _wall_line("z",65,16,26)
+ _wall_line("z",75,16,26)
+ _wall_line("x",16,65,75,[[68,72]])
+ _wall_line("x",26,65,75)
  var dark_panel := _mat(Color(0.045, 0.06, 0.065), 0.55, 0.42)
  var monitor_mat := _mat(Color(0.018, 0.16, 0.14), 0.12, 0.28)
  monitor_mat.emission_enabled = true
  monitor_mat.emission = Color(0.015, 0.28, 0.22)
  monitor_mat.emission_energy_multiplier = 0.7
- _box("Observation control desk", Vector3(2.8, 0.82, 0.82), Vector3(10.6, 0.41, 72.4), dark_panel)
- _box("Observation console screen", Vector3(1.45, 0.62, 0.06), Vector3(10.6, 1.18, 71.95), monitor_mat, false)
- _box("Observation file cabinet", Vector3(0.72, 1.65, 0.62), Vector3(6.0, 0.825, 67.5), metal_mat)
- _box("Observation window frame", Vector3(0.08, 1.1, 2.0), Vector3(12.72, 1.75, 70.0), metal_mat, false)
+ _box("Observation control desk", Vector3(2.8, 0.82, 0.82), Vector3(21.0, 0.41, 72.4), dark_panel)
+ _box("Observation console screen", Vector3(1.45, 0.62, 0.06), Vector3(21.0, 1.18, 71.95), monitor_mat, false)
+ _box("Observation file cabinet", Vector3(0.72, 1.65, 0.62), Vector3(18.0, 0.825, 67.5), metal_mat)
+ _box("Observation window frame", Vector3(0.08, 1.1, 2.0), Vector3(25.72, 1.75, 70.0), metal_mat, false)
  var glass_mat := _mat(Color(0.025, 0.095, 0.11, 0.78), 0.35, 0.18)
- _box("Observation reinforced glass", Vector3(0.035, 0.88, 1.72), Vector3(12.66, 1.75, 70.0), glass_mat, false)
- _box("Observation warning beacon", Vector3(0.18, 0.12, 0.18), Vector3(10.6, 1.0, 72.0), red_mat, false)
+ _box("Observation reinforced glass", Vector3(0.035, 0.88, 1.72), Vector3(25.66, 1.75, 70.0), glass_mat, false)
+ _box("Observation warning beacon", Vector3(0.18, 0.12, 0.18), Vector3(21.0, 1.0, 72.0), red_mat, false)
  var room_label := Label3D.new()
  room_label.name = "Observation room sign"
  room_label.text = "OBSERVATION / 03"
  room_label.font_size = 28
  room_label.pixel_size = 0.008
  room_label.modulate = Color(0.88, 0.12, 0.08)
- room_label.position = Vector3(12.68, 2.55, 70.0)
+ room_label.position = Vector3(25.68, 2.55, 70.0)
  room_label.rotation.y = -PI / 2.0
  add_child(room_label)
- _add_light(Vector3(9.2, 2.65, 70.5), Color(0.72, 0.045, 0.025), 0.72, 7.0)
+ _add_light(Vector3(19.2, 2.65, 70.5), Color(0.72, 0.045, 0.025), 0.72, 7.0)
 
 func _cylinder(n: String,radius: float,height: float,p: Vector3,m: Material,solid: bool=true) -> Node3D:
  var node: Node3D
