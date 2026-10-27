@@ -481,6 +481,9 @@ func _door_frame(z: float, code: String) -> void:
   _box(code + " hazard stripe", Vector3(0.22, 0.055, 0.025), Vector3(-0.66 + i * 0.22, 3.09, z + 0.37), hazard_mat, false)
 
 func _build_lights() -> void:
+ # Reliable neutral fill light in the starting lift: the player must be able to
+ # see the door and controls even before the flashlight has been toggled.
+ _add_light(Vector3(0,2.65,-7.55),Color(0.78,0.84,0.92),1.9,8.5)
  _add_light(Vector3(0,2.8,-4),Color(0.9,0.3,0.2),1.15,9)
  _add_light(Vector3(0,2.8,13),Color(0.85,0.035,0.025),1.45,12)
  _add_light(Vector3(-10,2.8,10),Color(0.12,0.35,0.85),0.95,9)
