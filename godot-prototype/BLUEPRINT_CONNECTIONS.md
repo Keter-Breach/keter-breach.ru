@@ -15,7 +15,7 @@ The room rectangles are a working blockout; final wall thickness and prop placem
 | Laboratory | X 5..15, Z 27..39 | Main spine door at Z 31..35 |
 | Medical block | X 15..37, Z 25..51 | Connects to lab through X=15, Z 30..36 |
 | Containment | X -16..16, Z 44..60 | Main route through Z=44; side exits toward reactor and observation |
-| Reactor / technical sector | X -37..-13, Z 49..75 | Doorway through the shared X=-16 wall around Z 55..63 |
+| Reactor / technical sector | X -37..-16, Z 49..75 | Doorway through the shared X=-16 wall around Z 55..63 |
 | Security post | X -14..-4, Z 63..77 | Side entrance from the spine at X=-4, Z 66..70 |
 | Observation gallery | X 13..37, Z 58..82 | Connects from containment at X=16, Z 55..60 |
 | Observation booth | X 16..26, Z 65..75 | Internal doorway through X=16, Z 68..72 |
