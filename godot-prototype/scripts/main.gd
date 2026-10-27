@@ -346,13 +346,24 @@ func _flash_alarm() -> void:
 	tween.tween_callback(flash.queue_free)
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Allow keyboard and mouse to advance past the intro. This is a fallback
+	# for builds where the first click is used to focus the game window.
 	if not game_started:
-		if event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_ENTER or event.keycode == KEY_SPACE):
-			if intro_root != null and intro_root.visible:
+		if intro_root != null and intro_root.visible:
+			if event is InputEventKey and event.pressed and not event.echo:
+				if event.keycode == KEY_ENTER or event.keycode == KEY_SPACE or event.keycode == KEY_E:
+					_enter_game()
+			elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 				_enter_game()
 		return
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
-		_interact()
+	# A click always restores mouse capture after the OS or window manager releases it.
+	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		elif event.keycode == KEY_E:
+			_interact()
 
 func _get_interaction_target() -> Area3D:
 	if player_ref == null or not is_instance_valid(player_ref):
@@ -1000,20 +1011,27 @@ func _enter_game() -> void:
 	tween.tween_callback(_finish_enter_game)
 
 func _finish_enter_game() -> void:
+	if player_ref == null or not is_instance_valid(player_ref):
+		_show_status("ОШИБКА: игрок не создан. Перезапусти игру.")
+		loading_root.visible = false
+		menu_root.visible = true
+		return
 	game_started = true
 	loading_root.visible = false
 	hud_layer.visible = true
 	player_ref.set_process(true)
 	player_ref.set_physics_process(true)
+	# Re-assert the gameplay camera after the menu camera was active.
 	var player_camera := player_ref.get_node_or_null("PlayerCamera") as Camera3D
 	if player_camera:
 		player_camera.current = true
+		player_camera.make_current()
 	if menu_camera:
 		menu_camera.current = false
 	if menu_alarm_light:
 		menu_alarm_light.visible = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	_show_status("03:17 — грузовой лифт остановился. Последние 47 минут отсутствуют в памяти. Найди карту L1 в администрации.")
+	_show_status("03:17 — грузовой лифт остановился. Последние 47 минут отсутствуют в памяти. Найди карту L1 в администрации. WASD — движение, мышь — осмотр, ESC — курсор.")
 
 func _add_map_room(room_name: String, x1: float, z1: float, x2: float, z2: float, tint: Color) -> void:
 	if map_panel == null:
