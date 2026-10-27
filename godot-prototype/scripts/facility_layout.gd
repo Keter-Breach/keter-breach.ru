@@ -166,7 +166,7 @@ func _build_walls() -> void:
  _wall_line("z",39,5,15)
  # Shared boundary of the lab wing and medical block is defined by the medical-room wall below.
  _wall_line("z",44,-16,16,[[-1.5,1.5]])
- _wall_line("x",-16,44,60,[[55,60]])
+ _wall_line("x",-16,44,75,[[55,63]])
  _wall_line("x",16,44,60,[[55,60]])
  _wall_line("z",60,-16,16,[[-1,1]])
  _wall_line("x",-4,60,80,[[66,70]])
@@ -192,8 +192,8 @@ func _build_walls() -> void:
  _wall_line("z",51,15,37)
  # Технический уровень/реактор: центр (-25,62), 24x26.
  _wall_line("x",-37,49,75)
- _wall_line("x",-13,49,75,[[56,63]])
- _wall_line("z",75,-37,-13)
+ # Reactor access is handled by the shared X=-16 wall above.
+ _wall_line("z",75,-37,-16)
  # Галерея наблюдения: центр (25,70), 24x24.
  _wall_line("x",13,58,82,[[58,63]])
  _wall_line("x",37,58,82)
