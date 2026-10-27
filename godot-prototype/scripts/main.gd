@@ -1100,7 +1100,7 @@ func _build_hud() -> void:
 	_add_map_room("Laboratory", 5.0, 27.0, 15.0, 39.0, Color(0.18, 0.34, 0.29, 0.95))
 	_add_map_room("Medical block", 15.0, 25.0, 37.0, 51.0, Color(0.28, 0.34, 0.38, 0.95))
 	_add_map_room("Containment", -16.0, 44.0, 16.0, 60.0, Color(0.42, 0.19, 0.17, 0.95))
-	_add_map_room("Reactor", -37.0, 49.0, -13.0, 75.0, Color(0.43, 0.23, 0.13, 0.95))
+	_add_map_room("Reactor", -37.0, 49.0, -16.0, 75.0, Color(0.43, 0.23, 0.13, 0.95))
 	_add_map_room("Security post", -14.0, 63.0, -4.0, 77.0, Color(0.36, 0.28, 0.20, 0.95))
 	_add_map_room("Observation gallery", 13.0, 58.0, 37.0, 82.0, Color(0.20, 0.30, 0.34, 0.95))
 	_add_map_room("Personnel", -35.0, 79.0, -15.0, 97.0, Color(0.31, 0.30, 0.27, 0.95))
