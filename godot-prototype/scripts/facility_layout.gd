@@ -67,6 +67,7 @@ func _ready() -> void:
  _box("Facility ceiling",Vector3(180,0.28,240),Vector3(0,3.34,30),metal_mat)
  _build_elevator()
  _build_walls()
+ _build_restricted_observation_room()
  _build_props()
  _build_detail_pass()
  _build_room_dressing()
@@ -169,7 +170,7 @@ func _build_walls() -> void:
  _wall_line("x",16,44,60)
  _wall_line("z",60,-16,16,[[-1,1]])
  _wall_line("x",-4,60,80,[[66,70]])
- _wall_line("x",4,60,80)
+ _wall_line("x",4,60,80,[[65,70]])
  _wall_line("z",63,-14,-4)
  _wall_line("z",77,-14,-4)
  _wall_line("x",-14,63,77)
@@ -208,6 +209,34 @@ func _build_walls() -> void:
  # За эвакуационным шлюзом начинается визуально повторённый коридор Протокола «Зеркало».
  _wall_line("x",-4,105,130)
  _wall_line("x",4,105,130)
+
+func _build_restricted_observation_room() -> void:
+ # Compact annex off the evacuation corridor: a control desk, reinforced glass and restrained red lighting.
+ _wall_line("x",14,65,75)
+ _wall_line("z",65,4,14)
+ _wall_line("z",75,4,14)
+ var dark_panel := _mat(Color(0.045, 0.06, 0.065), 0.55, 0.42)
+ var monitor_mat := _mat(Color(0.018, 0.16, 0.14), 0.12, 0.28)
+ monitor_mat.emission_enabled = true
+ monitor_mat.emission = Color(0.015, 0.28, 0.22)
+ monitor_mat.emission_energy_multiplier = 0.7
+ _box("Observation control desk", Vector3(2.8, 0.82, 0.82), Vector3(10.6, 0.41, 72.4), dark_panel)
+ _box("Observation console screen", Vector3(1.45, 0.62, 0.06), Vector3(10.6, 1.18, 71.95), monitor_mat, false)
+ _box("Observation file cabinet", Vector3(0.72, 1.65, 0.62), Vector3(6.0, 0.825, 67.5), metal_mat)
+ _box("Observation window frame", Vector3(0.08, 1.1, 2.0), Vector3(13.72, 1.75, 70.0), metal_mat, false)
+ var glass_mat := _mat(Color(0.025, 0.095, 0.11, 0.78), 0.35, 0.18)
+ _box("Observation reinforced glass", Vector3(0.035, 0.88, 1.72), Vector3(13.66, 1.75, 70.0), glass_mat, false)
+ _box("Observation warning beacon", Vector3(0.18, 0.12, 0.18), Vector3(10.6, 1.0, 72.0), red_mat, false)
+ var room_label := Label3D.new()
+ room_label.name = "Observation room sign"
+ room_label.text = "OBSERVATION / 03"
+ room_label.font_size = 28
+ room_label.pixel_size = 0.008
+ room_label.modulate = Color(0.88, 0.12, 0.08)
+ room_label.position = Vector3(13.68, 2.55, 70.0)
+ room_label.rotation.y = -PI / 2.0
+ add_child(room_label)
+ _add_light(Vector3(9.2, 2.65, 70.5), Color(0.72, 0.045, 0.025), 0.72, 7.0)
 
 func _cylinder(n: String,radius: float,height: float,p: Vector3,m: Material,solid: bool=true) -> Node3D:
  var node: Node3D
