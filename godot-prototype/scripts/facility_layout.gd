@@ -164,7 +164,7 @@ func _build_walls() -> void:
  _wall_line("x",5,24,44,[[31,35]])
  _wall_line("z",27,5,15)
  _wall_line("z",39,5,15)
- _wall_line("x",15,27,39)
+ # Shared boundary of the lab wing and medical block is defined by the medical-room wall below.
  _wall_line("z",44,-16,16,[[-1.5,1.5]])
  _wall_line("x",-16,44,60,[[55,60]])
  _wall_line("x",16,44,60,[[55,60]])
@@ -187,7 +187,7 @@ func _build_walls() -> void:
  _wall_line("x",-13,6,30,[[24,29]])
  _wall_line("z",30,-37,-13)
  # Медблок: центр (25,38), 24x26.
- _wall_line("x",13,25,51,[[30,36]])
+ _wall_line("x",15,25,51,[[30,36]])
  _wall_line("x",37,25,51)
  _wall_line("z",51,13,37)
  # Технический уровень/реактор: центр (-25,62), 24x26.
@@ -278,7 +278,7 @@ func _build_props() -> void:
  for i in range(6): _box("Administration locker",Vector3(0.5,1.8,0.9),Vector3(-14.4,0.9,5.5+i*1.5),metal_mat)
  _box("L1 card visual",Vector3(0.35,0.035,0.22),Vector3(-10,0.82,12),_mat(Color(0,0.35,0.8)),false)
  _add_interaction("card_l1",Vector3(-10,0.9,12),Vector3(1.6,1.2,1.6),"Ключ-карта L1")
- for z in [6.5,9.5,13.0]: _box("Medical bed",Vector3(0.9,0.5,2),Vector3(13.8,0.35,z),_mat(Color(0.24,0.26,0.25)))
+ for z in [30.5,36.5,42.5]: _box("Medical bed",Vector3(0.9,0.5,2),Vector3(24.5,0.35,z),_mat(Color(0.24,0.26,0.25)))
  _box("Medical supply crate",Vector3(1,1,1),Vector3(7,0.5,14.5),metal_mat)
  _box("Battery visual",Vector3(0.22,0.28,0.16),Vector3(7,1.15,14.5),_mat(Color(0.1,0.55,0.3)),false)
  _add_interaction("battery_pack",Vector3(7,1.1,14.5),Vector3(1.5,1.5,1.5),"Запасная батарея")
@@ -296,10 +296,10 @@ func _build_props() -> void:
  _box("Incident memo paper", Vector3(0.38, 0.018, 0.27), Vector3(-9.55, 0.83, 28.25), _mat(Color(0.66, 0.61, 0.48), 0.0, 0.96), false)
  _box("Incident memo red stamp", Vector3(0.12, 0.008, 0.07), Vector3(-9.55, 0.843, 28.25), red_mat, false)
  _add_interaction("incident_memo", Vector3(-9.55, 0.95, 28.25), Vector3(0.9, 0.8, 0.8), "Служебная записка")
- _box("Emergency generator",Vector3(1.25,1.55,1),Vector3(-14.8,0.78,32.8),metal_mat)
- _add_interaction("reactor",Vector3(-14.8,1.1,32.8),Vector3(2.2,2.2,2.2),"Аварийный генератор")
- _box("Sparking panel",Vector3(0.08,0.08,0.08),Vector3(-14.05,1.2,32.55),red_mat,false)
- for x in [-13.2,-12.7,-12.2]: _box("Workshop pipe",Vector3(0.07,0.07,3),Vector3(x,2.85,33),metal_mat,false)
+ _box("Emergency generator",Vector3(1.25,1.55,1),Vector3(-25.0,0.78,62.8),metal_mat)
+ _add_interaction("reactor",Vector3(-25.0,1.1,62.8),Vector3(2.2,2.2,2.2),"Аварийный генератор")
+ _box("Sparking panel",Vector3(0.08,0.08,0.08),Vector3(-24.25,1.2,62.55),red_mat,false)
+ for x in [-23.4,-22.9,-22.4]: _box("Reactor coolant pipe",Vector3(0.07,0.07,3),Vector3(x,2.85,63),metal_mat,false)
  _box("Isolation bed",Vector3(1,0.42,2.2),Vector3(-14.1,0.28,38.2),_mat(Color(0.22,0.23,0.22)))
  _box("Isolation side table",Vector3(0.8,0.75,0.7),Vector3(-9.3,0.375,41.1),metal_mat)
  _box("Security crate",Vector3(1,1,1),Vector3(-9,0.5,69),metal_mat)
@@ -381,17 +381,17 @@ func _build_room_dressing() -> void:
  for i in range(7):
   _box("Administration vent slat", Vector3(0.025, 0.035, 0.78), Vector3(-4.65, 2.03 + i * 0.07, 12.0), dark_mat, false)
  # Medical block: privacy screens, bedside equipment and supply cabinets.
- for z in [6.5, 9.5, 13.0]:
-  _box("Medical bed head panel", Vector3(0.95, 0.28, 0.12), Vector3(13.8, 0.73, z - 0.82), metal_mat, false)
-  _box("Medical bed pillow", Vector3(0.62, 0.09, 0.34), Vector3(13.8, 0.63, z - 0.67), paper_mat, false)
-  _box("Medical privacy screen post", Vector3(0.045, 1.65, 0.045), Vector3(12.55, 0.83, z), metal_mat, false)
-  _box("Medical privacy screen", Vector3(0.035, 1.2, 1.5), Vector3(12.55, 1.45, z + 0.65), glass_mat, false)
- _box("Medical supply cabinet", Vector3(0.65, 1.65, 0.5), Vector3(16.0, 0.825, 7.0), metal_mat, false)
- _box("Medical cabinet glass", Vector3(0.025, 0.95, 0.34), Vector3(15.66, 1.08, 7.0), glass_mat, false)
- _cylinder("Medical IV stand", 0.035, 1.85, Vector3(11.8, 0.93, 13.5), metal_mat, false)
- _cylinder("Medical IV hook", 0.025, 0.28, Vector3(11.8, 1.77, 13.5), metal_mat, false)
- _box("Medical monitor", Vector3(0.42, 0.3, 0.08), Vector3(13.8, 1.08, 5.45), dark_mat, false)
- _box("Medical monitor screen", Vector3(0.34, 0.21, 0.025), Vector3(13.8, 1.1, 5.395), screen_mat, false)
+ for z in [30.5, 36.5, 42.5]:
+  _box("Medical bed head panel", Vector3(0.95, 0.28, 0.12), Vector3(24.5, 0.73, z - 0.82), metal_mat, false)
+  _box("Medical bed pillow", Vector3(0.62, 0.09, 0.34), Vector3(24.5, 0.63, z - 0.67), paper_mat, false)
+  _box("Medical privacy screen post", Vector3(0.045, 1.65, 0.045), Vector3(22.8, 0.83, z), metal_mat, false)
+  _box("Medical privacy screen", Vector3(0.035, 1.2, 1.5), Vector3(22.8, 1.45, z + 0.65), glass_mat, false)
+ _box("Medical supply cabinet", Vector3(0.65, 1.65, 0.5), Vector3(31.0, 0.825, 29.5), metal_mat, false)
+ _box("Medical cabinet glass", Vector3(0.025, 0.95, 0.34), Vector3(30.66, 1.08, 29.5), glass_mat, false)
+ _cylinder("Medical IV stand", 0.035, 1.85, Vector3(29.0, 0.93, 43.5), metal_mat, false)
+ _cylinder("Medical IV hook", 0.025, 0.28, Vector3(29.0, 1.77, 43.5), metal_mat, false)
+ _box("Medical monitor", Vector3(0.42, 0.3, 0.08), Vector3(24.5, 1.08, 29.4), dark_mat, false)
+ _box("Medical monitor screen", Vector3(0.34, 0.21, 0.025), Vector3(24.5, 1.1, 29.345), screen_mat, false)
  # Archive: numbered file boxes and a fallen stack of reports.
  for i in range(4):
   _box("Archive labeled storage box", Vector3(0.38, 0.28, 0.42), Vector3(-15.1, 0.14 + i * 0.29, 30.2 + (i % 2) * 0.48), paper_mat, false)
