@@ -83,16 +83,20 @@ assert.match(mobileJs, /camera\.rotation\.y/, "right-side touch zone should rota
 assert.match(mobileJs, /moveForward = y < -dead/, "virtual joystick should drive the existing movement state");
 assert.match(mobileCss, /env\(safe-area-inset-left\)/, "touch controls should respect device safe areas");
 assert.match(manifest, /"display": "standalone"/, "PWA should launch without browser chrome");
+assert.match(manifest, /"orientation": "landscape"/, "installed PWA should request landscape orientation");
+assert.match(mobileJs, /screen\.orientation\.lock\("landscape"\)/, "supported mobile browsers should request landscape after a user gesture");
 assert.match(serviceWorker, /caches\.open\(CACHE_NAME\)/, "PWA should cache its app shell");
 assert.match(packageJson, /mobile-controls\.js/, "desktop package should include the mobile runtime files");
 new Function(mobileJs);
 new Function(serviceWorker);
 JSON.parse(manifest);
 
-const [mobileControls, androidBuilder] = await Promise.all([
+const [mobileControls, androidBuilder, landscapeBuilder] = await Promise.all([
   read("../mobile-controls.js"),
-  read("../scripts/build-android.mjs")
+  read("../scripts/build-android.mjs"),
+  read("../scripts/set-android-landscape.mjs")
 ]);
+assert.match(landscapeBuilder, /android:screenOrientation="landscape"/, "Android MainActivity should be locked to landscape");
 assert.match(mobileControls, /keter-tutorial-subtitle/, "mobile controls should show subtitle tutorial");
 assert.match(mobileControls, /ПРАВАЯ ЧАСТЬ ЭКРАНА/, "tutorial should explain camera swipe");
 assert.match(mobileControls, /keter-mobile-tutorial-v2/, "tutorial completion should be remembered");
