@@ -1,0 +1,14 @@
+{
+  "id": "/",
+  "name": "PROJECT: KETER",
+  "short_name": "KETER",
+  "description": "VHS survival horror — инцидент в секторе D-12",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#030506",
+  "theme_color": "#080b0c",
+  "icons": [{ "src": "./pwa-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
