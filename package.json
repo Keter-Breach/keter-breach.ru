@@ -28,7 +28,12 @@
       "audio/**/*",
       "desktop/**/*",
       "node_modules/three/build/three.min.js",
-      "package.json"
+      "package.json",
+      "mobile-controls.js",
+      "mobile-controls.css",
+      "manifest.webmanifest",
+      "pwa-icon.svg",
+      "service-worker.js"
     ],
     "win": {
       "target": [

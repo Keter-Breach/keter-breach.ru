@@ -47,16 +47,44 @@ console.log("Checked: page wiring, game entry points, PBR maps, input fixes, men
 assert.match(html, /id="keter-loading"/, "page should show a branded loading overlay during startup");
 assert.match(html, /id="loading-status"/, "loading overlay should expose startup status");
 assert.match(html, /loading-mark/, "loading overlay should include an animated loading icon");
-assert.match(html, /gameScript\.onload = hideLoader/, "loading overlay should disappear after the game script loads");
+assert.match(html, /controlsScript\.onload = hideLoader/, "loading overlay should disappear after touch controls load");
 assert.match(html, /gameScript\.onerror = showError/, "startup failure should show a readable error");
 assert.match(html, /loadThree\("\.\/node_modules\/three\/build\/three\.min\.js", function \(\)/, "desktop build should prefer the bundled Three.js runtime");
 assert.match(html, /loadThree\("https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.128\.0\/build\/three\.min\.js", showError\)/, "browser build should have a pinned CDN fallback");
 assert.doesNotMatch(html, /<script src="script\.js"><\/script>/, "game script must not be loaded twice");
 
 assert.match(script, /document\.pointerLockElement === canvas/, "pointer lock state should recognize the game canvas");
-assert.match(script, /renderer\.domElement\.addEventListener\("click", requestGamePointerLock\)/, "game canvas should request pointer lock from one click handler");
+assert.match(script, /renderer\.domElement\.addEventListener\("click", requestGamePointerLock\)/, "desktop canvas should request pointer lock from one click handler");
+assert.match(script, /matchMedia\("\(pointer: coarse\)"\)\.matches/, "touch devices should bypass desktop pointer lock");
 assert.doesNotMatch(script, /container\.addEventListener\("click", requestGamePointerLock\)/, "pointer lock must not be requested twice by bubbling clicks");
 assert.match(script, /className = 'keter-vhs-overlay'/, "gameplay should mount its VHS overlay");
 assert.match(css, /keter-game-vhs-track/, "gameplay should have animated VHS tracking bands");
 assert.match(css, /repeating-linear-gradient\(0deg, rgba\(190,220,211,\.16\)/, "gameplay should have visible VHS scanlines");
 assert.match(css, /#000 !important/, "boot screen should use a true black base");
+
+
+// Mobile browser and installable PWA support.
+const [mobileJs, mobileCss, manifest, serviceWorker, packageJson] = await Promise.all([
+  read("../mobile-controls.js"),
+  read("../mobile-controls.css"),
+  read("../manifest.webmanifest"),
+  read("../service-worker.js"),
+  read("../package.json")
+]);
+assert.match(html, /name="viewport" content="width=device-width, initial-scale=1\.0, viewport-fit=cover"/, "mobile viewport should respect device safe areas");
+assert.match(html, /rel="manifest" href="\.\/manifest\.webmanifest"/, "page should advertise its PWA manifest");
+assert.match(html, /mobile-controls\.css/, "page should load touch control styles");
+assert.match(html, /controlsScript\.src = "\.\/mobile-controls\.js"/, "touch controls should load after the game core");
+assert.match(html, /navigator\.serviceWorker\.register\("\.\/service-worker\.js"\)/, "page should register its offline service worker");
+assert.match(mobileJs, /data-action="sprint"/, "touch UI should include sprint");
+assert.match(mobileJs, /data-action="flashlight"/, "touch UI should include flashlight");
+assert.match(mobileJs, /data-action="interact"/, "touch UI should include interaction");
+assert.match(mobileJs, /camera\.rotation\.y/, "right-side touch zone should rotate the camera");
+assert.match(mobileJs, /moveForward = y < -dead/, "virtual joystick should drive the existing movement state");
+assert.match(mobileCss, /env\(safe-area-inset-left\)/, "touch controls should respect device safe areas");
+assert.match(manifest, /"display": "standalone"/, "PWA should launch without browser chrome");
+assert.match(serviceWorker, /caches\.open\(CACHE_NAME\)/, "PWA should cache its app shell");
+assert.match(packageJson, /mobile-controls\.js/, "desktop package should include the mobile runtime files");
+new Function(mobileJs);
+new Function(serviceWorker);
+JSON.parse(manifest);

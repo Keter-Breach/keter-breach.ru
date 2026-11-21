@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" fill="#050809"/><path d="M0 0h512v512H0z" fill="none" stroke="#8b2924" stroke-width="18"/>
+<path d="M104 88h304v336H104z" fill="#0c1314" stroke="#63716d" stroke-width="8"/>
+<path d="M150 145h212M150 183h212M150 221h130" stroke="#b9c6c0" stroke-width="12" opacity=".45"/>
+<path d="M162 302l70-78 0 57 118-1-70 78v-57H162z" fill="#b94b40"/>
+<text x="256" y="395" fill="#e4ece7" font-family="monospace" font-size="48" font-weight="700" text-anchor="middle" letter-spacing="8">KETER</text></svg>

@@ -2,7 +2,10 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#080b0c">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./pwa-icon.svg" type="image/svg+xml">
 <title>Project: Keter</title>
 <style>
   :root {
@@ -252,6 +255,7 @@
   }
 </style>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="./mobile-controls.css">
 </head>
 <body>
 
@@ -344,7 +348,13 @@
       setStatus("ЗАПУСК ИГРОВОГО МОДУЛЯ");
       const gameScript = document.createElement("script");
       gameScript.src = "./script.js";
-      gameScript.onload = hideLoader;
+      gameScript.onload = function () {
+        const controlsScript = document.createElement("script");
+        controlsScript.src = "./mobile-controls.js";
+        controlsScript.onload = hideLoader;
+        controlsScript.onerror = hideLoader;
+        document.body.appendChild(controlsScript);
+      };
       gameScript.onerror = showError;
       document.body.appendChild(gameScript);
     }
@@ -365,5 +375,14 @@
   })();
 </script>
 
+<script>
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("./service-worker.js").catch(function (error) {
+        console.warn("[KETER] PWA offline cache unavailable:", error);
+      });
+    });
+  }
+</script>
 </body>
 </html>
