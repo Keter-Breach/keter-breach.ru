@@ -159,6 +159,9 @@ function generateKeycardTexture(levelStr, colorHex) {
 // === 2b. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ (рисуются на canvas, внешние файлы не нужны) ===
 let MAT = null, dust = null, flickers = [];
 let emergencyPulse = null;
+let lastMinimapDraw = 0;
+let lastLightUpdate = 0;
+let lastDustUpdate = 0;
 const rnd = Math.random;
 
 function dataTexture(size, draw) {
@@ -728,13 +731,13 @@ function init3DMode() {
       console.error("[KETER] WebGL initialization failed:", error);
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, touchDevice ? 1.25 : 1.75));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, touchDevice ? 1.0 : 1.25));
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.12;
-    renderer.shadowMap.enabled = !touchDevice;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.physicallyCorrectLights = !touchDevice;
+    renderer.shadowMap.enabled = false;
+    renderer.shadowMap.type = THREE.BasicShadowMap;
+    renderer.physicallyCorrectLights = false;
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
     renderer.domElement.addEventListener("webglcontextlost", event => {
@@ -746,10 +749,7 @@ function init3DMode() {
 
     flashlight = new THREE.SpotLight(0xddeeff, 260, 32, Math.PI / 4.2, 0.58, 1.7);
     flashlight.position.set(0, 0, 0);
-    flashlight.castShadow = true;
-    flashlight.shadow.mapSize.set(1024, 1024);
-    flashlight.shadow.bias = -0.00025;
-    flashlight.shadow.normalBias = 0.025;
+    flashlight.castShadow = false; // Динамические тени от фонаря отключены для стабильного FPS.
     flashlight.target.position.set(0, 0, -1); // камера смотрит в -Z
     camera.add(flashlight, flashlight.target);
     scene.add(camera);
@@ -1786,21 +1786,29 @@ function animate3D() {
     emergencyPulse.intensity = 0.18 + pulse * 1.25;
   }
 
-  flickers.forEach(f => {
-    const outage = Math.random() < 0.065;
-    f.light.intensity = f.base * (outage ? 0.08 : 0.82 + Math.random() * 0.18);
-  });
+  if (time - lastLightUpdate >= 100) {
+    lastLightUpdate = time;
+    flickers.forEach(f => {
+      const outage = Math.random() < 0.065;
+      f.light.intensity = f.base * (outage ? 0.08 : 0.82 + Math.random() * 0.18);
+    });
+  }
   if (MAT) MAT.keter.emissiveIntensity = 0.7 + 0.3 * Math.sin(time * 0.003);
-  if (dust) {
+  if (dust && dust.visible && time - lastDustUpdate >= 80) {
+    const dustDelta = Math.min((time - lastDustUpdate) / 1000, 0.1);
+    lastDustUpdate = time;
     const p = dust.geometry.attributes.position;
     for (let i = 0; i < p.count; i++) {
-      let y = p.getY(i) + delta * 0.05; if (y > 3) y = 0;
+      let y = p.getY(i) + dustDelta * 0.05; if (y > 3) y = 0;
       p.setY(i, y); p.setX(i, p.getX(i) + Math.sin(time * 0.0005 + i) * 0.0015);
     }
     p.needsUpdate = true;
   }
 
-  drawMinimap();
+  if (time - lastMinimapDraw >= 120) {
+    lastMinimapDraw = time;
+    drawMinimap();
+  }
   try { renderer.render(scene, camera); }
   catch (error) {
     if (window.__keterReportError) window.__keterReportError("Ошибка отрисовки 3D-сцены", error);
@@ -2663,14 +2671,14 @@ renderChapter(1);
       const touchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
         Number(navigator.maxTouchPoints || 0) > 0;
       const profiles = {
-        low:      { pixelRatio: 0.85, shadows: false, exposure: 1.02, fog: 0.92, dust: false },
-        balanced: { pixelRatio: 1.15, shadows: false, exposure: 1.08, fog: 1.00, dust: true },
-        high:     { pixelRatio: 1.5, shadows: true,  exposure: 1.12, fog: 1.00, dust: true },
-        ultra:    { pixelRatio: 1.85, shadows: true, exposure: 1.16, fog: 1.00, dust: true }
+        low:      { pixelRatio: 0.75, shadows: false, exposure: 1.02, fog: 0.92, dust: false },
+        balanced: { pixelRatio: 1.0, shadows: false, exposure: 1.08, fog: 1.00, dust: true },
+        high:     { pixelRatio: 1.25, shadows: false, exposure: 1.12, fog: 1.00, dust: true },
+        ultra:    { pixelRatio: 1.5, shadows: false, exposure: 1.16, fog: 1.00, dust: true }
       };
       const profile = profiles[settings.quality] || profiles.balanced;
       // Phone GPUs get a conservative cap even when the user selects a higher preset.
-      const deviceCap = touchDevice ? 1.35 : 2;
+      const deviceCap = touchDevice ? 1.0 : 1.5;
       const ratio = Math.min(window.devicePixelRatio || 1, profile.pixelRatio, deviceCap);
       renderer.setPixelRatio(ratio);
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -2691,9 +2699,9 @@ renderChapter(1);
       if (container) {
         const displayBrightness = clamp(settings.brightness / 0.95, 0.68, 1.35);
         const styles = {
-          vhs: "contrast(1.13) brightness(" + displayBrightness.toFixed(2) + ") sepia(0.16) saturate(0.68)",
-          cold: "contrast(1.08) brightness(" + displayBrightness.toFixed(2) + ") sepia(0) saturate(0.78) hue-rotate(8deg)",
-          emergency: "contrast(1.18) brightness(" + displayBrightness.toFixed(2) + ") sepia(0.08) saturate(1.18) hue-rotate(-12deg)"
+          vhs: "contrast(1.04) brightness(" + displayBrightness.toFixed(2) + ") sepia(0.08) saturate(0.82)",
+          cold: "contrast(1.02) brightness(" + displayBrightness.toFixed(2) + ") saturate(0.88)",
+          emergency: "contrast(1.06) brightness(" + displayBrightness.toFixed(2) + ") sepia(0.05) saturate(1.05)"
         };
         container.style.filter = styles[settings.visualStyle] || styles.vhs;
       }
