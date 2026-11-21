@@ -1852,7 +1852,7 @@ renderChapter(1);
 
   const DEFAULT_SETTINGS = {
     quality: "balanced",
-    visualStyle: "vhs",
+    visualStyle: "cinematic",
     shadows: false,
     brightness: 0.95,
     volume: 0.7,
@@ -1915,7 +1915,7 @@ renderChapter(1);
       if (!["low", "balanced", "high", "ultra"].includes(merged.quality)) {
         merged.quality = DEFAULT_SETTINGS.quality;
       }
-      if (!["vhs", "cold", "emergency"].includes(merged.visualStyle)) {
+      if (!["cinematic", "vhs", "cold", "emergency", "nightvision", "monochrome"].includes(merged.visualStyle)) {
         merged.visualStyle = DEFAULT_SETTINGS.visualStyle;
       }
 
@@ -2489,8 +2489,8 @@ renderChapter(1);
     const footnote = document.createElement("div");
     footnote.className = "keter-footnote";
     footnote.textContent =
-      "Изменение качества может повлиять на производительность. " +
-      "При выходе в игру настройки применяются автоматически.";
+      "Пресеты меняют разрешение рендера. На телефонах действует безопасный предел GPU; " +
+      "цветовые режимы можно переключать без перезапуска.";
     settingsPanel.appendChild(footnote);
 
     overlay.append(menuPanel, settingsPanel);
@@ -2537,9 +2537,12 @@ renderChapter(1);
     visualStyle.id = "keter-visual-style";
     visualStyle.className = "keter-select";
     [
+      ["cinematic", "Кинематографичный реализм — нейтральный контраст"],
       ["vhs", "VHS — плёночные помехи и грязная запись"],
-      ["cold", "Холодный реализм — сталь и холодный свет"],
-      ["emergency", "Аварийный — красные тревожные оттенки"]
+      ["cold", "Холодный реализм — синеватая сталь"],
+      ["emergency", "Аварийный — красный свет тревоги"],
+      ["nightvision", "Ночное видение — зелёный монохром"],
+      ["monochrome", "Чёрно-белый — архивная камера"]
     ].forEach(([value, label]) => {
       const option = document.createElement("option");
       option.value = value;
@@ -2682,14 +2685,14 @@ renderChapter(1);
       const touchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
         Number(navigator.maxTouchPoints || 0) > 0;
       const profiles = {
-        low:      { pixelRatio: 0.6, shadows: false, exposure: 1.02, fog: 0.88, dust: false },
-        balanced: { pixelRatio: 0.75, shadows: false, exposure: 1.08, fog: 0.94, dust: false },
-        high:     { pixelRatio: 0.9, shadows: false, exposure: 1.12, fog: 1.00, dust: false },
-        ultra:    { pixelRatio: 1.0, shadows: false, exposure: 1.16, fog: 1.00, dust: false }
+        low:      { pixelRatio: touchDevice ? 0.55 : 0.70, shadows: false, exposure: 1.02, fog: 0.88, dust: false },
+        balanced: { pixelRatio: touchDevice ? 0.68 : 0.90, shadows: false, exposure: 1.08, fog: 0.94, dust: false },
+        high:     { pixelRatio: touchDevice ? 0.78 : 1.05, shadows: false, exposure: 1.12, fog: 1.00, dust: false },
+        ultra:    { pixelRatio: touchDevice ? 0.85 : 1.20, shadows: false, exposure: 1.16, fog: 1.00, dust: false }
       };
-      const profile = profiles[touchDevice ? 'low' : settings.quality] || profiles.balanced;
-      // Phone GPUs get a conservative cap even when the user selects a higher preset.
-      const deviceCap = touchDevice ? 0.75 : 1.5;
+      // На телефоне пресет тоже меняет разрешение рендера, но остаётся безопасный GPU-предел.
+      const profile = profiles[settings.quality] || profiles.balanced;
+      const deviceCap = touchDevice ? 0.88 : 1.5;
       const ratio = Math.min(window.devicePixelRatio || 1, profile.pixelRatio, deviceCap);
       renderer.setPixelRatio(ratio);
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -2709,12 +2712,17 @@ renderChapter(1);
       const container = el("three-container");
       if (container) {
         const displayBrightness = clamp(settings.brightness / 0.95, 0.68, 1.35);
+        // Цветовые режимы работают и на телефонах; без тяжёлых blur и дополнительных проходов.
+        const brightness = displayBrightness.toFixed(2);
         const styles = {
-          vhs: touchDevice ? "none" : "contrast(1.04) brightness(" + displayBrightness.toFixed(2) + ") sepia(0.08) saturate(0.82)",
-          cold: touchDevice ? "none" : "contrast(1.02) brightness(" + displayBrightness.toFixed(2) + ") saturate(0.88)",
-          emergency: touchDevice ? "none" : "contrast(1.06) brightness(" + displayBrightness.toFixed(2) + ") sepia(0.05) saturate(1.05)"
+          cinematic: "contrast(1.06) brightness(" + brightness + ") saturate(0.92)",
+          vhs: "contrast(1.08) brightness(" + brightness + ") sepia(0.12) saturate(0.76)",
+          cold: "contrast(1.04) brightness(" + brightness + ") hue-rotate(7deg) saturate(0.78)",
+          emergency: "contrast(1.10) brightness(" + brightness + ") sepia(0.18) saturate(1.18) hue-rotate(-8deg)",
+          nightvision: "grayscale(0.72) sepia(1) hue-rotate(65deg) saturate(2.2) brightness(" + brightness + ") contrast(1.18)",
+          monochrome: "grayscale(1) contrast(1.16) brightness(" + brightness + ")"
         };
-        container.style.filter = styles[settings.visualStyle] || styles.vhs;
+        container.style.filter = styles[settings.visualStyle] || styles.cinematic;
       }
     } catch (error) {
       console.warn("[KETER] Не удалось применить графику:", error);
