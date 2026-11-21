@@ -782,7 +782,9 @@ function init3DMode() {
     };
     // Один обработчик на canvas: двойной вызов через bubbling раньше мог
     // отправлять два конкурирующих запроса Pointer Lock и оставлять управление неактивным.
-    renderer.domElement.addEventListener("click", requestGamePointerLock);
+    if (!window.matchMedia || !window.matchMedia("(pointer: coarse)").matches) {
+      renderer.domElement.addEventListener("click", requestGamePointerLock);
+    }
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('keydown', (e) => {
       // Не повторяем одноразовые действия, пока клавиша удерживается.
@@ -2696,6 +2698,12 @@ renderChapter(1);
       if (typeof renderChapter === "function") {
         renderChapter(1);
       }
+    } else if (is3DVisible() && window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
+      // На телефонах Pointer Lock отсутствует: возвращаем управление сенсорной панелью.
+      window.__keterPaused = false;
+      hideOverlay();
+      startVhsAmbient();
+      setStatus("Сенсорное управление активно.");
     } else if (is3DVisible()) {
       // Захват мыши должен быть вызван действием пользователя. Используем тот же
       // canvas, на котором запрашивается Pointer Lock при первом входе в 3D.
