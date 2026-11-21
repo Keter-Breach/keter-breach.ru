@@ -174,6 +174,8 @@ function generateKeycardTexture(levelStr, colorHex) {
 // === 2b. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ (рисуются на canvas, внешние файлы не нужны) ===
 let MAT = null, dust = null, flickers = [];
 let emergencyPulse = null;
+let eventPulseTimer = 0;
+let eventBlackoutTimer = 0;
 let lastMinimapDraw = 0;
 let lastLightUpdate = 0;
 let lastDustUpdate = 0;
@@ -1224,10 +1226,10 @@ function build10ZonesMap() {
   // Одноразовые сюжетные ивенты, запускаемые при входе в новые зоны.
   eventTriggers = [
     { x: -11.0, z: 27.0, radius: 2.8, message: 'АРХИВ 04: терминал печатает отчёт сам по себе. В записи указано: «НЕ СМОТРЕТЬ В КАМЕРУ 6».', sound: 'deny', fired: false },
-    { x: -11.0, z: 33.0, radius: 2.8, message: 'МАСТЕРСКАЯ: щиток выбивает дугой. На секунду все лампы комплекса гаснут, а в темноте кто-то проходит за спиной.', sound: 'deny', fired: false },
+    { x: -11.0, z: 33.0, radius: 2.8, message: 'МАСТЕРСКАЯ: щиток выбивает дугой. На секунду все лампы комплекса гаснут, а в темноте кто-то проходит за спиной.', sound: 'deny', blackout: true, fired: false },
     { x: -11.0, z: 39.5, radius: 2.8, message: 'ИЗОЛЯТОР: за дверью слышны три удара. Затем кто-то шепчет ваше имя по внутренней связи.', sound: 'door', fired: false },
     { x: 0, z: 18.5, radius: 2.5, message: 'РАДИОПЕРЕХВАТ: «...эвакуация отменена. Персонал не покидал комплекс. Повторяю: персонал не покидал...»', sound: 'deny', fired: false },
-    { x: 0, z: 51.5, radius: 3.0, message: 'ПРОТОКОЛ KETER: датчик фиксирует движение внутри пустой камеры. Свет в секторе гаснет на секунду.', sound: 'door', fired: false }
+    { x: 0, z: 51.5, radius: 3.0, message: 'ПРОТОКОЛ KETER: датчик фиксирует движение внутри пустой камеры. Свет в секторе гаснет на секунду.', sound: 'door', blackout: true, fired: false }
   ];
 
   function seamWingMat() {
@@ -1946,6 +1948,9 @@ function animate3D() {
     for (const event of eventTriggers) {
       if (!event.fired && Math.hypot(camera.position.x - event.x, camera.position.z - event.z) < event.radius) {
         event.fired = true;
+        // Событие влияет на освещение: короткий провал питания, затем аварийный импульс.
+        eventPulseTimer = Math.max(eventPulseTimer, event.blackout ? 1.9 : 0.9);
+        if (event.blackout) eventBlackoutTimer = Math.max(eventBlackoutTimer, 0.72);
         playSound(event.sound || 'deny');
         showToast(event.message, 6500);
         break;
@@ -1972,16 +1977,20 @@ function animate3D() {
   // Пленочный дрифт камеры (не накапливается)
   camera.rotation.z = Math.sin(time * 0.0007) * 0.004 + (Math.random() - 0.5) * 0.0008;
 
+  if (eventBlackoutTimer > 0) eventBlackoutTimer = Math.max(0, eventBlackoutTimer - delta);
+  if (eventPulseTimer > 0) eventPulseTimer = Math.max(0, eventPulseTimer - delta);
   if (emergencyPulse) {
     const pulse = Math.max(0, Math.sin(time * 0.0019));
-    emergencyPulse.intensity = 0.18 + pulse * 1.25;
+    const recoveryFlash = eventPulseTimer > 0 ? Math.max(0, Math.sin((1.9 - eventPulseTimer) * 10)) * 2.1 : 0;
+    emergencyPulse.intensity = eventBlackoutTimer > 0 ? 0.035 : 0.18 + pulse * 1.25 + recoveryFlash;
   }
 
   if (time - lastLightUpdate >= 100) {
     lastLightUpdate = time;
     flickers.forEach(f => {
-      const outage = Math.random() < 0.065;
-      f.light.intensity = f.base * (outage ? 0.08 : 0.82 + Math.random() * 0.18);
+      const outage = eventBlackoutTimer > 0 || Math.random() < 0.065;
+      const recovery = eventPulseTimer > 0 && eventBlackoutTimer <= 0;
+      f.light.intensity = f.base * (outage ? 0.025 : recovery ? 1.05 + Math.random() * 0.35 : 0.82 + Math.random() * 0.18);
     });
   }
   if (MAT) MAT.keter.emissiveIntensity = 0.7 + 0.3 * Math.sin(time * 0.003);
