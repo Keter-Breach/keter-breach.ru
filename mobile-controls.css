@@ -1,4 +1,5 @@
 #keter-touch-ui { display: none; }
+#keter-touch-ui.is-disabled { display: none !important; }
 @media (pointer: coarse), (max-width: 900px) {
   html, body { overscroll-behavior: none; }
   #text-game { height: 100dvh; overflow-y: auto; align-items: flex-start; padding: 12px; }
