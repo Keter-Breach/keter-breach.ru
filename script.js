@@ -190,6 +190,11 @@ function updateFacilityAlarm(delta, time) {
   if (facilityAlarmTimer <= 0) return;
   facilityAlarmTimer = Math.max(0, facilityAlarmTimer - delta);
   facilityAlarmPhase += delta * 2.8;
+  if (facilityAlarmTimer <= 0) {
+    setFacilityLockdown(false);
+    if (facilityAlarmGain && audioCtx) facilityAlarmGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.22);
+    showToast("ЛОКДАУН D-12 СНЯТ · АВТОМАТИЧЕСКИЙ ДОПУСК ВОССТАНОВЛЕН", 4200);
+  }
   if (facilityAlarmOscillator && audioCtx && facilityAlarmGain) {
     const sweep = 560 + (Math.sin(facilityAlarmPhase) * 0.5 + 0.5) * 520;
     facilityAlarmOscillator.frequency.setTargetAtTime(sweep, audioCtx.currentTime, 0.06);
@@ -200,8 +205,27 @@ function updateFacilityAlarm(delta, time) {
 }
 
 
+function setFacilityLockdown(active) {
+  const state = window.playerState || (window.playerState = freshState());
+  state.lockdownActive = !!active;
+  const lockdownDoor = doors && doors.doorL2;
+  if (lockdownDoor) {
+    lockdownDoor.userData.locked = !!active;
+    if (lockdownDoor.userData.lamp && lockdownDoor.userData.lamp.material && lockdownDoor.userData.lamp.material.color) {
+      lockdownDoor.userData.lamp.material.color.set(active ? 0xff2418 : 0x00ff66);
+    }
+  }
+}
+
+function releaseFacilityLockdown(manual = false) {
+  setFacilityLockdown(false);
+  facilityAlarmTimer = 0;
+  if (facilityAlarmGain && audioCtx) facilityAlarmGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.18);
+  if (manual) showToast("АВАРИЙНЫЙ ДОСТУП ПОДТВЕРЖДЁН · БЛОКИРОВКА L-2 СНЯТА", 4200);
+}
+
 // === 2. СЮЖЕТ И СОСТОЯНИЕ ===
-const freshState = () => ({ keycardL1: false, keycardL2: false, logsFound: [], reactorDisabled: false, anomalySeen: false, radioMessages: 0, containmentOverride: false });
+const freshState = () => ({ keycardL1: false, keycardL2: false, logsFound: [], reactorDisabled: false, anomalySeen: false, radioMessages: 0, containmentOverride: false, lockdownActive: false });
 window.playerState = freshState();
 let loopCount = 1;
 
@@ -1838,7 +1862,16 @@ function interact3D() {
 
   const tryDoor = (door, key, msg, onOpen) => {
     if (!door || target !== door) return false;
-    if (window.playerState[key]) (onOpen || openDoor)(door);
+    if (door.userData.locked && door === doors.doorL2) {
+      if (window.playerState[key]) {
+        playSound("door");
+        releaseFacilityLockdown(true);
+        openDoor(door);
+      } else {
+        playSound("deny");
+        showToast("АВАРИЙНАЯ БЛОКИРОВКА L-2 · НУЖНА КАРТА L-2 ДЛЯ РУЧНОГО СБРОСА");
+      }
+    } else if (window.playerState[key]) (onOpen || openDoor)(door);
     else { playSound('deny'); showToast(msg); }
     currentInteractionTarget = null;
     return true;
@@ -1855,7 +1888,7 @@ function interact3D() {
 }
 
 function openDoor(mesh) {
-  if (!mesh || mesh.userData.opened || mesh.userData.opening) return;
+  if (!mesh || mesh.userData.locked || mesh.userData.opened || mesh.userData.opening) return;
   mesh.userData.opening = true;
   playSound('door');
   if (mesh.userData.lamp) mesh.userData.lamp.material.color.set(0x00ff66);
@@ -1866,7 +1899,7 @@ function openDoor(mesh) {
 function updateAutomaticDoors() {
   if (!camera || !window.playerState) return;
   for (const [door, key] of [[doors.doorL1, 'keycardL1'], [doors.doorL2, 'keycardL2']]) {
-    if (!door || door.userData.opened || door.userData.opening || !window.playerState[key]) continue;
+    if (!door || door.userData.locked || door.userData.opened || door.userData.opening || !window.playerState[key]) continue;
     const dx = camera.position.x - door.position.x;
     const dz = camera.position.z - door.position.z;
     if (dx * dx + dz * dz < 2.8 * 2.8) openDoor(door);
@@ -2162,8 +2195,9 @@ function animate3D() {
         eventPulseTimer = Math.max(eventPulseTimer, event.blackout ? 1.9 : 0.9);
         if (event.blackout) eventBlackoutTimer = Math.max(eventBlackoutTimer, 0.72);
         if (event.alarm) {
-          startFacilityAlarm(12);
-          showToast("⚠ АВАРИЙНЫЙ ПРОТОКОЛ D-12 · ЛОКАЛЬНАЯ ТРЕВОГА", 4200);
+          startFacilityAlarm(18);
+          setFacilityLockdown(true);
+          showToast("⚠ ПРОТОКОЛ KETER · ЛОКДАУН D-12\nДверь L-2 заблокирована. Аварийный сброс доступен у панели двери.", 6200);
           if (Number.isInteger(event.radio)) playRadioIntercept(event.radio);
         }
         playSound(event.sound || 'deny');
