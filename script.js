@@ -234,6 +234,11 @@ function setFacilityPower(active) {
       serviceDoor.userData.lamp.material.color.set(active ? 0x00ff66 : 0xff2418);
     }
   }
+  const relay = interactiveItems.find(item => item && item.userData && item.userData.type === "powerRelay");
+  if (relay && relay.userData.screen) {
+    relay.userData.screen.material.emissive.set(active ? 0x0a7a3b : 0x7a2a10);
+    relay.userData.screen.material.emissiveIntensity = active ? 1.15 : 0.65;
+  }
   if (active) {
     flickers.forEach(f => { if (f && f.light) f.light.intensity = f.base; });
   }
@@ -1375,7 +1380,7 @@ function build10ZonesMap() {
   wallLine('z', 44, -16, 16, [[-1.5, 1.5]]);         // узел -> зал содержания
   wallLine('x', -16, 44, 60); wallLine('x', 16, 44, 60);
   wallLine('z', 60, -16, 16, [[-14.5, -12.5], [-1, 1]]); // L-2 и служебный обход
-  wallLine('x', -4, 60, 80, [[66, 70]]); wallLine('x', 4, 60, 80);
+  wallLine('x', -4, 60, 80, [[66, 70], [77, 79]]); wallLine('x', 4, 60, 80);
   wallLine('z', 63, -14, -4, [[-14.5, -12.5]]); wallLine('z', 77, -14, -4, [[-14.5, -12.5]]); wallLine('x', -14, 63, 77); // Пост охраны и обход
   wallLine('z', 80, -4, 4, [[-1, 1]]);               // выходная дверь
 
@@ -1411,7 +1416,7 @@ function build10ZonesMap() {
   powerRelay.add(relayFrame, relayScreen, relaySwitch);
   powerRelay.position.set(-13.65, 1.28, 32.15);
   powerRelay.rotation.y = Math.PI / 2;
-  powerRelay.userData = { type: 'powerRelay' };
+  powerRelay.userData = { type: 'powerRelay', screen: relayScreen };
   world.add(powerRelay);
   interactiveItems.push(powerRelay);
   addSign(['РЕЗЕРВНЫЙ ГЕНЕРАТОР', 'РУЧНОЙ ЗАПУСК'], -13.55, 2.35, 32.15, Math.PI / 2, '#ffb45e', 0.72);
@@ -1468,6 +1473,14 @@ function build10ZonesMap() {
   doors.doorService.userData.locked = true;
   doors.doorService.userData.lamp = box(redMat(), 0.3, 0.1, 0.1, -13.5, 3.05, 59.75);
   addSign(['ТЕХНИЧЕСКИЙ ОБХОД', 'ПИТАНИЕ: OFFLINE'], -13.5, 0.55, 59.82, Math.PI, '#ff5544', 0.72, doors.doorService);
+  // Световые маркеры обходного коридора загораются только после запуска генератора.
+  [-13.5].forEach(x => [49, 55].forEach(z => {
+    box(new THREE.MeshBasicMaterial({ color: 0x17352c }), 0.72, 0.07, 0.24, x, 3.05, z);
+    const routeLamp = new THREE.PointLight(0x8bffd0, 0, 7);
+    routeLamp.position.set(x, 2.72, z);
+    world.add(routeLamp);
+    flickers.push({ light: routeLamp, base: 0.62, powerRequired: true });
+  }));
   doors.doorExit = makeDoor(80, ['ВЫХОД', 'НА ПОВЕРХНОСТЬ']);
 
   // --- Таблички зон ---
@@ -2314,6 +2327,7 @@ function animate3D() {
     lastLightUpdate = time;
     flickers.forEach(f => {
       const powerOnline = !!(window.playerState && window.playerState.powerRestored);
+      if (f.powerRequired && !powerOnline) { f.light.intensity = 0; return; }
       const outage = eventBlackoutTimer > 0 || (!powerOnline && Math.random() < 0.065);
       const recovery = eventPulseTimer > 0 && eventBlackoutTimer <= 0;
       f.light.intensity = f.base * (outage ? 0.025 : powerOnline ? 1.0 : recovery ? 1.05 + Math.random() * 0.35 : 0.82 + Math.random() * 0.18);
