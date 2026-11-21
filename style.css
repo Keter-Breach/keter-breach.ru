@@ -1079,3 +1079,12 @@ p#description {
 #keter-settings .keter-check{border-color:rgba(147,168,156,.22)!important;background:rgba(18,26,28,.72)!important;color:#d2dbd4!important}
 @media(max-width:720px),(pointer:coarse){#keter-overlay{justify-content:center!important;align-items:center!important;padding:max(10px,env(safe-area-inset-top)) 12px max(18px,env(safe-area-inset-bottom))!important;background:linear-gradient(90deg,rgba(2,5,7,.78),rgba(2,5,7,.5)),linear-gradient(0deg,rgba(0,0,0,.48),transparent 65%)!important}#keter-overlay .keter-panel{width:min(100%,520px)!important;max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px)!important;margin:auto!important;padding:23px 18px!important;backdrop-filter:blur(15px)!important}#keter-main-menu .keter-title{font-size:clamp(42px,12vw,58px)!important}#keter-overlay .keter-button{min-height:52px!important;font-size:10px!important;padding:13px 12px!important}#keter-overlay:after{display:none!important}}
 @media(prefers-reduced-motion:reduce){#keter-overlay .keter-button{transition:none!important}#keter-overlay:before{animation:none!important}}
+
+
+/* Interaction reticle: contextual hand cursor */
+#three-container .crosshair{transition:opacity .12s,transform .12s,box-shadow .12s}
+#three-container .crosshair.is-targeting{opacity:0;transform:translate(-50%,-50%) scale(.4)}
+#three-container .interaction-hand{position:absolute;z-index:5;left:50%;top:50%;width:34px;height:34px;display:grid;place-items:center;opacity:0;transform:translate(-50%,-42%) scale(.72);pointer-events:none;color:#e4eee7;filter:drop-shadow(0 0 5px rgba(0,0,0,.95));transition:opacity .12s,transform .12s}
+#three-container .interaction-hand svg{width:30px;height:30px;fill:rgba(7,13,12,.82);stroke:#dce9df;stroke-width:1.45;stroke-linecap:round;stroke-linejoin:round}
+#three-container .interaction-hand.is-visible{opacity:1;transform:translate(-50%,-50%) scale(1)}
+@media(pointer:coarse){#three-container .interaction-hand{width:40px;height:40px}#three-container .interaction-hand svg{width:34px;height:34px}}
