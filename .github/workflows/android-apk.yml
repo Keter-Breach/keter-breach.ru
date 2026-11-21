@@ -37,6 +37,8 @@ jobs:
         run: node scripts/generate-android-icons.mjs
       - name: Generate Android project
         run: npx cap add android
+      - name: Lock Android app to landscape
+        run: node scripts/set-android-landscape.mjs
       - name: Generate native launcher icons
         run: npx capacitor-assets generate --android
       - name: Set APK version
