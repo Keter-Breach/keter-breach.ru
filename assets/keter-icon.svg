@@ -1,8 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-<defs><radialGradient id="bg" cx="50%" cy="42%" r="72%"><stop stop-color="#182326"/><stop offset=".58" stop-color="#080e11"/><stop offset="1" stop-color="#020405"/></radialGradient><linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e0e8e3"/><stop offset=".48" stop-color="#778782"/><stop offset="1" stop-color="#35413f"/></linearGradient><linearGradient id="red"><stop stop-color="#ff7665"/><stop offset="1" stop-color="#8f1e20"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="18" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-<rect width="1024" height="1024" rx="210" fill="url(#bg)"/><path d="M160 92H864L932 160V864L864 932H160L92 864V160Z" fill="none" stroke="#53615e" stroke-width="12" opacity=".72"/>
-<circle cx="512" cy="512" r="307" fill="none" stroke="#7f2928" stroke-width="28"/><path d="M512 190V285M512 739V834M190 512H285M739 512H834" stroke="#d0d9d3" stroke-width="14" opacity=".6"/>
-<circle cx="512" cy="512" r="215" fill="#070c0e" stroke="#a43b35" stroke-width="10"/><circle cx="512" cy="512" r="184" fill="none" stroke="#293638" stroke-width="8" stroke-dasharray="18 18"/>
-<path d="M365 685V339H458L659 570V339H748V685H656L455 455V685Z" fill="url(#steel)" stroke="#e2e9e4" stroke-width="7" stroke-linejoin="bevel"/>
-<path d="M365 685L512 512L659 685H570L512 617L454 685Z" fill="url(#red)" filter="url(#glow)"/><path d="M512 285V379M512 645V739" stroke="#f06b5e" stroke-width="18"/><circle cx="512" cy="512" r="24" fill="#f06b5e" filter="url(#glow)"/>
-<path d="M256 850H768" stroke="#81908b" stroke-width="7" opacity=".45"/><text x="512" y="914" fill="#dfe8e2" font-family="Arial,sans-serif" font-size="62" font-weight="800" letter-spacing="18" text-anchor="middle">KETER</text></svg>
+<defs>
+ <radialGradient id="bg" cx="50%" cy="42%" r="72%"><stop stop-color="#202426"/><stop offset=".58" stop-color="#090b0d"/><stop offset="1" stop-color="#010203"/></radialGradient>
+ <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".5" stop-color="#b9c0c0"/><stop offset="1" stop-color="#626b6d"/></linearGradient>
+ <linearGradient id="red" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff554d"/><stop offset="1" stop-color="#751416"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="12" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <pattern id="scan" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 0H8" stroke="#fff" stroke-opacity=".035" stroke-width="2"/></pattern>
+</defs>
+<rect width="1024" height="1024" rx="190" fill="url(#bg)"/>
+<path d="M90 90H934V934H90Z" fill="none" stroke="#6b7475" stroke-width="10" opacity=".45"/>
+<path d="M110 180H914M110 844H914" stroke="#9a2426" stroke-width="5" opacity=".8"/>
+<path d="M132 202H892V822H132Z" fill="none" stroke="#252c2e" stroke-width="5"/>
+<g opacity=".22" stroke="#b5babb" stroke-width="3"><path d="M150 245H300M724 245H874M150 780H300M724 780H874"/><path d="M180 150V300M844 150V300M180 724V874M844 724V874"/></g>
+<circle cx="512" cy="455" r="292" fill="#050708" stroke="#8f2024" stroke-width="24"/>
+<circle cx="512" cy="455" r="258" fill="none" stroke="#d5d9d8" stroke-opacity=".35" stroke-width="5" stroke-dasharray="12 18"/>
+<g fill="none" stroke="url(#steel)" stroke-width="46" stroke-linecap="square" stroke-linejoin="miter">
+ <path d="M512 254V414"/>
+ <path d="M512 414L440 340M512 414L584 340"/>
+ <path d="M338 555L476 475"/>
+ <path d="M476 475L376 462M476 475L445 566"/>
+ <path d="M686 555L548 475"/>
+ <path d="M548 475L579 566M548 475L648 462"/>
+</g>
+<circle cx="512" cy="455" r="54" fill="#080b0d" stroke="url(#red)" stroke-width="13" filter="url(#glow)"/>
+<circle cx="512" cy="455" r="17" fill="#f2f2ed"/>
+<path d="M512 185V235M512 675V725M242 455H292M732 455H782" stroke="#e7e9e8" stroke-width="8" opacity=".65"/>
+<rect width="1024" height="1024" rx="190" fill="url(#scan)"/>
+<path d="M240 790H784" stroke="#bfc4c3" stroke-width="5" opacity=".55"/>
+<text x="512" y="872" fill="#f0f1ed" font-family="Arial,sans-serif" font-size="82" font-weight="900" letter-spacing="20" text-anchor="middle">SCP</text>
+<text x="512" y="922" fill="#a6acad" font-family="Arial,sans-serif" font-size="24" font-weight="700" letter-spacing="12" text-anchor="middle">PROJECT KETER</text>
+<path d="M150 970H874" stroke="#7c1c20" stroke-width="7"/>
+</svg>
