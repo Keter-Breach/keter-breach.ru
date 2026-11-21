@@ -1879,6 +1879,9 @@ renderChapter(1);
     visualStyle: "cinematic",
     shadows: false,
     brightness: 0.95,
+    renderScale: 1,
+    fieldOfView: 75,
+    contrast: 1,
     volume: 0.7,
     mouseSensitivity: 0.002
   };
@@ -1945,6 +1948,9 @@ renderChapter(1);
 
       merged.shadows = Boolean(merged.shadows);
       merged.brightness = clamp(Number(merged.brightness) || DEFAULT_SETTINGS.brightness, 0.65, 1.5);
+      merged.renderScale = clamp(Number(merged.renderScale) || DEFAULT_SETTINGS.renderScale, 0.65, 1.15);
+      merged.fieldOfView = clamp(Number(merged.fieldOfView) || DEFAULT_SETTINGS.fieldOfView, 60, 100);
+      merged.contrast = clamp(Number(merged.contrast) || DEFAULT_SETTINGS.contrast, 0.85, 1.25);
       merged.volume = clamp(Number(merged.volume) || 0, 0, 1);
       merged.mouseSensitivity = clamp(
         Number(merged.mouseSensitivity) || 0.002,
@@ -2586,6 +2592,11 @@ renderChapter(1);
 
     settingsPanel.append(qualityLabel, quality);
 
+    const graphicsHint = document.createElement("div");
+    graphicsHint.className = "keter-footnote keter-graphics-hint";
+    graphicsHint.textContent = "Профиль влияет на разрешение рендера и нагрузку на устройство. Изменения применяются сразу.";
+    settingsPanel.appendChild(graphicsHint);
+
     const styleLabel = document.createElement("label");
     styleLabel.className = "keter-label";
     styleLabel.htmlFor = "keter-visual-style";
@@ -2635,10 +2646,25 @@ renderChapter(1);
     settingsPanel.appendChild(shadowLabel);
 
     addRangeSetting({
+      id: "keter-render-scale",
+      title: "Масштаб разрешения",
+      min: 0.65,
+      max: 1.15,
+      step: 0.05,
+      value: settings.renderScale,
+      format: value => `${Math.round(Number(value) * 100)}%`,
+      onChange: value => {
+        settings.renderScale = Number(value);
+        saveSettings();
+        applyGraphicsSettings();
+      }
+    });
+
+    addRangeSetting({
       id: "keter-brightness",
-      title: "Экспозиция",
+      title: "Яркость / экспозиция",
       min: 0.7,
-      max: 2,
+      max: 1.5,
       step: 0.05,
       value: settings.brightness,
       format: value => Number(value).toFixed(2),
@@ -2646,6 +2672,39 @@ renderChapter(1);
         settings.brightness = Number(value);
         saveSettings();
         applyGraphicsSettings();
+      }
+    });
+
+    addRangeSetting({
+      id: "keter-contrast",
+      title: "Контраст изображения",
+      min: 0.85,
+      max: 1.25,
+      step: 0.05,
+      value: settings.contrast,
+      format: value => `${Math.round(Number(value) * 100)}%`,
+      onChange: value => {
+        settings.contrast = Number(value);
+        saveSettings();
+        applyGraphicsSettings();
+      }
+    });
+
+    addRangeSetting({
+      id: "keter-fov",
+      title: "Угол обзора",
+      min: 60,
+      max: 100,
+      step: 1,
+      value: settings.fieldOfView,
+      format: value => `${Math.round(Number(value))}°`,
+      onChange: value => {
+        settings.fieldOfView = Number(value);
+        saveSettings();
+        if (typeof camera !== "undefined" && camera) {
+          camera.fov = settings.fieldOfView;
+          camera.updateProjectionMatrix();
+        }
       }
     });
 
@@ -2750,7 +2809,7 @@ renderChapter(1);
       // На телефоне пресет тоже меняет разрешение рендера, но остаётся безопасный GPU-предел.
       const profile = profiles[settings.quality] || profiles.balanced;
       const deviceCap = touchDevice ? 0.88 : 1.5;
-      const ratio = Math.min(window.devicePixelRatio || 1, profile.pixelRatio, deviceCap);
+      const ratio = Math.min((window.devicePixelRatio || 1) * settings.renderScale, profile.pixelRatio, deviceCap);
       renderer.setPixelRatio(ratio);
       renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -2760,6 +2819,10 @@ renderChapter(1);
         flashlight.castShadow = shadowsEnabled;
       }
       renderer.toneMappingExposure = settings.brightness * profile.exposure;
+      if (typeof camera !== "undefined" && camera) {
+        camera.fov = settings.fieldOfView;
+        camera.updateProjectionMatrix();
+      }
 
       if (typeof scene !== "undefined" && scene && scene.fog) {
         scene.fog.density = 0.034 * profile.fog;
@@ -2772,12 +2835,12 @@ renderChapter(1);
         // Цветовые режимы работают и на телефонах; без тяжёлых blur и дополнительных проходов.
         const brightness = displayBrightness.toFixed(2);
         const styles = {
-          cinematic: "contrast(1.06) brightness(" + brightness + ") saturate(0.92)",
-          vhs: "contrast(1.08) brightness(" + brightness + ") sepia(0.12) saturate(0.76)",
-          cold: "contrast(1.04) brightness(" + brightness + ") hue-rotate(7deg) saturate(0.78)",
-          emergency: "contrast(1.10) brightness(" + brightness + ") sepia(0.18) saturate(1.18) hue-rotate(-8deg)",
-          nightvision: "grayscale(0.72) sepia(1) hue-rotate(65deg) saturate(2.2) brightness(" + brightness + ") contrast(1.18)",
-          monochrome: "grayscale(1) contrast(1.16) brightness(" + brightness + ")"
+          cinematic: "contrast(" + (1.06 * settings.contrast).toFixed(2) + ") brightness(" + brightness + ") saturate(0.92)",
+          vhs: "contrast(" + (1.08 * settings.contrast).toFixed(2) + ") brightness(" + brightness + ") sepia(0.12) saturate(0.76)",
+          cold: "contrast(" + (1.04 * settings.contrast).toFixed(2) + ") brightness(" + brightness + ") hue-rotate(7deg) saturate(0.78)",
+          emergency: "contrast(" + (1.10 * settings.contrast).toFixed(2) + ") brightness(" + brightness + ") sepia(0.18) saturate(1.18) hue-rotate(-8deg)",
+          nightvision: "grayscale(0.72) sepia(1) hue-rotate(65deg) saturate(2.2) brightness(" + brightness + ") contrast(" + (1.18 * settings.contrast).toFixed(2) + ")",
+          monochrome: "grayscale(1) contrast(" + (1.16 * settings.contrast).toFixed(2) + ") brightness(" + brightness + ")"
         };
         container.style.filter = styles[settings.visualStyle] || styles.cinematic;
       }
@@ -2806,6 +2869,12 @@ renderChapter(1);
       brightness.previousElementSibling?.querySelector("output");
     }
 
+    const renderScale = el("keter-render-scale");
+    if (renderScale) renderScale.value = String(settings.renderScale);
+    const contrast = el("keter-contrast");
+    if (contrast) contrast.value = String(settings.contrast);
+    const fov = el("keter-fov");
+    if (fov) fov.value = String(settings.fieldOfView);
     const volume = el("keter-volume");
     if (volume) volume.value = String(settings.volume);
 
@@ -2822,6 +2891,9 @@ renderChapter(1);
     // Обновляем подписи слайдеров.
     [
       ["keter-brightness", v => Number(v).toFixed(2)],
+      ["keter-render-scale", v => `${Math.round(Number(v) * 100)}%`],
+      ["keter-contrast", v => `${Math.round(Number(v) * 100)}%`],
+      ["keter-fov", v => `${Math.round(Number(v))}°`],
       ["keter-volume", v => `${Math.round(Number(v) * 100)}%`],
       ["keter-sensitivity", v => `${(Number(v) / 0.002).toFixed(1)}×`]
     ].forEach(([id, format]) => {
