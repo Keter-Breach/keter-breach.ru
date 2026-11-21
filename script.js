@@ -749,6 +749,7 @@ function init3DMode() {
     toastEl = document.createElement('div');
     toastEl.style.cssText = base + "bottom:90px;opacity:0;transition:opacity .3s;";
     hintEl = document.createElement('div');
+    hintEl.className = "keter-mouse-hint";
     hintEl.style.cssText = base + "top:50%;margin-top:40px;";
     hintEl.textContent = "Кликните, чтобы управлять";
     container.append(toastEl, hintEl);
@@ -1648,7 +1649,9 @@ function animate3D() {
   prevTime = time;
 
   const locked = isLocked();
-  hintEl.style.display = locked ? 'none' : 'block';
+  const touchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+    (navigator.maxTouchPoints > 0);
+  hintEl.style.display = (locked || touchDevice) ? 'none' : 'block';
 
   // Медленное пробуждение: взгляд поднимается с пола лифта.
   if (wakeupActive) {
