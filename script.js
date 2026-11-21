@@ -3175,6 +3175,9 @@ renderChapter(1);
             startVhsAmbient();
           }
         }
+        if (is3DVisible() && typeof setFacilityAmbience === "function") {
+          setFacilityAmbience(settings.volume > 0);
+        }
       }
     });
 
