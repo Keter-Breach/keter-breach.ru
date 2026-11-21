@@ -24,6 +24,7 @@ assert.match(html, /threeScript\.onerror = onError/, "runtime load failure shoul
 assert.match(html, /href="style\.css"/, "page should load responsive styles");
 assert.match(script, /function renderChapter\(/, "chapter renderer should exist");
 assert.match(script, /function init3DMode\(/, "3D initialization should exist");
+assert.match(script, /firstPersonRig\.visible = true/, "first-person hands and flashlight should remain visible");
 assert.match(script, /bumpMap:\s*maps\.bump/, "PBR bump map should be configured");
 assert.match(script, /roughnessMap:\s*maps\.roughness/, "PBR roughness map should be configured");
 assert.match(script, /inputLength > 1/, "diagonal movement should be normalized");
