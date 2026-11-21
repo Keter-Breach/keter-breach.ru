@@ -1892,8 +1892,12 @@ renderChapter(1);
 
       const merged = { ...DEFAULT_SETTINGS, ...saved };
 
-      if (!["low", "medium", "high"].includes(merged.quality)) {
+      if (merged.quality === "medium") merged.quality = "balanced";
+      if (!["low", "balanced", "high", "ultra"].includes(merged.quality)) {
         merged.quality = DEFAULT_SETTINGS.quality;
+      }
+      if (!["vhs", "cold", "emergency"].includes(merged.visualStyle)) {
+        merged.visualStyle = DEFAULT_SETTINGS.visualStyle;
       }
 
       merged.shadows = Boolean(merged.shadows);
