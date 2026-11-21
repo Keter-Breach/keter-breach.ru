@@ -4,6 +4,16 @@
   const touchPoints = Number(navigator.maxTouchPoints || 0) > 0;
   const small = Math.min(window.innerWidth, window.innerHeight) <= 900;
   if (!coarse && !touchPoints && !small) return;
+
+  // Native APK is locked by AndroidManifest; this is a best-effort lock for
+  // browsers/PWAs that support the Screen Orientation API after a user gesture.
+  if (screen.orientation && typeof screen.orientation.lock === "function") {
+    document.addEventListener("pointerdown", () => {
+      const lock = screen.orientation.lock("landscape");
+      if (lock && typeof lock.catch === "function") lock.catch(() => {});
+    }, { once: true, capture: true });
+  }
+
   const game = document.getElementById("three-container");
   if (!game) return;
   const root = document.createElement("div");
