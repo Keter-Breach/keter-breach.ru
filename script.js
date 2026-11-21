@@ -1434,6 +1434,8 @@ function build10ZonesMap() {
   // Дополнительные архитектурные детали: техпанели, напольные решётки и следы эвакуации.
   const panelMat = new THREE.MeshStandardMaterial({ color: 0x202729, roughness: 0.88, metalness: 0.32 });
   const trimMat = new THREE.MeshStandardMaterial({ color: 0x485052, roughness: 0.76, metalness: 0.48 });
+  // Local to this architecture-detail scope: floor drains use the same dark steel finish.
+  const grateMat = new THREE.MeshStandardMaterial({ color: 0x252b2c, roughness: 0.88, metalness: 0.28 });
   const warningMat = new THREE.MeshBasicMaterial({ color: 0x76251f });
   [-1, 1].forEach(side => {
     for (let z = 18; z <= 78; z += 12) {
