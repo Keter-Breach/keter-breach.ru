@@ -2388,11 +2388,27 @@ renderChapter(1);
     fieldOfView: 75,
     contrast: 1,
     volume: 0.7,
-    mouseSensitivity: 0.002
+    mouseSensitivity: 0.002,
+    controlMode: "auto"
   };
 
   let settings = loadSettings();
   window.__keterVolume = settings.volume;
+
+  function getControlMode() {
+    if (settings.controlMode === "pc" || settings.controlMode === "mobile") return settings.controlMode;
+    const touch = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+      Number(navigator.maxTouchPoints || 0) > 0;
+    return touch ? "mobile" : "pc";
+  }
+
+  function syncControlMode() {
+    const mode = getControlMode();
+    window.__keterControlMode = mode;
+    document.documentElement.dataset.keterControlMode = mode;
+    window.dispatchEvent(new CustomEvent("keter-control-mode-change", { detail: { mode } }));
+    return mode;
+  }
   let coreLoaded = false;
   let sessionStarted = false;
   let pauseRequested = false;
@@ -2451,6 +2467,9 @@ renderChapter(1);
       }
       if (!["cinematic", "vhs", "cold", "emergency", "nightvision", "monochrome"].includes(merged.visualStyle)) {
         merged.visualStyle = DEFAULT_SETTINGS.visualStyle;
+      }
+      if (!["auto", "pc", "mobile"].includes(merged.controlMode)) {
+        merged.controlMode = DEFAULT_SETTINGS.controlMode;
       }
 
       merged.shadows = Boolean(merged.shadows);
@@ -3210,6 +3229,40 @@ renderChapter(1);
   }
 
   function createSettingsControls() {
+    const controlLabel = document.createElement("label");
+    controlLabel.className = "keter-label";
+    controlLabel.htmlFor = "keter-control-mode";
+    controlLabel.textContent = "Режим управления";
+
+    const controlMode = document.createElement("select");
+    controlMode.id = "keter-control-mode";
+    controlMode.className = "keter-select";
+    [
+      ["auto", "Автоматически — по устройству"],
+      ["pc", "ПК — клавиатура и мышь"],
+      ["mobile", "Телефон — джойстик и сенсорные кнопки"]
+    ].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      controlMode.appendChild(option);
+    });
+    controlMode.value = settings.controlMode;
+    controlMode.addEventListener("change", () => {
+      settings.controlMode = controlMode.value;
+      saveSettings();
+      const mode = syncControlMode();
+      setStatus(mode === "mobile"
+        ? "Сенсорное управление включено. Перезапустите текущую сессию, если кнопки не появились."
+        : "Управление ПК включено. Используйте WASD и мышь.");
+    });
+    settingsPanel.append(controlLabel, controlMode);
+
+    const controlHint = document.createElement("div");
+    controlHint.className = "keter-footnote";
+    controlHint.textContent = "Режим сохраняется на устройстве. При выборе «Автоматически» игра сама определяет телефон или ПК.";
+    settingsPanel.appendChild(controlHint);
+
     const qualityLabel = document.createElement("label");
     qualityLabel.className = "keter-label";
     qualityLabel.htmlFor = "keter-quality";
@@ -3505,6 +3558,10 @@ renderChapter(1);
     settings = { ...DEFAULT_SETTINGS };
     saveSettings();
 
+    const controlMode = el("keter-control-mode");
+    if (controlMode) controlMode.value = settings.controlMode;
+    syncControlMode();
+
     const quality = el("keter-quality");
     if (quality) quality.value = settings.quality;
     const visualStyle = el("keter-visual-style");
@@ -3573,7 +3630,7 @@ renderChapter(1);
       if (typeof renderChapter === "function") {
         renderChapter(1);
       }
-    } else if (is3DVisible() && window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
+    } else if (is3DVisible() && getControlMode() === "mobile") {
       // На телефонах Pointer Lock отсутствует: возвращаем управление сенсорной панелью.
       window.__keterPaused = false;
       hideOverlay();
@@ -3689,6 +3746,18 @@ renderChapter(1);
       try {
         originalInit3DMode();
         if (!renderer) return;
+        if (getControlMode() === "pc" && renderer.domElement && !renderer.domElement.dataset.keterPcPointerReady) {
+          renderer.domElement.dataset.keterPcPointerReady = "1";
+          renderer.domElement.addEventListener("click", () => {
+            if (!is3DVisible() || window.__keterPaused || isPointerLocked()) return;
+            try {
+              const request = renderer.domElement.requestPointerLock();
+              if (request && typeof request.catch === "function") request.catch(() => {});
+            } catch (error) {
+              console.warn("[KETER] Не удалось захватить указатель мыши:", error);
+            }
+          });
+        }
         applyGraphicsSettings();
         startVhsAmbient();
       } catch (error) {
@@ -3702,7 +3771,7 @@ renderChapter(1);
       document.removeEventListener("mousemove", onMouseMove);
 
       document.addEventListener("mousemove", function (event) {
-        if (!isPointerLocked()) return;
+        if (getControlMode() !== "pc" || !isPointerLocked()) return;
 
         if (typeof camera === "undefined" || !camera) return;
 
@@ -3783,6 +3852,8 @@ renderChapter(1);
         return;
       }
 
+      // На сенсорном режиме отсутствие Pointer Lock нормально и не должно ставить игру на паузу.
+      if (getControlMode() === "mobile") return;
       // Потеря захвата мыши в 3D переводит игру на паузу.
       if (sessionStarted && is3DVisible()) {
         window.__keterPaused = true;
@@ -3834,6 +3905,7 @@ renderChapter(1);
 
   function boot() {
     coreLoaded = true;
+    syncControlMode();
     createMenu();
     installCoreHooks();
     installEvents();
