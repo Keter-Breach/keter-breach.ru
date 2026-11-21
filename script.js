@@ -162,6 +162,7 @@ let emergencyPulse = null;
 let lastMinimapDraw = 0;
 let lastLightUpdate = 0;
 let lastDustUpdate = 0;
+let lastMobileFrame = 0;
 const rnd = Math.random;
 
 function dataTexture(size, draw) {
@@ -731,7 +732,7 @@ function init3DMode() {
       console.error("[KETER] WebGL initialization failed:", error);
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, touchDevice ? 1.0 : 1.25));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, touchDevice ? 0.7 : 1.1));
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.12;
@@ -756,8 +757,8 @@ function init3DMode() {
     firstPersonRig = createFirstPersonRig();
     flashlight.position.set(0.38, -0.48, -1.28);
     flashlight.target.position.set(0.38, -0.44, -5.5);
-    scene.add(new THREE.HemisphereLight(0x71818b, 0x100f0d, 0.42));
-    scene.add(new THREE.AmbientLight(0x6d777b, 0.12));
+    scene.add(new THREE.HemisphereLight(0x71818b, 0x100f0d, touchDevice ? 0.55 : 0.42));
+    scene.add(new THREE.AmbientLight(0x6d777b, touchDevice ? 0.2 : 0.12));
 
     // Подсказки поверх игры (вместо alert, который ломал pointer lock)
     const base = "position:absolute;left:50%;transform:translateX(-50%);padding:10px 18px;" +
@@ -1075,10 +1076,14 @@ function build10ZonesMap() {
   }
 
   function addPointLight(x, z, color = 0xffa040, y = 2.8) {
-    const light = new THREE.PointLight(color, 0.42, 8);
-    light.position.set(x, y, z); world.add(light);
-    if (color === 0xff3322 || color === 0x40ffee) flickers.push({ light, base: 0.42 });
-    box(new THREE.MeshBasicMaterial({ color: color === 0xff3322 ? 0x4d0b0b : 0x554a2c }), 0.8, 0.1, 0.3, x, 3.1, z);
+    const mobileGPU = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || Number(navigator.maxTouchPoints || 0) > 0;
+    if (!mobileGPU) {
+      const light = new THREE.PointLight(color, 0.42, 8);
+      light.position.set(x, y, z); world.add(light);
+      if (color === 0xff3322 || color === 0x40ffee) flickers.push({ light, base: 0.42 });
+    }
+    const fixtureColor = color === 0xff3322 ? 0x4d0b0b : (mobileGPU ? 0x292c25 : 0x554a2c);
+    box(new THREE.MeshBasicMaterial({ color: fixtureColor }), 0.8, 0.1, 0.3, x, 3.1, z);
   }
 
   const mkTable = (x, z) => {
@@ -1655,6 +1660,12 @@ function updateDistantApparition(delta, locked) {
 function animate3D() {
   if (document.getElementById("three-container").classList.contains("hidden")) return;
   requestAnimationFrame(animate3D);
+
+  // На телефонах ограничиваем частоту до 30 FPS, снижая нагрев и скачки времени кадра.
+  const mobileGPU = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || Number(navigator.maxTouchPoints || 0) > 0;
+  const frameNow = performance.now();
+  if (mobileGPU && frameNow - lastMobileFrame < 33.3) return;
+  if (mobileGPU) lastMobileFrame = frameNow;
 
   // Меню паузы замораживает симуляцию, но оставляет цикл рендера готовым к продолжению.
   if (window.__keterPaused) {
@@ -2671,14 +2682,14 @@ renderChapter(1);
       const touchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
         Number(navigator.maxTouchPoints || 0) > 0;
       const profiles = {
-        low:      { pixelRatio: 0.75, shadows: false, exposure: 1.02, fog: 0.92, dust: false },
-        balanced: { pixelRatio: 1.0, shadows: false, exposure: 1.08, fog: 1.00, dust: true },
-        high:     { pixelRatio: 1.25, shadows: false, exposure: 1.12, fog: 1.00, dust: true },
-        ultra:    { pixelRatio: 1.5, shadows: false, exposure: 1.16, fog: 1.00, dust: true }
+        low:      { pixelRatio: 0.6, shadows: false, exposure: 1.02, fog: 0.88, dust: false },
+        balanced: { pixelRatio: 0.75, shadows: false, exposure: 1.08, fog: 0.94, dust: false },
+        high:     { pixelRatio: 0.9, shadows: false, exposure: 1.12, fog: 1.00, dust: false },
+        ultra:    { pixelRatio: 1.0, shadows: false, exposure: 1.16, fog: 1.00, dust: false }
       };
-      const profile = profiles[settings.quality] || profiles.balanced;
+      const profile = profiles[touchDevice ? 'low' : settings.quality] || profiles.balanced;
       // Phone GPUs get a conservative cap even when the user selects a higher preset.
-      const deviceCap = touchDevice ? 1.0 : 1.5;
+      const deviceCap = touchDevice ? 0.75 : 1.5;
       const ratio = Math.min(window.devicePixelRatio || 1, profile.pixelRatio, deviceCap);
       renderer.setPixelRatio(ratio);
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -2699,9 +2710,9 @@ renderChapter(1);
       if (container) {
         const displayBrightness = clamp(settings.brightness / 0.95, 0.68, 1.35);
         const styles = {
-          vhs: "contrast(1.04) brightness(" + displayBrightness.toFixed(2) + ") sepia(0.08) saturate(0.82)",
-          cold: "contrast(1.02) brightness(" + displayBrightness.toFixed(2) + ") saturate(0.88)",
-          emergency: "contrast(1.06) brightness(" + displayBrightness.toFixed(2) + ") sepia(0.05) saturate(1.05)"
+          vhs: touchDevice ? "none" : "contrast(1.04) brightness(" + displayBrightness.toFixed(2) + ") sepia(0.08) saturate(0.82)",
+          cold: touchDevice ? "none" : "contrast(1.02) brightness(" + displayBrightness.toFixed(2) + ") saturate(0.88)",
+          emergency: touchDevice ? "none" : "contrast(1.06) brightness(" + displayBrightness.toFixed(2) + ") sepia(0.05) saturate(1.05)"
         };
         container.style.filter = styles[settings.visualStyle] || styles.vhs;
       }
