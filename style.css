@@ -894,3 +894,66 @@ p#description {
 @media (prefers-reduced-motion: reduce) {
   #three-container .keter-vhs-overlay { animation: none !important; }
 }
+
+
+/* Graphics settings panel: clear hierarchy and touch-friendly controls. */
+#keter-settings {
+  max-height: min(88vh, 820px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(169,74,65,.7) rgba(5,8,9,.6);
+}
+#keter-settings .keter-label {
+  margin-top: 15px;
+  color: #d8dfda;
+  font-size: 11px;
+  letter-spacing: .08em;
+}
+#keter-settings .keter-select {
+  min-height: 42px;
+  width: 100%;
+  padding: 10px 12px;
+  color: #e7ece7;
+  background: linear-gradient(100deg, rgba(22,29,30,.98), rgba(7,11,12,.98));
+  border: 1px solid rgba(150,169,157,.36);
+  border-left: 2px solid rgba(169,74,65,.8);
+  border-radius: 2px;
+  font: 11px var(--mono, monospace);
+}
+#keter-settings .keter-range {
+  width: 100%;
+  min-height: 28px;
+  accent-color: #b64b42;
+  cursor: pointer;
+}
+#keter-settings .keter-check {
+  min-height: 42px;
+  padding: 9px 11px;
+  margin-top: 12px;
+  border: 1px solid rgba(150,169,157,.22);
+  background: rgba(14,19,20,.72);
+  color: #cbd3ce;
+}
+#keter-settings .keter-graphics-hint {
+  margin: 7px 0 10px;
+  padding: 9px 11px;
+  border-left: 2px solid rgba(169,74,65,.72);
+  background: rgba(90,29,26,.13);
+  line-height: 1.55;
+}
+#keter-settings .keter-label output {
+  color: #e18a7d;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 700px) {
+  #keter-settings {
+    width: min(94vw, 520px);
+    max-height: 84dvh;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  #keter-settings .keter-select {
+    min-height: 44px;
+    font-size: 10px;
+  }
+}
