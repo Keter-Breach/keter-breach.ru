@@ -1273,9 +1273,9 @@ function build10ZonesMap() {
   const glassMat = MAT.glass;
   const redMat = () => new THREE.MeshBasicMaterial({ color: 0xff2222 });
 
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(180, 240), floorMaterial);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(210, 250), floorMaterial);
   floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 30); floor.receiveShadow = true; world.add(floor);
-  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(180, 240), ceilingMat);
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(210, 250), ceilingMat);
   ceiling.rotation.x = Math.PI / 2; ceiling.position.set(0, 3.2, 30); world.add(ceiling);
 
   const box = (mat, w, h, d, x, y, z, solid) => {
@@ -1689,10 +1689,11 @@ function build10ZonesMap() {
     cc.rotation.x = Math.PI / 2; cc.position.set(mid, 3.18, z); world.add(cc);
     [-1, 1].forEach(side => box(wallMaterial, length, 3.2, 0.45, mid, 1.6, z + side * width / 2, true));
   };
-  annexCorridor(-5.2, -10.0, 18);
-  annexCorridor(5.2, 10.0, 38);
-  annexCorridor(-5.2, -10.0, 62);
-  annexCorridor(5.2, 10.0, 70);
+  // Connector mouths cross the existing spine walls instead of stopping just short of them.
+  annexCorridor(-4.7, -10.0, 18, 5.8);
+  annexCorridor(4.7, 10.0, 38, 5.8);
+  annexCorridor(-3.7, -10.0, 62, 5.8);
+  annexCorridor(3.7, 10.0, 70, 5.8);
   room(-25, 18, 30, 28, 'АРХИВ-09', 'ЗАПИСИ ИНЦИДЕНТА', 0x5c9b87);
   room(25, 38, 30, 30, 'МЕДБЛОК', 'КАРАНТИН УРОВНЯ 4', 0x7b9dba);
   room(-25, 62, 30, 32, 'ТЕХНИЧЕСКИЙ УРОВЕНЬ', 'РЕАКТОР / НЕ ВХОДИТЬ', 0xff5533);
@@ -1716,6 +1717,16 @@ function build10ZonesMap() {
     box(MAT.glass, 0.08, 1.8, 2.8, 20.0, 1.15, z + 1.2, false);
   }
   room(0, 94, 36, 28, 'УЗЕЛ СВЯЗИ', 'КАНАЛ 7 · СИГНАЛ ИЗ БУДУЩЕГО', 0x5a79b8);
+  // South service wing from the blueprint: personnel, server room, workshop and CCTV.
+  room(-25, -24, 28, 24, 'КОМНАТА ПЕРСОНАЛА', 'ЖИЛОЙ БЛОК D-12', 0x87959b);
+  room(25, -24, 28, 24, 'СЕРВЕРНАЯ', 'РЕЗЕРВНЫЙ КОНТУР', 0x55a9c5);
+  room(-25, 104, 28, 24, 'ТЕХНИЧЕСКАЯ МАСТЕРСКАЯ', 'РЕМОНТ И ПИТАНИЕ', 0xff8844);
+  room(25, 104, 28, 24, 'КАМЕРЫ НАБЛЮДЕНИЯ', 'МОНИТОРИНГ СЕКТОРА', 0x7da6b8);
+  // Dedicated wide connectors link the added wings to the central circulation spine.
+  annexCorridor(-4.7, -11.0, -24, 5.8);
+  annexCorridor(4.7, 11.0, -24, 5.8);
+  annexCorridor(-3.7, -11.0, 104, 5.8);
+  annexCorridor(3.7, 11.0, 104, 5.8);
   for (let x = -11; x <= 11; x += 5.5) {
     box(MAT.cab, 1.4, 2.2, 0.8, x, 1.1, 90, true);
     box(MAT.glass, 0.05, 1.5, 0.6, x, 1.6, 89.55, false);
