@@ -717,16 +717,6 @@ function createFirstPersonRig() {
   addPlate(0.055, 0.12, 0.09, gloveMat, -0.555, -0.635, -1.34, -0.42);
   addPlate(0.055, 0.12, 0.09, gloveMat,  0.515, -0.635, -1.30,  0.42);
 
-  // Helmet lamp housing at the very top edge of the view, subtle and unobtrusive.
-  const helmetLamp = new THREE.Group();
-  helmetLamp.position.set(0, 0.39, -0.92);
-  const housing = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.055, 0.075), armorMat);
-  helmetLamp.add(housing);
-  const lampLens = new THREE.Mesh(new THREE.CircleGeometry(0.027, 8), lensMat);
-  lampLens.position.set(0, 0, -0.041);
-  helmetLamp.add(lampLens);
-  rig.add(helmetLamp);
-
   rig.position.set(0, 0, 0);
   rig.renderOrder = 2;
   rig.traverse(obj => {
