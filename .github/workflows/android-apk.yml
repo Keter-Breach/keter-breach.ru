@@ -20,7 +20,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -33,6 +32,9 @@ jobs:
 
       - name: Install project dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Run project smoke tests
+        run: npm test
 
       - name: Install Capacitor Android
         run: npm install --no-save --no-audit --no-fund @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
