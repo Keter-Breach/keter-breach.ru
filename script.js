@@ -716,15 +716,31 @@ function init3DMode() {
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ'; // yaw отдельно от pitch: взгляд вверх не замедляет ходьбу
 
-    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    const touchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+      Number(navigator.maxTouchPoints || 0) > 0;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: !touchDevice, alpha: false, depth: true, stencil: false,
+        powerPreference: touchDevice ? "low-power" : "high-performance"
+      });
+    } catch (error) {
+      if (window.__keterReportError) window.__keterReportError("Устройство не смогло создать WebGL-контекст", error);
+      console.error("[KETER] WebGL initialization failed:", error);
+      return;
+    }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, touchDevice ? 1.25 : 1.75));
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.12;
-    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.enabled = !touchDevice;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.physicallyCorrectLights = true;
+    renderer.physicallyCorrectLights = !touchDevice;
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
+    renderer.domElement.addEventListener("webglcontextlost", event => {
+      event.preventDefault();
+      if (window.__keterReportError) window.__keterReportError("Потерян WebGL-контекст", "Снизьте графическую нагрузку и перезапустите игру.");
+    });
 
     buildMaterials();
 
@@ -1651,7 +1667,8 @@ function animate3D() {
   const locked = isLocked();
   const touchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
     (navigator.maxTouchPoints > 0);
-  hintEl.style.display = (locked || touchDevice) ? 'none' : 'block';
+  const controlsActive = locked || touchDevice;
+  if (hintEl) hintEl.style.display = (locked || touchDevice) ? 'none' : 'block';
 
   // Медленное пробуждение: взгляд поднимается с пола лифта.
   if (wakeupActive) {
@@ -1729,10 +1746,10 @@ function animate3D() {
     }
   }
 
-  updateDistantApparition(delta, locked);
+  updateDistantApparition(delta, controlsActive);
 
   // Сюжетные ивенты: каждый триггер срабатывает только один раз за запуск.
-  if (locked && eventTriggers.length) {
+  if (controlsActive && eventTriggers.length) {
     for (const event of eventTriggers) {
       if (!event.fired && Math.hypot(camera.position.x - event.x, camera.position.z - event.z) < event.radius) {
         event.fired = true;
@@ -1752,7 +1769,7 @@ function animate3D() {
 
   // Лёгкое покачивание рук и фонаря синхронно с шагами.
   if (firstPersonRig) {
-    const moving = locked && (moveForward || moveBackward || moveLeft || moveRight);
+    const moving = controlsActive && (moveForward || moveBackward || moveLeft || moveRight);
     const bob = moving ? Math.sin(headBobTimer * 0.5) : 0;
     firstPersonRig.position.y = moving ? Math.abs(bob) * 0.018 : 0;
     firstPersonRig.position.x = moving ? Math.sin(headBobTimer * 0.25) * 0.012 : 0;
@@ -1782,7 +1799,11 @@ function animate3D() {
   }
 
   drawMinimap();
-  renderer.render(scene, camera);
+  try { renderer.render(scene, camera); }
+  catch (error) {
+    if (window.__keterReportError) window.__keterReportError("Ошибка отрисовки 3D-сцены", error);
+    console.error("[KETER] render failed:", error);
+  }
 }
 
 // Старт
@@ -2814,9 +2835,15 @@ renderChapter(1);
     originalInit3DMode = init3DMode;
 
     init3DMode = function () {
-      originalInit3DMode();
-      applyGraphicsSettings();
-      startVhsAmbient();
+      try {
+        originalInit3DMode();
+        if (!renderer) return;
+        applyGraphicsSettings();
+        startVhsAmbient();
+      } catch (error) {
+        if (window.__keterReportError) window.__keterReportError("Не удалось создать сцену сектора D-12", error);
+        console.error("[KETER] 3D scene initialization failed:", error);
+      }
     };
 
     // Применяем чувствительность мыши, не меняя механику камеры.
