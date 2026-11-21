@@ -1088,3 +1088,25 @@ p#description {
 #three-container .interaction-hand svg{width:30px;height:30px;fill:rgba(7,13,12,.82);stroke:#dce9df;stroke-width:1.45;stroke-linecap:round;stroke-linejoin:round}
 #three-container .interaction-hand.is-visible{opacity:1;transform:translate(-50%,-50%) scale(1)}
 @media(pointer:coarse){#three-container .interaction-hand{width:40px;height:40px}#three-container .interaction-hand svg{width:34px;height:34px}}
+
+
+/* KETER FIX 06 — make the 3D menu clearly visible on phones and desktop. */
+#keter-overlay { background: linear-gradient(90deg,rgba(2,5,7,.54),rgba(3,7,9,.18) 52%,rgba(2,4,5,.08)), radial-gradient(ellipse at 78% 48%,rgba(145,43,34,.12),transparent 48%), #030607 !important; }
+#keter-menu-world { opacity: 1 !important; z-index: 0 !important; background: radial-gradient(ellipse at 58% 42%,#354247 0%,#151f23 48%,#030607 100%) !important; }
+#keter-menu-world canvas { display:block !important; width:100% !important; height:100% !important; filter:brightness(1.22) contrast(1.12) saturate(.9); }
+#keter-overlay .keter-panel { position:relative !important; z-index:4 !important; }
+#keter-overlay:before { z-index:1 !important; pointer-events:none !important; }
+#keter-overlay:after { z-index:2 !important; pointer-events:none !important; }
+@media (max-width:720px),(pointer:coarse) {
+  #keter-overlay { background:linear-gradient(90deg,rgba(1,4,6,.18),rgba(1,4,6,.08)),linear-gradient(0deg,rgba(0,0,0,.38),transparent 65%),#030607 !important; }
+  #keter-overlay .keter-panel { width:min(88vw,430px) !important; max-height:calc(100dvh - 24px) !important; margin:0 auto !important; padding:20px 16px !important; background:linear-gradient(145deg,rgba(5,10,12,.78),rgba(3,7,9,.72)) !important; border:1px solid rgba(170,190,180,.34) !important; border-left:3px solid #b64e43 !important; backdrop-filter:blur(8px) saturate(.9) !important; }
+  #keter-overlay:after { display:block !important; }
+  #keter-overlay .keter-title { font-size:clamp(38px,10vw,54px) !important; }
+}
+
+/* Interaction indicator must sit above the WebGL canvas and HUD layers. */
+#three-container .crosshair { z-index:30 !important; }
+#three-container .crosshair.is-targeting { opacity:0 !important; }
+#three-container .interaction-hand { position:absolute !important; z-index:31 !important; left:50% !important; top:50% !important; width:48px !important; height:48px !important; display:grid !important; place-items:center !important; opacity:0 !important; visibility:hidden !important; transform:translate(-50%,-50%) scale(.7) !important; pointer-events:none !important; color:#f0f4ee !important; filter:drop-shadow(0 2px 4px #000) drop-shadow(0 0 8px rgba(190,225,204,.38)) !important; }
+#three-container .interaction-hand svg { display:block !important; width:40px !important; height:40px !important; fill:rgba(7,13,12,.92) !important; stroke:#f0f4ee !important; stroke-width:1.55 !important; stroke-linecap:round !important; stroke-linejoin:round !important; }
+#three-container .interaction-hand.is-visible { opacity:1 !important; visibility:visible !important; transform:translate(-50%,-50%) scale(1) !important; }
