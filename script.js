@@ -159,6 +159,46 @@ function playRadioIntercept(index) {
   showToast("◉ " + item.from + "\n" + item.message, 10000);
 }
 
+// Короткая локальная сирена аварийного протокола; запускается только игровым событием.
+function startFacilityAlarm(duration = 12) {
+  facilityAlarmTimer = Math.max(facilityAlarmTimer, duration);
+  eventPulseTimer = Math.max(eventPulseTimer, duration);
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    if (!facilityAlarmOscillator) {
+      facilityAlarmOscillator = audioCtx.createOscillator();
+      facilityAlarmGain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = 920;
+      filter.Q.value = 1.2;
+      facilityAlarmOscillator.type = "sawtooth";
+      facilityAlarmOscillator.frequency.value = 680;
+      facilityAlarmGain.gain.value = 0;
+      facilityAlarmOscillator.connect(filter).connect(facilityAlarmGain).connect(audioCtx.destination);
+      facilityAlarmOscillator.start();
+    }
+    const volume = Math.max(0, Math.min(1, Number(window.__keterVolume ?? 0.7)));
+    facilityAlarmGain.gain.setTargetAtTime(volume * 0.035, audioCtx.currentTime, 0.08);
+  } catch (error) {
+    console.warn("[KETER] Сирена недоступна:", error);
+  }
+}
+
+function updateFacilityAlarm(delta, time) {
+  if (facilityAlarmTimer <= 0) return;
+  facilityAlarmTimer = Math.max(0, facilityAlarmTimer - delta);
+  facilityAlarmPhase += delta * 2.8;
+  if (facilityAlarmOscillator && audioCtx && facilityAlarmGain) {
+    const sweep = 560 + (Math.sin(facilityAlarmPhase) * 0.5 + 0.5) * 520;
+    facilityAlarmOscillator.frequency.setTargetAtTime(sweep, audioCtx.currentTime, 0.06);
+  }
+  if (facilityAlarmTimer <= 0 && facilityAlarmGain && audioCtx) {
+    facilityAlarmGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.18);
+  }
+}
+
 
 // === 2. СЮЖЕТ И СОСТОЯНИЕ ===
 const freshState = () => ({ keycardL1: false, keycardL2: false, logsFound: [], reactorDisabled: false, anomalySeen: false, radioMessages: 0, containmentOverride: false });
@@ -283,6 +323,10 @@ let MAT = null, dust = null, flickers = [];
 let emergencyPulse = null;
 let eventPulseTimer = 0;
 let eventBlackoutTimer = 0;
+let facilityAlarmTimer = 0;
+let facilityAlarmPhase = 0;
+let facilityAlarmOscillator = null;
+let facilityAlarmGain = null;
 let lastMinimapDraw = 0;
 let lastLightUpdate = 0;
 let lastDustUpdate = 0;
@@ -1337,7 +1381,7 @@ function build10ZonesMap() {
     { x: -11.0, z: 33.0, radius: 2.8, message: 'МАСТЕРСКАЯ: щиток выбивает дугой. На секунду все лампы комплекса гаснут, а в темноте кто-то проходит за спиной.', sound: 'deny', blackout: true, fired: false },
     { x: -11.0, z: 39.5, radius: 2.8, message: 'ИЗОЛЯТОР: за дверью слышны три удара. Затем кто-то шепчет ваше имя по внутренней связи.', sound: 'door', fired: false },
     { x: 0, z: 18.5, radius: 2.5, message: 'РАДИОПЕРЕХВАТ: «...эвакуация отменена. Персонал не покидал комплекс. Повторяю: персонал не покидал...»', sound: 'deny', fired: false },
-    { x: 0, z: 51.5, radius: 3.0, message: 'ПРОТОКОЛ KETER: датчик фиксирует движение внутри пустой камеры. Свет в секторе гаснет на секунду.', sound: 'door', blackout: true, fired: false }
+    { x: 0, z: 51.5, radius: 3.0, message: 'ПРОТОКОЛ KETER: датчик фиксирует движение внутри пустой камеры. Объявлен локальный режим тревоги.', sound: 'door', blackout: true, alarm: true, radio: 2, fired: false }
   ];
 
   function seamWingMat() {
@@ -2073,8 +2117,13 @@ function animate3D() {
         // Событие влияет на освещение: короткий провал питания, затем аварийный импульс.
         eventPulseTimer = Math.max(eventPulseTimer, event.blackout ? 1.9 : 0.9);
         if (event.blackout) eventBlackoutTimer = Math.max(eventBlackoutTimer, 0.72);
+        if (event.alarm) {
+          startFacilityAlarm(12);
+          showToast("⚠ АВАРИЙНЫЙ ПРОТОКОЛ D-12 · ЛОКАЛЬНАЯ ТРЕВОГА", 4200);
+          if (Number.isInteger(event.radio)) playRadioIntercept(event.radio);
+        }
         playSound(event.sound || 'deny');
-        showToast(event.message, 6500);
+        if (!event.alarm) showToast(event.message, 6500);
         break;
       }
     }
@@ -2116,10 +2165,12 @@ function animate3D() {
 
   if (eventBlackoutTimer > 0) eventBlackoutTimer = Math.max(0, eventBlackoutTimer - delta);
   if (eventPulseTimer > 0) eventPulseTimer = Math.max(0, eventPulseTimer - delta);
+  updateFacilityAlarm(delta, time);
   if (emergencyPulse) {
     const pulse = Math.max(0, Math.sin(time * 0.0019));
     const recoveryFlash = eventPulseTimer > 0 ? Math.max(0, Math.sin((1.9 - eventPulseTimer) * 10)) * 2.1 : 0;
-    emergencyPulse.intensity = eventBlackoutTimer > 0 ? 0.035 : 0.18 + pulse * 1.25 + recoveryFlash;
+    const alarmFlash = facilityAlarmTimer > 0 ? 0.7 + Math.max(0, Math.sin(time * 0.012)) * 1.6 : 0;
+    emergencyPulse.intensity = eventBlackoutTimer > 0 ? 0.035 : 0.18 + pulse * 1.25 + recoveryFlash + alarmFlash;
   }
 
   if (time - lastLightUpdate >= 100) {
