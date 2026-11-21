@@ -1,9 +1,10 @@
 /* PROJECT: KETER — mobile touch controls. */
 (function installKeterTouchControls() {
-  const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
-  const touchPoints = Number(navigator.maxTouchPoints || 0) > 0;
-  const small = Math.min(window.innerWidth, window.innerHeight) <= 900;
-  if (!coarse && !touchPoints && !small) return;
+  const detectMode = () => window.__keterControlMode ||
+    (((window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+      Number(navigator.maxTouchPoints || 0) > 0 ||
+      Math.min(window.innerWidth, window.innerHeight) <= 900) ? "mobile" : "pc");
+  if (detectMode() !== "mobile") return;
 
   // Native APK is locked by AndroidManifest; this is a best-effort lock for
   // browsers/PWAs that support the Screen Orientation API after a user gesture.
@@ -149,10 +150,12 @@
   window.addEventListener("blur", () => { resetStick(); state.lookId = null; isSprinting = false; });
   function updateVisibility() {
     const visible = !game.classList.contains("hidden");
-    root.classList.toggle("is-active", visible);
-    if (visible) startTutorial();
+    const mobileMode = detectMode() === "mobile";
+    root.classList.toggle("is-active", visible && mobileMode);
+    if (visible && mobileMode) startTutorial();
     if (!visible) { resetStick(); state.lookId = null; isSprinting = false; }
   }
   new MutationObserver(updateVisibility).observe(game, { attributes: true, attributeFilter: ["class"] });
+  window.addEventListener("keter-control-mode-change", updateVisibility);
   updateVisibility();
 })();
