@@ -142,17 +142,32 @@ function renderChapter(chapNum) {
 }
 function generateKeycardTexture(levelStr, colorHex) {
   const canvas = document.createElement('canvas');
-  canvas.width = 256; canvas.height = 160;
+  canvas.width = 512; canvas.height = 320;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = colorHex; ctx.fillRect(0, 0, 256, 160);
-  ctx.fillStyle = '#111'; ctx.fillRect(0, 20, 256, 30);
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 22px Courier New';
-  ctx.fillText("FACILITY SECURITY", 20, 85);
-  ctx.font = 'bold 18px Courier New';
-  ctx.fillText(`LEVEL ${levelStr}`, 20, 125);
+  const accent = colorHex;
+  ctx.fillStyle = '#101619'; ctx.fillRect(0, 0, 512, 320);
+  ctx.strokeStyle = accent; ctx.lineWidth = 12;
+  ctx.strokeRect(8, 8, 496, 304);
+  ctx.fillStyle = '#20292c'; ctx.fillRect(20, 24, 472, 56);
+  ctx.fillStyle = accent; ctx.fillRect(20, 24, 9, 56);
+  ctx.fillStyle = '#dce5e4'; ctx.font = 'bold 27px monospace';
+  ctx.fillText('SCP FOUNDATION', 48, 61);
+  ctx.fillStyle = '#080c0e'; ctx.fillRect(34, 105, 112, 86);
+  ctx.strokeStyle = '#687579'; ctx.lineWidth = 5; ctx.strokeRect(34, 105, 112, 86);
+  ctx.fillStyle = '#b6c0bd'; ctx.fillRect(49, 120, 82, 56);
+  ctx.strokeStyle = '#596467'; ctx.lineWidth = 3;
+  for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(49 + i * 20, 120); ctx.lineTo(49 + i * 20, 176); ctx.stroke(); }
+  ctx.fillStyle = '#f0f2ed'; ctx.font = 'bold 54px monospace';
+  ctx.fillText('LEVEL ' + levelStr, 174, 160);
+  ctx.fillStyle = accent; ctx.fillRect(174, 180, 280, 8);
+  ctx.fillStyle = '#9aa7a6'; ctx.font = '20px monospace';
+  ctx.fillText('D-12 // AUTHORIZED PERSONNEL', 174, 220);
+  ctx.fillStyle = '#647174'; ctx.font = '16px monospace';
+  ctx.fillText('PROPERTY OF SITE SECURITY', 34, 278);
+  ctx.fillText('ID: D12-' + String(levelStr).padStart(2, '0') + '-7A91', 300, 278);
   const tex = new THREE.CanvasTexture(canvas);
   tex.encoding = THREE.sRGBEncoding;
+  tex.anisotropy = 2;
   return tex;
 }
 
@@ -1534,17 +1549,102 @@ function build10ZonesMap() {
 }
 
 function spawnKeycard(x, y, z, level, colorHex, type) {
-  const mat = new THREE.MeshBasicMaterial({ map: generateKeycardTexture(level, colorHex) });
-  const m = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.02, 0.22), mat);
-  m.position.set(x, y, z); m.userData = { type };
-  world.add(m); interactiveItems.push(m);
+  const card = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: 0x182124, metalness: 0.62, roughness: 0.38
+  });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.39, 0.026, 0.25), bodyMat);
+  card.add(body);
+
+  const face = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.365, 0.225),
+    new THREE.MeshBasicMaterial({ map: generateKeycardTexture(level, colorHex) })
+  );
+  face.rotation.x = -Math.PI / 2;
+  face.position.y = 0.014;
+  card.add(face);
+
+  const edgeMat = new THREE.MeshStandardMaterial({
+    color: colorHex, emissive: colorHex, emissiveIntensity: 0.16,
+    metalness: 0.45, roughness: 0.42
+  });
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(0.39, 0.008, 0.018), edgeMat);
+  edge.position.set(0, 0.018, -0.105);
+  card.add(edge);
+
+  card.position.set(x, y, z);
+  card.rotation.y = (Math.random() - 0.5) * 0.28;
+  card.rotation.x = -0.035;
+  card.userData = { type, baseY: y, phase: Math.random() * Math.PI * 2 };
+  world.add(card);
+  interactiveItems.push(card);
 }
 
 function spawnBattery(x, y, z) {
-  const mat = new THREE.MeshStandardMaterial({ color: 0x00ff66, roughness: 0.3 });
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.3, 12), mat);
-  m.position.set(x, y, z); m.userData = { type: 'battery' };
-  world.add(m); interactiveItems.push(m);
+  const batteryPack = new THREE.Group();
+  const shellMat = new THREE.MeshStandardMaterial({
+    color: 0x182322, metalness: 0.58, roughness: 0.32
+  });
+  const shell = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.105, 0.105, 0.34, 16), shellMat
+  );
+  batteryPack.add(shell);
+
+  const wrapMat = new THREE.MeshStandardMaterial({
+    color: 0x526b43, metalness: 0.28, roughness: 0.48
+  });
+  const wrap = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.108, 0.108, 0.19, 16), wrapMat
+  );
+  batteryPack.add(wrap);
+
+  const terminalMat = new THREE.MeshStandardMaterial({
+    color: 0xb8c1bd, metalness: 0.86, roughness: 0.22
+  });
+  const terminal = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.043, 0.043, 0.025, 12), terminalMat
+  );
+  terminal.position.y = 0.182;
+  batteryPack.add(terminal);
+
+  const insulator = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.071, 0.071, 0.012, 16),
+    new THREE.MeshStandardMaterial({ color: 0x171b1a, roughness: 0.7 })
+  );
+  insulator.position.y = 0.174;
+  batteryPack.add(insulator);
+
+  const labelCanvas = document.createElement('canvas');
+  labelCanvas.width = 256; labelCanvas.height = 128;
+  const g = labelCanvas.getContext('2d');
+  g.fillStyle = '#202a25'; g.fillRect(0, 0, 256, 128);
+  g.fillStyle = '#a8c58b'; g.font = 'bold 27px monospace';
+  g.fillText('D-12 POWER', 12, 43);
+  g.fillStyle = '#d7dfd0'; g.font = 'bold 38px monospace';
+  g.fillText('18650', 12, 91);
+  g.fillStyle = '#81917a'; g.font = '15px monospace';
+  g.fillText('RECHARGE CELL', 148, 112);
+  const labelTex = new THREE.CanvasTexture(labelCanvas);
+  labelTex.encoding = THREE.sRGBEncoding;
+  const label = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.16, 0.105),
+    new THREE.MeshBasicMaterial({ map: labelTex })
+  );
+  label.position.set(0, 0, 0.106);
+  batteryPack.add(label);
+
+  const indicator = new THREE.Mesh(
+    new THREE.SphereGeometry(0.018, 8, 6),
+    new THREE.MeshBasicMaterial({ color: 0x9cff68 })
+  );
+  indicator.position.set(0.073, 0.06, 0.073);
+  batteryPack.add(indicator);
+
+  batteryPack.position.set(x, y, z);
+  batteryPack.rotation.z = -0.12;
+  batteryPack.userData = { type: 'battery', baseY: y, phase: Math.random() * Math.PI * 2 };
+  world.add(batteryPack);
+  interactiveItems.push(batteryPack);
 }
 
 // === 5. ИНВЕНТАРЬ И ВЗАИМОДЕЙСТВИЕ ===
