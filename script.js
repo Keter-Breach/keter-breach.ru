@@ -1380,6 +1380,7 @@ function build10ZonesMap() {
     { x: -11.0, z: 27.0, radius: 2.8, message: 'АРХИВ 04: терминал печатает отчёт сам по себе. В записи указано: «НЕ СМОТРЕТЬ В КАМЕРУ 6».', sound: 'deny', fired: false },
     { x: -11.0, z: 33.0, radius: 2.8, message: 'МАСТЕРСКАЯ: щиток выбивает дугой. На секунду все лампы комплекса гаснут, а в темноте кто-то проходит за спиной.', sound: 'deny', blackout: true, fired: false },
     { x: -11.0, z: 39.5, radius: 2.8, message: 'ИЗОЛЯТОР: за дверью слышны три удара. Затем кто-то шепчет ваше имя по внутренней связи.', sound: 'door', fired: false },
+    { x: 0, z: 8.5, radius: 2.7, message: 'КОРИДОР D-12: датчик движения сработал за стеклом наблюдения. В проходе никого нет.', sound: 'deny', blackout: true, fired: false },
     { x: 0, z: 18.5, radius: 2.5, message: 'РАДИОПЕРЕХВАТ: «...эвакуация отменена. Персонал не покидал комплекс. Повторяю: персонал не покидал...»', sound: 'deny', fired: false },
     { x: 0, z: 51.5, radius: 3.0, message: 'ПРОТОКОЛ KETER: датчик фиксирует движение внутри пустой камеры. Объявлен локальный режим тревоги.', sound: 'door', blackout: true, alarm: true, radio: 2, fired: false }
   ];
@@ -1905,12 +1906,34 @@ let apparitionFired = false;
 let apparitionCueFired = false;
 
 function createDistantApparition() {
-  // Временно отключены монстры и гуманоидные явления; атмосферу создают свет, звук и окружение.
-  distantApparition = null;
   apparitionClock = 0;
   apparitionFired = false;
   apparitionCueFired = false;
-  return;
+
+  // Нечёткий силуэт сотрудника за линией наблюдения: без ИИ и физики,
+  // поэтому событие почти не влияет на производительность мобильных устройств.
+  const group = new THREE.Group();
+  const shadowMat = new THREE.MeshBasicMaterial({
+    color: 0x030607, transparent: true, opacity: 0,
+    depthWrite: false, side: THREE.DoubleSide
+  });
+  const addPart = (geometry, x, y, z, sx = 1, sy = 1, sz = 1) => {
+    const mesh = new THREE.Mesh(geometry, shadowMat);
+    mesh.position.set(x, y, z);
+    mesh.scale.set(sx, sy, sz);
+    mesh.frustumCulled = false;
+    group.add(mesh);
+  };
+  addPart(new THREE.BoxGeometry(0.52, 1.05, 0.2), 0, 1.42, 0);
+  addPart(new THREE.SphereGeometry(0.23, 7, 5), 0, 2.12, 0);
+  addPart(new THREE.BoxGeometry(0.18, 0.82, 0.18), -0.19, 0.48, 0);
+  addPart(new THREE.BoxGeometry(0.18, 0.82, 0.18), 0.19, 0.48, 0);
+  addPart(new THREE.BoxGeometry(0.16, 0.9, 0.17), -0.34, 1.42, 0);
+  addPart(new THREE.BoxGeometry(0.16, 0.9, 0.17), 0.34, 1.42, 0);
+  group.position.set(1.65, 0, 16.8);
+  group.visible = false;
+  world.add(group);
+  distantApparition = { group, shadowMat, eyeMat: shadowMat };
 }
 function updateDistantApparition(delta, locked) {
   if (!distantApparition || !locked || apparitionFired) return;
@@ -1926,7 +1949,7 @@ function updateDistantApparition(delta, locked) {
   distantApparition.eyeMat.opacity = Math.min(1, opacity * 1.7);
 
   if (elapsed < 1.5) {
-    distantApparition.group.position.x = Math.sin(elapsed * 1.7) * 0.045;
+    distantApparition.group.position.x = 1.65 + Math.sin(elapsed * 1.7) * 0.045;
   }
   if (!apparitionCueFired && elapsed >= 0.05) {
     apparitionCueFired = true;
