@@ -1370,17 +1370,17 @@ function build10ZonesMap() {
   wallLine('x', -4, -10, 2, [[-5, -1]]); wallLine('x', 4, -10, 2);
   wallLine('z', -9, -14, -4); wallLine('z', 1, -14, -4); wallLine('x', -14, -9, 1); // Блок D-класса
   wallLine('z', 2, -5, 5, [[-1.5, 1.5]]);            // шлюз -> холл
-  wallLine('x', -5, 2, 24, [[8, 12]]);               // холл (проём в Администрацию)
+  wallLine('x', -5, 2, 24, [[8, 12], [16, 20]]);               // холл (проём в Администрацию)
   wallLine('x', 5, 2, 24, [[8, 12]]);                // холл (проём в Медпункт)
   wallLine('z', 24, -5, 5, [[-1, 1]]);               // дверь L-1
   wallLine('z', 4, -15, -5); wallLine('z', 16, -15, -5); wallLine('x', -15, 4, 16); // Администрация
   wallLine('z', 4, 5, 15); wallLine('z', 16, 5, 15); wallLine('x', 15, 4, 16);      // Медпункт
-  wallLine('x', -5, 24, 44, [[25, 28], [31, 34], [38, 41]]); wallLine('x', 5, 24, 44, [[31, 35]]);
+  wallLine('x', -5, 24, 44, [[25, 28], [31, 34], [38, 41]]); wallLine('x', 5, 24, 44, [[31, 35], [36, 40]]);
   wallLine('z', 27, 5, 15); wallLine('z', 39, 5, 15); wallLine('x', 15, 27, 39); // Лаборатория                              // Узел данных
   wallLine('z', 44, -16, 16, [[-1.5, 1.5]]);         // узел -> зал содержания
   wallLine('x', -16, 44, 60); wallLine('x', 16, 44, 60);
   wallLine('z', 60, -16, 16, [[-14.5, -12.5], [-1, 1]]); // L-2 и служебный обход
-  wallLine('x', -4, 60, 80, [[66, 70], [77, 79]]); wallLine('x', 4, 60, 80);
+  wallLine('x', -4, 60, 80, [[60.5, 64.5], [66, 70], [77, 79]]); wallLine('x', 4, 60, 80, [[68, 72]]);
   wallLine('z', 63, -14, -4, [[-14.5, -12.5]]); wallLine('z', 77, -14, -4, [[-14.5, -12.5]]); wallLine('x', -14, 63, 77); // Пост охраны и обход
   wallLine('z', 80, -4, 4, [[-1, 1]]);               // выходная дверь
 
@@ -1650,17 +1650,49 @@ function build10ZonesMap() {
 
   // Дополнительные крылья комплекса: архив, медблок и технический уровень.
   const roomFloor = new THREE.MeshStandardMaterial({ color: 0x303638, roughness: 0.94 });
+  // Blueprint annexes: each room has a real doorway facing the central route.
   const room = (cx, cz, w, d, title, subtitle, lightColor = 0x8aa8a0) => {
     const rf = new THREE.Mesh(new THREE.PlaneGeometry(w, d), roomFloor);
     rf.rotation.x = -Math.PI / 2; rf.position.set(cx, 0.012, cz); world.add(rf);
     const rc = new THREE.Mesh(new THREE.PlaneGeometry(w, d), ceilingMat);
     rc.rotation.x = Math.PI / 2; rc.position.set(cx, 3.18, cz); world.add(rc);
-    box(wallMaterial, 0.45, 3.2, d, cx - w / 2, 1.6, cz, true);
-    box(wallMaterial, 0.45, 3.2, d, cx + w / 2, 1.6, cz, true);
-    box(wallMaterial, w, 3.2, 0.45, cx, 1.6, cz + d / 2, true);
+    const left = cx - w / 2, right = cx + w / 2, top = cz - d / 2, bottom = cz + d / 2;
+    const half = 1.65;
+    if (cx < -1) {
+      box(wallMaterial, 0.45, 3.2, d, left, 1.6, cz, true);
+      box(wallMaterial, 0.45, 3.2, d / 2 - half, right, 1.6, top + (d / 2 - half) / 2, true);
+      box(wallMaterial, 0.45, 3.2, d / 2 - half, right, 1.6, bottom - (d / 2 - half) / 2, true);
+      box(wallMaterial, w, 3.2, 0.45, cx, 1.6, top, true);
+      box(wallMaterial, w, 3.2, 0.45, cx, 1.6, bottom, true);
+    } else if (cx > 1) {
+      box(wallMaterial, 0.45, 3.2, d / 2 - half, left, 1.6, top + (d / 2 - half) / 2, true);
+      box(wallMaterial, 0.45, 3.2, d / 2 - half, left, 1.6, bottom - (d / 2 - half) / 2, true);
+      box(wallMaterial, 0.45, 3.2, d, right, 1.6, cz, true);
+      box(wallMaterial, w, 3.2, 0.45, cx, 1.6, top, true);
+      box(wallMaterial, w, 3.2, 0.45, cx, 1.6, bottom, true);
+    } else {
+      box(wallMaterial, 0.45, 3.2, d, left, 1.6, cz, true);
+      box(wallMaterial, 0.45, 3.2, d, right, 1.6, cz, true);
+      box(wallMaterial, (w - half * 2) / 2, 3.2, 0.45, cx - (w + half * 2) / 4, 1.6, top, true);
+      box(wallMaterial, (w - half * 2) / 2, 3.2, 0.45, cx + (w + half * 2) / 4, 1.6, top, true);
+      box(wallMaterial, w, 3.2, 0.45, cx, 1.6, bottom, true);
+    }
     addPointLight(cx, cz, lightColor, 2.65);
-    addSign([title, subtitle], cx, 2.65, cz - d / 2 + 0.35, 0, '#9dffcb');
+    addSign([title, subtitle], cx, 2.65, top + 0.35, 0, '#9dffcb');
   };
+  // Broad connector passages physically join the west/east annexes to the main spine.
+  const annexCorridor = (x1, x2, z, width = 5.2) => {
+    const length = Math.abs(x2 - x1), mid = (x1 + x2) / 2;
+    const cf = new THREE.Mesh(new THREE.PlaneGeometry(length, width), roomFloor);
+    cf.rotation.x = -Math.PI / 2; cf.position.set(mid, 0.014, z); world.add(cf);
+    const cc = new THREE.Mesh(new THREE.PlaneGeometry(length, width), ceilingMat);
+    cc.rotation.x = Math.PI / 2; cc.position.set(mid, 3.18, z); world.add(cc);
+    [-1, 1].forEach(side => box(wallMaterial, length, 3.2, 0.45, mid, 1.6, z + side * width / 2, true));
+  };
+  annexCorridor(-5.2, -10.0, 18);
+  annexCorridor(5.2, 10.0, 38);
+  annexCorridor(-5.2, -10.0, 62);
+  annexCorridor(5.2, 10.0, 70);
   room(-25, 18, 30, 28, 'АРХИВ-09', 'ЗАПИСИ ИНЦИДЕНТА', 0x5c9b87);
   room(25, 38, 30, 30, 'МЕДБЛОК', 'КАРАНТИН УРОВНЯ 4', 0x7b9dba);
   room(-25, 62, 30, 32, 'ТЕХНИЧЕСКИЙ УРОВЕНЬ', 'РЕАКТОР / НЕ ВХОДИТЬ', 0xff5533);
