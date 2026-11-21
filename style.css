@@ -957,3 +957,96 @@ p#description {
     font-size: 10px;
   }
 }
+
+
+/* === KETER 3D BOOT CORRIDOR === */
+.keter-loading {
+  isolation: isolate;
+  background: radial-gradient(ellipse at 50% 42%, rgba(36,48,51,.28), transparent 42%), #030607;
+}
+.loading-world {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  perspective: 1050px;
+  perspective-origin: 50% 47%;
+  background: radial-gradient(ellipse at 50% 45%, #1b2529 0%, #0a1012 54%, #020405 100%);
+}
+.loading-corridor {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: translateZ(0) rotateX(1deg);
+  animation: loading-camera-drift 9s ease-in-out infinite alternate;
+}
+.loading-corridor span { position: absolute; display: block; backface-visibility: hidden; }
+.loading-wall-back {
+  left: 36%; top: 24%; width: 28%; height: 40%;
+  border: 2px solid rgba(135,151,151,.25);
+  background: linear-gradient(90deg, #111a1d, #3a4446 48%, #11191c);
+  box-shadow: 0 0 50px rgba(0,0,0,.8), inset 0 0 35px #05090b;
+  transform: translateZ(-390px);
+}
+.loading-wall-left {
+  left: 7%; top: 11%; width: 47%; height: 69%;
+  transform-origin: right center; transform: rotateY(66deg) translateZ(-190px);
+  background: repeating-linear-gradient(0deg, transparent 0 68px, rgba(150,165,164,.1) 69px 71px), linear-gradient(90deg, #090e10, #283236 72%, #151e21);
+  border: 1px solid rgba(135,151,151,.18);
+  box-shadow: inset -45px 0 70px rgba(0,0,0,.65);
+}
+.loading-wall-right {
+  right: 7%; top: 11%; width: 47%; height: 69%;
+  transform-origin: left center; transform: rotateY(-66deg) translateZ(-190px);
+  background: repeating-linear-gradient(0deg, transparent 0 68px, rgba(150,165,164,.1) 69px 71px), linear-gradient(270deg, #090e10, #283236 72%, #151e21);
+  border: 1px solid rgba(135,151,151,.18);
+  box-shadow: inset 45px 0 70px rgba(0,0,0,.65);
+}
+.loading-floor {
+  left: 12%; top: 48%; width: 76%; height: 85%;
+  transform-origin: top center; transform: rotateX(73deg) translateZ(-80px);
+  background: repeating-linear-gradient(90deg, transparent 0 18%, rgba(139,157,155,.12) 18.2% 18.5%, transparent 18.8% 100%), repeating-linear-gradient(0deg, #101719 0 48px, #293235 49px 51px);
+  border-top: 2px solid rgba(140,156,155,.25);
+}
+.loading-ceiling {
+  left: 12%; top: -33%; width: 76%; height: 85%;
+  transform-origin: bottom center; transform: rotateX(-73deg) translateZ(-80px);
+  background: repeating-linear-gradient(90deg, transparent 0 18%, rgba(139,157,155,.09) 18.2% 18.5%, transparent 18.8% 100%), linear-gradient(#080d0f, #20292c);
+}
+.loading-elevator {
+  left: 38%; top: 28%; width: 24%; height: 32%;
+  transform: translateZ(-365px);
+  border: 3px solid #596467;
+  background: linear-gradient(90deg, #0b1113 0 48%, #697478 49% 51%, #0b1113 52%);
+  box-shadow: 0 0 35px rgba(0,0,0,.9), 0 0 22px rgba(166,38,30,.14);
+}
+.loading-elevator i {
+  position: absolute; top: 0; bottom: 0; width: 43%;
+  border: 1px solid rgba(161,174,171,.4);
+  background: linear-gradient(90deg, #20292c, #566165 45%, #252e31);
+}
+.loading-elevator i:first-child { left: 0; transform: skewY(-1deg) translateX(-9%); }
+.loading-elevator i:last-child { right: 0; transform: skewY(1deg) translateX(9%); }
+.loading-world-vignette {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.12), transparent 35%, rgba(0,0,0,.7)), radial-gradient(ellipse at center, transparent 22%, rgba(0,0,0,.75) 100%);
+}
+.loading-mark, .loading-brand, .loading-status, .loading-track, .loading-foot, #loading-retry {
+  z-index: 2;
+}
+.loading-brand strong { text-shadow: 0 3px 26px #000, 0 0 30px rgba(210,54,45,.3); }
+.loading-mark { background: rgba(3,7,8,.45); backdrop-filter: blur(3px); }
+@keyframes loading-camera-drift {
+  from { transform: translate3d(-.35%, 0, 0) rotateX(1deg) scale(1.015); }
+  to { transform: translate3d(.35%, -.25%, 0) rotateX(1deg) scale(1.045); }
+}
+@media (max-width: 700px) {
+  .loading-world { perspective: 760px; }
+  .loading-wall-left { left: -2%; width: 56%; transform: rotateY(60deg) translateZ(-150px); }
+  .loading-wall-right { right: -2%; width: 56%; transform: rotateY(-60deg) translateZ(-150px); }
+  .loading-wall-back { left: 30%; width: 40%; }
+  .loading-elevator { left: 32%; width: 36%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-corridor { animation: none; }
+}
