@@ -224,8 +224,23 @@ function releaseFacilityLockdown(manual = false) {
   if (manual) showToast("АВАРИЙНЫЙ ДОСТУП ПОДТВЕРЖДЁН · БЛОКИРОВКА L-2 СНЯТА", 4200);
 }
 
+function setFacilityPower(active) {
+  const state = window.playerState || (window.playerState = freshState());
+  state.powerRestored = !!active;
+  const serviceDoor = doors && doors.doorService;
+  if (serviceDoor) {
+    serviceDoor.userData.locked = !active;
+    if (serviceDoor.userData.lamp && serviceDoor.userData.lamp.material && serviceDoor.userData.lamp.material.color) {
+      serviceDoor.userData.lamp.material.color.set(active ? 0x00ff66 : 0xff2418);
+    }
+  }
+  if (active) {
+    flickers.forEach(f => { if (f && f.light) f.light.intensity = f.base; });
+  }
+}
+
 // === 2. СЮЖЕТ И СОСТОЯНИЕ ===
-const freshState = () => ({ keycardL1: false, keycardL2: false, logsFound: [], reactorDisabled: false, anomalySeen: false, radioMessages: 0, containmentOverride: false, lockdownActive: false });
+const freshState = () => ({ keycardL1: false, keycardL2: false, logsFound: [], reactorDisabled: false, anomalySeen: false, radioMessages: 0, containmentOverride: false, lockdownActive: false, powerRestored: false });
 window.playerState = freshState();
 let loopCount = 1;
 
@@ -270,6 +285,8 @@ function renderChapter(chapNum) {
   if (chapNum === 'RESET') {
     loopCount++;
     window.playerState = freshState();
+    setFacilityLockdown(false);
+    setFacilityPower(false);
     chapNum = 1;
   }
 
@@ -1357,15 +1374,15 @@ function build10ZonesMap() {
   wallLine('z', 27, 5, 15); wallLine('z', 39, 5, 15); wallLine('x', 15, 27, 39); // Лаборатория                              // Узел данных
   wallLine('z', 44, -16, 16, [[-1.5, 1.5]]);         // узел -> зал содержания
   wallLine('x', -16, 44, 60); wallLine('x', 16, 44, 60);
-  wallLine('z', 60, -16, 16, [[-1, 1]]);             // дверь L-2
+  wallLine('z', 60, -16, 16, [[-14.5, -12.5], [-1, 1]]); // L-2 и служебный обход
   wallLine('x', -4, 60, 80, [[66, 70]]); wallLine('x', 4, 60, 80);
-  wallLine('z', 63, -14, -4); wallLine('z', 77, -14, -4); wallLine('x', -14, 63, 77); // Пост охраны
+  wallLine('z', 63, -14, -4, [[-14.5, -12.5]]); wallLine('z', 77, -14, -4, [[-14.5, -12.5]]); wallLine('x', -14, 63, 77); // Пост охраны и обход
   wallLine('z', 80, -4, 4, [[-1, 1]]);               // выходная дверь
 
   // --- Новое боковое крыло: архив, мастерская и изолятор ---
   wallLine('x', -17, 24, 44);
   wallLine('z', 24, -17, -5);
-  wallLine('z', 44, -17, -5);
+  wallLine('z', 44, -17, -5, [[-14.5, -12.5]]);
   wallLine('z', 30, -17, -5);
   wallLine('z', 36, -17, -5);
 
@@ -1383,6 +1400,21 @@ function build10ZonesMap() {
   box(cabMat, 1.25, 1.55, 1.0, -14.8, 0.78, 32.8, true);
   box(seamWingMat(), 0.06, 0.42, 0.55, -14.12, 1.02, 32.8);
   box(new THREE.MeshBasicMaterial({ color: 0xff6a18 }), 0.08, 0.08, 0.08, -14.05, 1.2, 32.55);
+  // Интерактивный пульт ручного запуска резервного генератора.
+  const powerRelay = new THREE.Group();
+  const relayFrame = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.82, 0.16), seamWingMat());
+  const relayScreenMat = new THREE.MeshStandardMaterial({ color: 0x17201d, emissive: 0x7a2a10, emissiveIntensity: 0.65, metalness: 0.28, roughness: 0.42 });
+  const relayScreen = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.28, 0.025), relayScreenMat);
+  relayScreen.position.set(0, 0.15, 0.095);
+  const relaySwitch = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.22, 0.08), new THREE.MeshStandardMaterial({ color: 0xb6a27b, metalness: 0.72, roughness: 0.3 }));
+  relaySwitch.position.set(0.2, -0.22, 0.12);
+  powerRelay.add(relayFrame, relayScreen, relaySwitch);
+  powerRelay.position.set(-13.65, 1.28, 32.15);
+  powerRelay.rotation.y = Math.PI / 2;
+  powerRelay.userData = { type: 'powerRelay' };
+  world.add(powerRelay);
+  interactiveItems.push(powerRelay);
+  addSign(['РЕЗЕРВНЫЙ ГЕНЕРАТОР', 'РУЧНОЙ ЗАПУСК'], -13.55, 2.35, 32.15, Math.PI / 2, '#ffb45e', 0.72);
   [-13.2, -12.7, -12.2].forEach((x) => {
     const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 3.0, 6), seamWingMat());
     pipe.rotation.x = Math.PI / 2;
@@ -1432,6 +1464,10 @@ function build10ZonesMap() {
   };
   doors.doorL1 = makeDoor(24, ['ДОПУСК L-1', 'УЗЕЛ ДАННЫХ']);
   doors.doorL2 = makeDoor(60, ['ДОПУСК L-2', 'ЭВАКУАЦИЯ']);
+  doors.doorService = box(doorMaterial, 2.0, 2.8, 0.2, -13.5, 1.4, 60, true);
+  doors.doorService.userData.locked = true;
+  doors.doorService.userData.lamp = box(redMat(), 0.3, 0.1, 0.1, -13.5, 3.05, 59.75);
+  addSign(['ТЕХНИЧЕСКИЙ ОБХОД', 'ПИТАНИЕ: OFFLINE'], -13.5, 0.55, 59.82, Math.PI, '#ff5544', 0.72, doors.doorService);
   doors.doorExit = makeDoor(80, ['ВЫХОД', 'НА ПОВЕРХНОСТЬ']);
 
   // --- Таблички зон ---
@@ -1841,6 +1877,16 @@ function interact3D() {
       battery = Math.min(100, battery + 50);
       showToast(restored > 0 ? "Батарея фонаря +" + restored + "%" : "Заряд фонаря уже полный");
     }
+    else if (t === 'powerRelay') {
+      if (window.playerState.powerRestored) showToast("ГЕНЕРАТОР D-12 · ПИТАНИЕ УЖЕ ВОССТАНОВЛЕНО");
+      else {
+        setFacilityPower(true);
+        playSound("door");
+        showToast("ПИТАНИЕ ВОССТАНОВЛЕНО · СЛУЖЕБНЫЙ ОБХОД ОТКРЫТ\nИщите проход вдоль левой стены за залом содержания.", 6500);
+      }
+      currentInteractionTarget = null;
+      return;
+    }
     else if (t === 'loreShift') {
       showToast("ЖУРНАЛ СМЕНЫ · 03:17 — «Смена завершена. Нас шестеро в комнате, но в отражении монитора — семеро. Гирс приказал не смотреть на камеры. Если запись найдут: НЕ ВЫХОДИТЕ ЧЕРЕЗ ЛИФТ».", 9000);
     }
@@ -1876,6 +1922,14 @@ function interact3D() {
     currentInteractionTarget = null;
     return true;
   };
+
+  const serviceDoorTarget = doors.doorService;
+  if (serviceDoorTarget && target === serviceDoorTarget) {
+    if (window.playerState.powerRestored) openDoor(serviceDoorTarget);
+    else { playSound("deny"); showToast("СЛУЖЕБНЫЙ ШЛЮЗ ОБЕСТОЧЕН · ВОССТАНОВИТЕ ПИТАНИЕ В МАСТЕРСКОЙ"); }
+    currentInteractionTarget = null;
+    return;
+  }
 
   tryDoor(doors.doorL1, 'keycardL1', "Нужна ключ-карта L-1 (кабинет администрации)") ||
   tryDoor(doors.doorL2, 'keycardL2', "Нужна ключ-карта L-2 (серверная)") ||
@@ -2259,9 +2313,10 @@ function animate3D() {
   if (time - lastLightUpdate >= 100) {
     lastLightUpdate = time;
     flickers.forEach(f => {
-      const outage = eventBlackoutTimer > 0 || Math.random() < 0.065;
+      const powerOnline = !!(window.playerState && window.playerState.powerRestored);
+      const outage = eventBlackoutTimer > 0 || (!powerOnline && Math.random() < 0.065);
       const recovery = eventPulseTimer > 0 && eventBlackoutTimer <= 0;
-      f.light.intensity = f.base * (outage ? 0.025 : recovery ? 1.05 + Math.random() * 0.35 : 0.82 + Math.random() * 0.18);
+      f.light.intensity = f.base * (outage ? 0.025 : powerOnline ? 1.0 : recovery ? 1.05 + Math.random() * 0.35 : 0.82 + Math.random() * 0.18);
     });
   }
   if (MAT) MAT.keter.emissiveIntensity = 0.7 + 0.3 * Math.sin(time * 0.003);
