@@ -53,6 +53,113 @@ function playSound(name) {
   osc.start(t); osc.stop(t + s.dur);
 }
 
+// === 1b. ЗВУКОВАЯ СРЕДА И РАДИОПЕРЕХВАТЫ ===
+// Все звуки синтезируются локально: нет дополнительных файлов и сетевых загрузок.
+let facilityAudio = null;
+
+function createFacilityAudio() {
+  if (facilityAudio || !audioCtx) return facilityAudio;
+  const ctx = audioCtx;
+  const master = ctx.createGain();
+  master.gain.value = 0;
+  master.connect(ctx.destination);
+
+  const lowpass = ctx.createBiquadFilter();
+  lowpass.type = "lowpass";
+  lowpass.frequency.value = 260;
+  lowpass.Q.value = 0.7;
+  lowpass.connect(master);
+
+  const humA = ctx.createOscillator();
+  humA.type = "sine";
+  humA.frequency.value = 48;
+  const humGainA = ctx.createGain();
+  humGainA.gain.value = 0.12;
+  humA.connect(humGainA).connect(lowpass);
+  humA.start();
+
+  const humB = ctx.createOscillator();
+  humB.type = "triangle";
+  humB.frequency.value = 73;
+  const humGainB = ctx.createGain();
+  humGainB.gain.value = 0.035;
+  humB.connect(humGainB).connect(lowpass);
+  humB.start();
+
+  const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const noiseData = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1) * 0.22;
+  const noise = ctx.createBufferSource();
+  noise.buffer = noiseBuffer;
+  noise.loop = true;
+  const noiseFilter = ctx.createBiquadFilter();
+  noiseFilter.type = "lowpass";
+  noiseFilter.frequency.value = 180;
+  const noiseGain = ctx.createGain();
+  noiseGain.gain.value = 0.16;
+  noise.connect(noiseFilter).connect(noiseGain).connect(master);
+  noise.start();
+
+  facilityAudio = { master, humA, humB, noise, ctx };
+  return facilityAudio;
+}
+
+function setFacilityAmbience(active) {
+  try {
+    if (!audioCtx) {
+      if (!active) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const ambience = createFacilityAudio();
+    if (!ambience) return;
+    const volume = Math.max(0, Math.min(1, Number(window.__keterVolume ?? 0.7)));
+    const target = active ? volume * 0.12 : 0;
+    ambience.master.gain.cancelScheduledValues(audioCtx.currentTime);
+    ambience.master.gain.setTargetAtTime(target, audioCtx.currentTime, active ? 1.8 : 0.25);
+  } catch (error) {
+    console.warn("[KETER] Не удалось обновить звуковую среду:", error);
+  }
+}
+
+function playRadioStatic() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const ctx = audioCtx;
+    const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.42), ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length) * 0.55;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = 1250;
+    filter.Q.value = 0.8;
+    const gain = ctx.createGain();
+    gain.gain.value = Math.max(0, Math.min(1, Number(window.__keterVolume ?? 0.7))) * 0.22;
+    source.connect(filter).connect(gain).connect(ctx.destination);
+    source.start();
+  } catch (error) {
+    // Радиосообщение останется доступным текстом, даже если Web Audio недоступен.
+  }
+}
+
+const RADIO_INTERCEPTS = [
+  { from: "ДЕЖУРНЫЙ ПОСТ · 03:12", message: "Пост D-12 вызывает контрольную. В коридоре B кто-то повторяет наши переговоры с задержкой в семь секунд. Камеры пустые. Повторяю: камеры пустые." },
+  { from: "ДОКТОР ГИРС · ЗАПИСЬ", message: "Если вы слышите это сообщение, не отвечайте на канал семь. Передатчик принимает голос не из помещения, а из следующего цикла." },
+  { from: "МОБИЛЬНАЯ ГРУППА · ОБРЫВ", message: "Нашли следы у лифта. Они ведут внутрь, хотя дверь всё время была закрыта. Кто-нибудь… выключите свет в коридоре." }
+];
+
+function playRadioIntercept(index) {
+  const item = RADIO_INTERCEPTS[index % RADIO_INTERCEPTS.length];
+  playRadioStatic();
+  const state = window.playerState || (window.playerState = freshState());
+  state.radioMessages = (Number(state.radioMessages) || 0) + 1;
+  showToast("◉ " + item.from + "\n" + item.message, 10000);
+}
+
+
 // === 2. СЮЖЕТ И СОСТОЯНИЕ ===
 const freshState = () => ({ keycardL1: false, keycardL2: false, logsFound: [], reactorDisabled: false, anomalySeen: false, radioMessages: 0, containmentOverride: false });
 window.playerState = freshState();
@@ -1669,7 +1776,12 @@ function interact3D() {
       showToast("ЖУРНАЛ СМЕНЫ · 03:17 — «Смена завершена. Нас шестеро в комнате, но в отражении монитора — семеро. Гирс приказал не смотреть на камеры. Если запись найдут: НЕ ВЫХОДИТЕ ЧЕРЕЗ ЛИФТ».", 9000);
     }
     else if (t === 'loreChannel7') {
-      showToast("КАНАЛ 7 · ВХОДЯЩЕЕ СООБЩЕНИЕ — «Не включайте резервное питание. Вы уже сделали это завтра. Когда услышите собственный голос — не отвечайте». ВРЕМЯ ПАКЕТА: ЗАВТРА, 03:17.", 9000);
+      const radioIndex = Number(window.playerState.radioMessages || 0);
+      playRadioIntercept(radioIndex);
+      // Терминал остаётся на месте: канал можно прослушать повторно, но каждый раз
+      // открывается следующий фрагмент перехвата.
+      currentInteractionTarget = null;
+      return;
     }
 
     interactiveItems.splice(itemIndex, 1);
@@ -2101,6 +2213,7 @@ renderChapter(1);
 
   function startVhsAmbient() {
     try {
+      if (typeof setFacilityAmbience === "function" && is3DVisible()) setFacilityAmbience(true);
       const audio = getVhsAmbient();
       audio.volume = Math.min(1, settings.volume * 0.18);
       if (settings.volume <= 0) {
@@ -2118,6 +2231,7 @@ renderChapter(1);
 
   function pauseVhsAmbient() {
     if (vhsAmbient) vhsAmbient.pause();
+    if (typeof setFacilityAmbience === "function") setFacilityAmbience(false);
   }
 
   function loadSettings() {
