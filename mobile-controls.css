@@ -1,6 +1,8 @@
 #keter-touch-ui { display: none; }
 @media (pointer: coarse), (max-width: 900px) {
   html, body { overscroll-behavior: none; }
+  #text-game { height: 100dvh; overflow-y: auto; align-items: flex-start; padding: 12px; }
+  #text-game > .card { margin: auto; max-height: none; }
   body { -webkit-tap-highlight-color: transparent; }
   #three-container { height: 100dvh; min-height: 100%; overflow: hidden; touch-action: none; }
   #three-container canvas { display: block; touch-action: none; }
