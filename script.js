@@ -2098,6 +2098,17 @@ renderChapter(1);
     style.id = "keter-menu-styles";
     style.textContent = `
       #keter-overlay {
+        background: linear-gradient(90deg, rgba(0,0,0,.78) 0%, rgba(0,0,0,.28) 55%, rgba(0,0,0,.12) 100%), #05090b;
+      }
+      #keter-menu-world {
+        position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+        background: radial-gradient(ellipse at 50% 44%, #293236 0%, #0b1012 56%, #020405 100%);
+      }
+      #keter-menu-world canvas { display:block; width:100%; height:100%; }
+      #keter-overlay .keter-panel { z-index: 2; width: min(100%, 490px); background: linear-gradient(145deg, rgba(5,10,12,.94), rgba(3,6,7,.86)); backdrop-filter: blur(8px); }
+      #keter-overlay::before { z-index: 1; }
+      #keter-overlay::after { z-index: 3; }
+      #keter-overlay {
         position: fixed;
         inset: 0;
         z-index: 99999;
@@ -2471,7 +2482,9 @@ renderChapter(1);
       #keter-main-menu .keter-controls { color: #7f8b85; font-size: 10px; }
       #keter-main-menu .keter-terminal-footer { border-color: rgba(130,145,137,.18); color: #69756f; }
       @media (max-width: 720px) {
-        #keter-overlay { background: linear-gradient(90deg, rgba(0,0,0,.82), rgba(0,0,0,.62)), url("menu-background.svg") 63% center / cover no-repeat, #020405; }
+        #keter-overlay { background: linear-gradient(90deg, rgba(0,0,0,.84), rgba(0,0,0,.52)), #020405; }
+        #keter-overlay .keter-panel { width: min(100%, 460px); margin: auto; max-height: calc(100dvh - 24px); }
+        #keter-menu-world { opacity: .78; }
         #keter-overlay .keter-panel { width: 100%; }
       }
       @media (max-width: 480px) {
@@ -2535,6 +2548,133 @@ renderChapter(1);
 
   function hideOverlay() {
     overlay.classList.add("keter-hidden");
+  }
+
+  function createMenuScene() {
+    if (!window.THREE || !overlay || overlay.querySelector("#keter-menu-world")) return;
+    const world = document.createElement("div");
+    world.id = "keter-menu-world";
+    world.setAttribute("aria-hidden", "true");
+    overlay.prepend(world);
+
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: "low-power" });
+    } catch (error) {
+      console.warn("[KETER] 3D menu renderer unavailable; keeping fallback background.", error);
+      return;
+    }
+    const mobile = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+      Number(navigator.maxTouchPoints || 0) > 0;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 0.48 : 0.72));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
+    renderer.shadowMap.enabled = false;
+    world.appendChild(renderer.domElement);
+
+    const menuScene = new THREE.Scene();
+    menuScene.background = new THREE.Color(0x080d10);
+    menuScene.fog = new THREE.Fog(0x080d10, 10, 31);
+    const menuCamera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 70);
+    menuCamera.position.set(0, 2.05, 7.8);
+    menuCamera.lookAt(0, 1.8, -9);
+
+    const mat = (color, roughness = 0.86, metalness = 0.18) =>
+      new THREE.MeshStandardMaterial({ color, roughness, metalness });
+    const concrete = mat(0x343b3d, 0.98, 0.04);
+    const darkSteel = mat(0x171e21, 0.72, 0.55);
+    const steel = mat(0x566064, 0.58, 0.68);
+    const floorMat = mat(0x242a2c, 0.94, 0.12);
+    const warning = new THREE.MeshStandardMaterial({ color: 0x641b18, emissive: 0x8e160f, emissiveIntensity: 0.55, roughness: 0.7 });
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(9, 29), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0, -6.5);
+    menuScene.add(floor);
+    const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(9, 29), concrete);
+    ceiling.rotation.x = Math.PI / 2;
+    ceiling.position.set(0, 5, -6.5);
+    menuScene.add(ceiling);
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.34, 5, 29), concrete);
+    leftWall.position.set(-4.35, 2.5, -6.5);
+    const rightWall = leftWall.clone();
+    rightWall.position.x = 4.35;
+    menuScene.add(leftWall, rightWall);
+
+    // Recessed elevator bay and partially opened steel doors.
+    const back = new THREE.Mesh(new THREE.BoxGeometry(5.1, 4.8, 0.35), darkSteel);
+    back.position.set(0, 2.4, -19.4);
+    menuScene.add(back);
+    const frameTop = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.22, 0.5), steel);
+    frameTop.position.set(0, 4.25, -18.95);
+    const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.8, 0.5), steel);
+    frameLeft.position.set(-2.15, 2.2, -18.95);
+    const frameRight = frameLeft.clone();
+    frameRight.position.x = 2.15;
+    menuScene.add(frameTop, frameLeft, frameRight);
+    const doorGeo = new THREE.BoxGeometry(1.55, 3.55, 0.12);
+    const doorLeft = new THREE.Mesh(doorGeo, steel);
+    doorLeft.position.set(-1.22, 2.05, -18.8);
+    const doorRight = new THREE.Mesh(doorGeo, steel);
+    doorRight.position.set(1.22, 2.05, -18.8);
+    menuScene.add(doorLeft, doorRight);
+
+    // Repeating wall ribs, floor guides and ceiling luminaires add depth without expensive detail.
+    for (let z = 4; z > -18; z -= 3.6) {
+      for (const side of [-1, 1]) {
+        const rib = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.65, 0.16), darkSteel);
+        rib.position.set(side * 4.12, 2.35, z);
+        menuScene.add(rib);
+      }
+      const lightHousing = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.07, 0.38), darkSteel);
+      lightHousing.position.set(0, 4.91, z - 0.9);
+      const lightLens = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.025, 0.2), mat(0x9da9a4, 0.35, 0.1));
+      lightLens.position.set(0, 4.86, z - 0.9);
+      menuScene.add(lightHousing, lightLens);
+    }
+    for (const side of [-1, 1]) {
+      const guide = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.018, 24), mat(0x7b332d, 0.7, 0.25));
+      guide.position.set(side * 0.72, 0.015, -6.5);
+      menuScene.add(guide);
+    }
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.42, 0.08), warning);
+    sign.position.set(0, 4.55, -18.65);
+    menuScene.add(sign);
+
+    menuScene.add(new THREE.HemisphereLight(0x91a2aa, 0x151313, 0.82));
+    const ambient = new THREE.AmbientLight(0x8c999e, 0.34);
+    menuScene.add(ambient);
+    const coldLight = new THREE.PointLight(0x8da8b5, mobile ? 7 : 11, 19, 2);
+    coldLight.position.set(0, 4.25, -5);
+    menuScene.add(coldLight);
+    const redLight = new THREE.PointLight(0xd12a20, mobile ? 4 : 7, 12, 2);
+    redLight.position.set(0, 3.65, -17.8);
+    menuScene.add(redLight);
+
+    let lastRender = 0;
+    let frame = 0;
+    let disposed = false;
+    const render = (time) => {
+      if (disposed) return;
+      frame = requestAnimationFrame(render);
+      if (overlay.classList.contains("keter-hidden") || time - lastRender < (mobile ? 90 : 55)) return;
+      lastRender = time;
+      const t = time * 0.001;
+      menuCamera.position.x = Math.sin(t * 0.22) * 0.11;
+      menuCamera.position.y = 2.05 + Math.sin(t * 0.31) * 0.035;
+      menuCamera.lookAt(Math.sin(t * 0.16) * 0.12, 1.8, -9);
+      redLight.intensity = (mobile ? 4 : 7) * (0.88 + Math.sin(t * 2.2) * 0.12);
+      renderer.render(menuScene, menuCamera);
+    };
+    frame = requestAnimationFrame(render);
+    const onResize = () => {
+      if (disposed) return;
+      menuCamera.aspect = window.innerWidth / window.innerHeight;
+      menuCamera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+    window.addEventListener("resize", onResize, { passive: true });
   }
 
   function createMenu() {
@@ -2648,6 +2788,7 @@ renderChapter(1);
 
     overlay.append(menuPanel, settingsPanel);
     document.body.appendChild(overlay);
+    createMenuScene();
   }
 
   function createSettingsControls() {
