@@ -4,8 +4,6 @@
     (((window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
       Number(navigator.maxTouchPoints || 0) > 0 ||
       Math.min(window.innerWidth, window.innerHeight) <= 900) ? "mobile" : "pc");
-  if (detectMode() !== "mobile") return;
-
   // Native APK is locked by AndroidManifest; this is a best-effort lock for
   // browsers/PWAs that support the Screen Orientation API after a user gesture.
   if (screen.orientation && typeof screen.orientation.lock === "function") {
@@ -153,7 +151,7 @@
     const mobileMode = detectMode() === "mobile";
     root.classList.toggle("is-active", visible && mobileMode);
     if (visible && mobileMode) startTutorial();
-    if (!visible) { resetStick(); state.lookId = null; isSprinting = false; }
+    if (!visible || !mobileMode) { resetStick(); state.lookId = null; isSprinting = false; }
   }
   new MutationObserver(updateVisibility).observe(game, { attributes: true, attributeFilter: ["class"] });
   window.addEventListener("keter-control-mode-change", updateVisibility);
