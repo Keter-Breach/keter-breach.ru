@@ -1365,7 +1365,7 @@ function build10ZonesMap() {
   box(seamMat, 2.6, 0.018, 0.16, 0, 0.025, -5.28);
   box(edgeMat, 2.5, 0.025, 0.055, 0, 0.035, -5.38);
 
-  // --- Стены и проёмы ---
+  // --- Стены и проёмы ---\n  // Extend the south spine to serve the personnel and service wings without open-air shortcuts.\n  wallLine('x', -4, -60, -10, [[-55, -49], [-27, -21]]);\n  wallLine('x', 4, -60, -10, [[-55, -49], [-27, -21]]);\n\n
   wallLine('z', -10, -4, 4);                         // Шлюз D-12
   wallLine('x', -4, -10, 2, [[-5, -1]]); wallLine('x', 4, -10, 2);
   wallLine('z', -9, -14, -4); wallLine('z', 1, -14, -4); wallLine('x', -14, -9, 1); // Блок D-класса
@@ -1720,13 +1720,13 @@ function build10ZonesMap() {
   // South service wing from the blueprint: personnel, server room, workshop and CCTV.
   room(-25, -24, 28, 24, 'КОМНАТА ПЕРСОНАЛА', 'ЖИЛОЙ БЛОК D-12', 0x87959b);
   room(25, -24, 28, 24, 'СЕРВЕРНАЯ', 'РЕЗЕРВНЫЙ КОНТУР', 0x55a9c5);
-  room(-25, 104, 28, 24, 'ТЕХНИЧЕСКАЯ МАСТЕРСКАЯ', 'РЕМОНТ И ПИТАНИЕ', 0xff8844);
-  room(25, 104, 28, 24, 'КАМЕРЫ НАБЛЮДЕНИЯ', 'МОНИТОРИНГ СЕКТОРА', 0x7da6b8);
+  room(-25, -52, 28, 24, 'ТЕХНИЧЕСКАЯ МАСТЕРСКАЯ', 'РЕМОНТ И ПИТАНИЕ', 0xff8844);
+  room(25, -52, 28, 24, 'КАМЕРЫ НАБЛЮДЕНИЯ', 'МОНИТОРИНГ СЕКТОРА', 0x7da6b8);
   // Dedicated wide connectors link the added wings to the central circulation spine.
   annexCorridor(-4.7, -11.0, -24, 5.8);
   annexCorridor(4.7, 11.0, -24, 5.8);
-  annexCorridor(-3.7, -11.0, 104, 5.8);
-  annexCorridor(3.7, 11.0, 104, 5.8);
+  annexCorridor(-3.7, -11.0, -52, 5.8);
+  annexCorridor(3.7, 11.0, -52, 5.8);
   // Room-specific silhouettes make the new wings readable without expensive assets.
   for (let z = -32; z <= -18; z += 4) {
     box(MAT.cab, 1.0, 2.15, 2.8, -35.0, 1.075, z, true);
@@ -1737,15 +1737,15 @@ function build10ZonesMap() {
     box(new THREE.MeshBasicMaterial({ color: 0x35d98a }), 0.055, 0.055, 0.055, x, 1.75, -24.53, false);
   });
   [-32, -25, -18].forEach(x => {
-    box(tableMaterial, 2.6, 0.12, 1.0, x, 0.82, 104.0, true);
-    box(cabMat, 0.18, 0.8, 0.18, x - 1.05, 0.4, 104.0, true);
-    box(cabMat, 0.18, 0.8, 0.18, x + 1.05, 0.4, 104.0, true);
+    box(tableMaterial, 2.6, 0.12, 1.0, x, 0.82, -52.0, true);
+    box(cabMat, 0.18, 0.8, 0.18, x - 1.05, 0.4, -52.0, true);
+    box(cabMat, 0.18, 0.8, 0.18, x + 1.05, 0.4, -52.0, true);
   });
   for (let i = 0; i < 4; i++) {
     const x = 19 + i * 3.5;
-    box(cabMat, 2.1, 1.1, 0.8, x, 0.55, 100.0, true);
-    box(new THREE.MeshBasicMaterial({ color: 0x152c38 }), 1.7, 0.85, 0.06, x, 1.55, 99.55, false);
-    box(new THREE.MeshBasicMaterial({ color: 0x47a9d2 }), 0.06, 0.06, 0.06, x + 0.65, 1.85, 99.48, false);
+    box(cabMat, 2.1, 1.1, 0.8, x, 0.55, -56.0, true);
+    box(new THREE.MeshBasicMaterial({ color: 0x152c38 }), 1.7, 0.85, 0.06, x, 1.55, -56.45, false);
+    box(new THREE.MeshBasicMaterial({ color: 0x47a9d2 }), 0.06, 0.06, 0.06, x + 0.65, 1.85, -56.52, false);
   }
   for (let x = -11; x <= 11; x += 5.5) {
     box(MAT.cab, 1.4, 2.2, 0.8, x, 1.1, 90, true);
