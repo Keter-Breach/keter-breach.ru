@@ -2321,6 +2321,39 @@ renderChapter(1);
         line-height: 1.6;
       }
 
+      /* PROJECT KETER // revised containment terminal menu */
+      #keter-overlay {
+        background: linear-gradient(90deg, rgba(0,0,0,.82), rgba(0,0,0,.42) 58%, rgba(0,0,0,.12)), url("menu-background.svg") center / cover no-repeat, #020405;
+        filter: none;
+      }
+      #keter-overlay::before { opacity: .18; mix-blend-mode: normal; }
+      #keter-overlay .keter-panel {
+        width: min(100%, 610px); padding: clamp(24px, 4vw, 42px);
+        border-color: rgba(151,166,157,.34);
+        background: linear-gradient(115deg, rgba(8,12,13,.97), rgba(5,8,9,.91)), #050708;
+        box-shadow: 0 34px 110px rgba(0,0,0,.88), inset 4px 0 0 rgba(153,42,36,.72);
+        backdrop-filter: none; -webkit-backdrop-filter: none;
+      }
+      #keter-main-menu .keter-eyebrow { color: #c36a60; font-size: 10px; letter-spacing: 2.5px; }
+      #keter-main-menu .keter-title { margin: 12px 0 10px; font-size: clamp(42px, 7vw, 68px); letter-spacing: .045em; text-shadow: 0 3px 28px rgba(0,0,0,.9), 2px 0 rgba(180,40,34,.18); }
+      #keter-main-menu .keter-subtitle { max-width: 48ch; color: #9ba6a2; letter-spacing: .045em; }
+      #keter-main-menu .keter-status-strip { gap: 6px; margin: 20px 0 14px; }
+      #keter-main-menu .keter-status-cell { border-color: rgba(137,153,145,.22); background: rgba(18,24,25,.72); }
+      #keter-main-menu .keter-status-cell span { color: #798681; letter-spacing: 1.6px; }
+      #keter-main-menu .keter-status-cell b { color: #d0d8d2; }
+      #keter-main-menu .keter-status-cell b.warning { color: #d8796e; }
+      #keter-main-menu .keter-alert-banner { border-color: rgba(157,61,54,.35); border-left-color: #a94139; background: linear-gradient(90deg, rgba(79,24,22,.28), rgba(8,12,13,.55)); }
+      #keter-main-menu .keter-button { min-height: 48px; padding: 14px 16px; border-color: rgba(142,158,149,.28); background: rgba(16,22,22,.78); color: #d8dfda; }
+      #keter-main-menu .keter-button:hover, #keter-main-menu .keter-button:focus-visible { border-color: #c16a60; background: rgba(67,28,27,.52); color: #fff; box-shadow: inset 3px 0 #b94b42; transform: translateX(3px); }
+      #keter-main-menu .keter-button.primary { border-color: #b74a41; background: #9e3933; color: #fff; box-shadow: 0 5px 24px rgba(135,35,30,.2); }
+      #keter-main-menu .keter-button.primary:hover { background: #b64a40; }
+      #keter-main-menu .keter-divider { background: linear-gradient(90deg, rgba(170,70,60,.7), rgba(111,128,119,.25), transparent); }
+      #keter-main-menu .keter-controls { color: #7f8b85; font-size: 10px; }
+      #keter-main-menu .keter-terminal-footer { border-color: rgba(130,145,137,.18); color: #69756f; }
+      @media (max-width: 720px) {
+        #keter-overlay { background: linear-gradient(90deg, rgba(0,0,0,.82), rgba(0,0,0,.62)), url("menu-background.svg") 63% center / cover no-repeat, #020405; }
+        #keter-overlay .keter-panel { width: 100%; }
+      }
       @media (max-width: 480px) {
         #keter-overlay { padding: 10px 10px 40px; }
         #keter-overlay::after { left: 10px; right: 10px; bottom: 5px; font-size: 7px; }
