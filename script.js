@@ -2300,7 +2300,7 @@ function animate3D() {
     }
 
     // Движение относительно направления взгляда (только по горизонтали)
-    const speed = isSprinting ? 11.5 : 7.0;
+    const speed = isSprinting ? 14.5 : 9.0;
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
 
@@ -2323,7 +2323,7 @@ function animate3D() {
 
     // Покачивание головы и шаги (один звук на каждый шаг)
     if (dirZ || dirX) {
-      headBobTimer += delta * (isSprinting ? 14 : 9);
+      headBobTimer += delta * (isSprinting ? 16 : 10.5);
       const s = Math.sin(headBobTimer);
       camera.position.y = 1.6 + s * 0.04;
       if (s < -0.9) { if (stepReady) { playSound('step'); stepReady = false; } }
