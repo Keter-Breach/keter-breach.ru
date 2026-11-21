@@ -2139,7 +2139,13 @@ function updateInteractionReticle() {
   // Стена должна блокировать подбор, но не должна перекрывать предмет,
   // закреплённый на её поверхности (панель, карта или терминал).
   if (target && walls.length) {
-    const blockers = walls.map(entry => entry && entry.mesh).filter(Boolean);
+    // В walls также попадают столы, кровати и ящики. Они не должны перекрывать
+    // предметы, лежащие сверху: блокирующими считаем только высокие перегородки.
+    const blockers = walls.filter(entry => {
+      if (!entry || !entry.mesh) return false;
+      const bounds = entry.box || new THREE.Box3().setFromObject(entry.mesh);
+      return bounds.max.y - bounds.min.y > 2.2;
+    }).map(entry => entry.mesh);
     const blockHits = interactionRaycaster.intersectObjects(blockers, true);
     const blocked = blockHits.some(hit => {
       const belongsToTarget = targets.some(candidate => isDescendantOf(hit.object, candidate));
