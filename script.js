@@ -1832,8 +1832,9 @@ renderChapter(1);
   const SETTINGS_KEY = "keterSettings";
 
   const DEFAULT_SETTINGS = {
-    quality: "medium",
-    shadows: true,
+    quality: "balanced",
+    visualStyle: "vhs",
+    shadows: false,
     brightness: 0.95,
     volume: 0.7,
     mouseSensitivity: 0.002
@@ -2484,9 +2485,10 @@ renderChapter(1);
     quality.className = "keter-select";
 
     [
-      ["low", "Низкое — для слабых ПК"],
-      ["medium", "Среднее — баланс"],
-      ["high", "Высокое — качество"]
+      ["low", "Производительность — слабые телефоны и ПК"],
+      ["balanced", "Сбалансированное — рекомендуемое"],
+      ["high", "Высокое — больше деталей"],
+      ["ultra", "Максимум — мощные устройства"]
     ].forEach(([value, text]) => {
       const option = document.createElement("option");
       option.value = value;
@@ -2503,6 +2505,32 @@ renderChapter(1);
     });
 
     settingsPanel.append(qualityLabel, quality);
+
+    const styleLabel = document.createElement("label");
+    styleLabel.className = "keter-label";
+    styleLabel.htmlFor = "keter-visual-style";
+    styleLabel.textContent = "Визуальный стиль комплекса";
+    const visualStyle = document.createElement("select");
+    visualStyle.id = "keter-visual-style";
+    visualStyle.className = "keter-select";
+    [
+      ["vhs", "VHS — плёночные помехи и грязная запись"],
+      ["cold", "Холодный реализм — сталь и холодный свет"],
+      ["emergency", "Аварийный — красные тревожные оттенки"]
+    ].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      visualStyle.appendChild(option);
+    });
+    visualStyle.value = settings.visualStyle;
+    visualStyle.addEventListener("change", () => {
+      settings.visualStyle = visualStyle.value;
+      saveSettings();
+      applyGraphicsSettings();
+      setStatus("Визуальный стиль обновлён.");
+    });
+    settingsPanel.append(styleLabel, visualStyle);
 
     const shadowLabel = document.createElement("label");
     shadowLabel.className = "keter-check";
@@ -2628,35 +2656,42 @@ renderChapter(1);
     try {
       if (typeof renderer === "undefined" || !renderer) return;
 
-      const profile = {
-        low: { pixelRatio: 1, shadows: false },
-        medium: { pixelRatio: 1.5, shadows: false },
-        high: { pixelRatio: 2, shadows: false }
-      }[settings.quality];
-
-      const ratio = Math.min(
-        window.devicePixelRatio || 1,
-        profile.pixelRatio
-      );
-
+      const touchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+        Number(navigator.maxTouchPoints || 0) > 0;
+      const profiles = {
+        low:      { pixelRatio: 0.85, shadows: false, exposure: 1.02, fog: 0.92, dust: false },
+        balanced: { pixelRatio: 1.15, shadows: false, exposure: 1.08, fog: 1.00, dust: true },
+        high:     { pixelRatio: 1.5, shadows: true,  exposure: 1.12, fog: 1.00, dust: true },
+        ultra:    { pixelRatio: 1.85, shadows: true, exposure: 1.16, fog: 1.00, dust: true }
+      };
+      const profile = profiles[settings.quality] || profiles.balanced;
+      // Phone GPUs get a conservative cap even when the user selects a higher preset.
+      const deviceCap = touchDevice ? 1.35 : 2;
+      const ratio = Math.min(window.devicePixelRatio || 1, profile.pixelRatio, deviceCap);
       renderer.setPixelRatio(ratio);
       renderer.setSize(window.innerWidth, window.innerHeight);
 
-      renderer.shadowMap.enabled = false;
-
+      const shadowsEnabled = profile.shadows && settings.shadows && !touchDevice;
+      renderer.shadowMap.enabled = shadowsEnabled;
       if (typeof flashlight !== "undefined" && flashlight) {
-        flashlight.castShadow = false;
+        flashlight.castShadow = shadowsEnabled;
       }
+      renderer.toneMappingExposure = settings.brightness * profile.exposure;
 
-      renderer.toneMappingExposure = settings.brightness * 0.92;
+      if (typeof scene !== "undefined" && scene && scene.fog) {
+        scene.fog.density = 0.034 * profile.fog;
+      }
+      if (typeof dust !== "undefined" && dust) dust.visible = profile.dust;
 
       const container = el("three-container");
       if (container) {
-        // Связываем ползунок экспозиции и с постобработочным фильтром,
-        // чтобы настройка была заметна даже в затемнённой VHS-сцене.
-        const displayBrightness = clamp(settings.brightness / 0.95 * 0.78, 0.55, 1.25);
-        container.style.filter =
-          `contrast(1.16) brightness(${displayBrightness.toFixed(2)}) sepia(0.18) saturate(0.58)`;
+        const displayBrightness = clamp(settings.brightness / 0.95, 0.68, 1.35);
+        const styles = {
+          vhs: "contrast(1.13) brightness(" + displayBrightness.toFixed(2) + ") sepia(0.16) saturate(0.68)",
+          cold: "contrast(1.08) brightness(" + displayBrightness.toFixed(2) + ") sepia(0) saturate(0.78) hue-rotate(8deg)",
+          emergency: "contrast(1.18) brightness(" + displayBrightness.toFixed(2) + ") sepia(0.08) saturate(1.18) hue-rotate(-12deg)"
+        };
+        container.style.filter = styles[settings.visualStyle] || styles.vhs;
       }
     } catch (error) {
       console.warn("[KETER] Не удалось применить графику:", error);
@@ -2669,6 +2704,8 @@ renderChapter(1);
 
     const quality = el("keter-quality");
     if (quality) quality.value = settings.quality;
+    const visualStyle = el("keter-visual-style");
+    if (visualStyle) visualStyle.value = settings.visualStyle;
 
     const shadow = settingsPanel.querySelector(
       "#keter-settings input[type='checkbox']"
