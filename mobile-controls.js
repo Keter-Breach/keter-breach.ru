@@ -1,8 +1,9 @@
 /* PROJECT: KETER — mobile touch controls. */
 (function installKeterTouchControls() {
   const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  const touchPoints = Number(navigator.maxTouchPoints || 0) > 0;
   const small = Math.min(window.innerWidth, window.innerHeight) <= 900;
-  if (!coarse && !small) return;
+  if (!coarse && !touchPoints && !small) return;
   const game = document.getElementById("three-container");
   if (!game) return;
   const root = document.createElement("div");
