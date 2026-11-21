@@ -1855,10 +1855,22 @@ function interact3D() {
 }
 
 function openDoor(mesh) {
+  if (!mesh || mesh.userData.opened || mesh.userData.opening) return;
+  mesh.userData.opening = true;
   playSound('door');
-  if (mesh.userData.lamp) mesh.userData.lamp.material.color.set(0x00ff66); // индикатор: зелёный
-  walls = walls.filter(w => w.mesh !== mesh); // проход свободен сразу
+  if (mesh.userData.lamp) mesh.userData.lamp.material.color.set(0x00ff66);
+  walls = walls.filter(w => w.mesh !== mesh);
   openingDoors.push({ mesh, targetY: mesh.position.y + 3.0 });
+}
+
+function updateAutomaticDoors() {
+  if (!camera || !window.playerState) return;
+  for (const [door, key] of [[doors.doorL1, 'keycardL1'], [doors.doorL2, 'keycardL2']]) {
+    if (!door || door.userData.opened || door.userData.opening || !window.playerState[key]) continue;
+    const dx = camera.position.x - door.position.x;
+    const dz = camera.position.z - door.position.z;
+    if (dx * dx + dz * dz < 2.8 * 2.8) openDoor(door);
+  }
 }
 
 // === 6. МИНИ-КАРТА ===
@@ -1909,31 +1921,36 @@ function createDistantApparition() {
   apparitionClock = 0;
   apparitionFired = false;
   apparitionCueFired = false;
-
-  // Нечёткий силуэт сотрудника за линией наблюдения: без ИИ и физики,
-  // поэтому событие почти не влияет на производительность мобильных устройств.
-  const group = new THREE.Group();
   const shadowMat = new THREE.MeshBasicMaterial({
     color: 0x030607, transparent: true, opacity: 0,
     depthWrite: false, side: THREE.DoubleSide
   });
-  const addPart = (geometry, x, y, z, sx = 1, sy = 1, sz = 1) => {
-    const mesh = new THREE.Mesh(geometry, shadowMat);
-    mesh.position.set(x, y, z);
-    mesh.scale.set(sx, sy, sz);
-    mesh.frustumCulled = false;
-    group.add(mesh);
+  const makeSilhouette = () => {
+    const silhouette = new THREE.Group();
+    const addPart = (geometry, x, y, z, sx = 1, sy = 1, sz = 1) => {
+      const mesh = new THREE.Mesh(geometry, shadowMat);
+      mesh.position.set(x, y, z);
+      mesh.scale.set(sx, sy, sz);
+      mesh.frustumCulled = false;
+      silhouette.add(mesh);
+    };
+    addPart(new THREE.BoxGeometry(0.52, 1.05, 0.2), 0, 1.42, 0);
+    addPart(new THREE.SphereGeometry(0.23, 7, 5), 0, 2.12, 0);
+    addPart(new THREE.BoxGeometry(0.18, 0.82, 0.18), -0.19, 0.48, 0);
+    addPart(new THREE.BoxGeometry(0.18, 0.82, 0.18), 0.19, 0.48, 0);
+    addPart(new THREE.BoxGeometry(0.16, 0.9, 0.17), -0.34, 1.42, 0);
+    addPart(new THREE.BoxGeometry(0.16, 0.9, 0.17), 0.34, 1.42, 0);
+    return silhouette;
   };
-  addPart(new THREE.BoxGeometry(0.52, 1.05, 0.2), 0, 1.42, 0);
-  addPart(new THREE.SphereGeometry(0.23, 7, 5), 0, 2.12, 0);
-  addPart(new THREE.BoxGeometry(0.18, 0.82, 0.18), -0.19, 0.48, 0);
-  addPart(new THREE.BoxGeometry(0.18, 0.82, 0.18), 0.19, 0.48, 0);
-  addPart(new THREE.BoxGeometry(0.16, 0.9, 0.17), -0.34, 1.42, 0);
-  addPart(new THREE.BoxGeometry(0.16, 0.9, 0.17), 0.34, 1.42, 0);
+  const group = makeSilhouette();
   group.position.set(1.65, 0, 16.8);
   group.visible = false;
   world.add(group);
-  distantApparition = { group, shadowMat, eyeMat: shadowMat };
+  const glassGroup = makeSilhouette();
+  glassGroup.position.set(-13.65, 0, 57.0);
+  glassGroup.visible = false;
+  world.add(glassGroup);
+  distantApparition = { group, glassGroup, shadowMat, eyeMat: shadowMat };
 }
 function updateDistantApparition(delta, locked) {
   if (!distantApparition || !locked || apparitionFired) return;
@@ -1945,11 +1962,13 @@ function updateDistantApparition(delta, locked) {
   const fadeOut = Math.max(0, 1 - Math.max(0, elapsed - 3.4) / 1.8);
   const opacity = Math.min(fadeIn, fadeOut) * 0.82;
   distantApparition.group.visible = opacity > 0.015;
+  distantApparition.glassGroup.visible = opacity > 0.015;
   distantApparition.shadowMat.opacity = opacity;
   distantApparition.eyeMat.opacity = Math.min(1, opacity * 1.7);
 
   if (elapsed < 1.5) {
     distantApparition.group.position.x = 1.65 + Math.sin(elapsed * 1.7) * 0.045;
+    distantApparition.glassGroup.position.z = 57.0 + Math.sin(elapsed * 1.1) * 0.38;
   }
   if (!apparitionCueFired && elapsed >= 0.05) {
     apparitionCueFired = true;
@@ -1958,6 +1977,7 @@ function updateDistantApparition(delta, locked) {
   }
   if (elapsed >= 5.2) {
     distantApparition.group.visible = false;
+    distantApparition.glassGroup.visible = false;
     apparitionFired = true;
   }
 }
@@ -2049,6 +2069,7 @@ function animate3D() {
   prevTime = time;
 
   const locked = isLocked();
+  updateAutomaticDoors();
   const touchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
     (navigator.maxTouchPoints > 0);
   const controlsActive = locked || touchDevice;
@@ -2171,7 +2192,12 @@ function animate3D() {
   for (let i = openingDoors.length - 1; i >= 0; i--) {
     const d = openingDoors[i];
     d.mesh.position.y += (d.targetY - d.mesh.position.y) * Math.min(1, delta * 4);
-    if (Math.abs(d.targetY - d.mesh.position.y) < 0.02) { d.mesh.position.y = d.targetY; openingDoors.splice(i, 1); }
+    if (Math.abs(d.targetY - d.mesh.position.y) < 0.02) {
+      d.mesh.position.y = d.targetY;
+      d.mesh.userData.opening = false;
+      d.mesh.userData.opened = true;
+      openingDoors.splice(i, 1);
+    }
   }
 
   // Лёгкое покачивание рук и фонаря синхронно с шагами.
