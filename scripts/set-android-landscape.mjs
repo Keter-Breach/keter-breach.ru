@@ -5,7 +5,7 @@ let xml = await fs.readFile(manifestPath, "utf8");
 
 // Capacitor's generated launcher activity is the app entry point. Lock only
 // this activity so Android opens the game in landscape before WebView starts.
-const activityPattern = /<activity\\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*>/;
+const activityPattern = /<activity\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*>/;
 const match = xml.match(activityPattern);
 if (!match) throw new Error("Could not find the Capacitor MainActivity in AndroidManifest.xml");
 
