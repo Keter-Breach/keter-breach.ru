@@ -1727,6 +1727,26 @@ function build10ZonesMap() {
   annexCorridor(4.7, 11.0, -24, 5.8);
   annexCorridor(-3.7, -11.0, 104, 5.8);
   annexCorridor(3.7, 11.0, 104, 5.8);
+  // Room-specific silhouettes make the new wings readable without expensive assets.
+  for (let z = -32; z <= -18; z += 4) {
+    box(MAT.cab, 1.0, 2.15, 2.8, -35.0, 1.075, z, true);
+    box(MAT.cab, 0.08, 0.08, 2.4, -34.45, 1.9, z, false);
+  }
+  [-31, -25, -19].forEach(x => {
+    box(serverMaterial, 1.15, 2.35, 0.85, x, 1.175, -25.0, true);
+    box(new THREE.MeshBasicMaterial({ color: 0x35d98a }), 0.055, 0.055, 0.055, x, 1.75, -24.53, false);
+  });
+  [-32, -25, -18].forEach(x => {
+    box(tableMaterial, 2.6, 0.12, 1.0, x, 0.82, 104.0, true);
+    box(cabMat, 0.18, 0.8, 0.18, x - 1.05, 0.4, 104.0, true);
+    box(cabMat, 0.18, 0.8, 0.18, x + 1.05, 0.4, 104.0, true);
+  });
+  for (let i = 0; i < 4; i++) {
+    const x = 19 + i * 3.5;
+    box(cabMat, 2.1, 1.1, 0.8, x, 0.55, 100.0, true);
+    box(new THREE.MeshBasicMaterial({ color: 0x152c38 }), 1.7, 0.85, 0.06, x, 1.55, 99.55, false);
+    box(new THREE.MeshBasicMaterial({ color: 0x47a9d2 }), 0.06, 0.06, 0.06, x + 0.65, 1.85, 99.48, false);
+  }
   for (let x = -11; x <= 11; x += 5.5) {
     box(MAT.cab, 1.4, 2.2, 0.8, x, 1.1, 90, true);
     box(MAT.glass, 0.05, 1.5, 0.6, x, 1.6, 89.55, false);
