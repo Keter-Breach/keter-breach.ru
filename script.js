@@ -1874,10 +1874,14 @@ function updateInventoryHUD() {
 }
 
 function interact3D() {
-  // Взаимодействуем только с тем объектом, на который игрок действительно смотрит.
-  // Это исключает подбор предметов сквозь стены и случайное открытие соседней двери.
+  // Обновляем цель непосредственно в момент нажатия: сенсорная кнопка и клавиша E
+  // не должны зависеть от устаревшего состояния предыдущего кадра.
+  updateInteractionReticle();
   const target = currentInteractionTarget;
-  if (!target || !camera || camera.position.distanceTo(target.position) > 2.85) return;
+  if (!target || !camera || currentInteractionDistance > 3.8) {
+    showToast("Подойдите ближе и наведите прицел на предмет");
+    return;
+  }
 
   const itemIndex = interactiveItems.indexOf(target);
   if (itemIndex !== -1) {
@@ -2087,6 +2091,7 @@ function updateDistantApparition(delta, locked) {
 const interactionRaycaster = new THREE.Raycaster();
 const interactionRayOrigin = new THREE.Vector2(0, 0);
 let currentInteractionTarget = null;
+let currentInteractionDistance = Infinity;
 
 function isDescendantOf(object, rootObject) {
   let node = object;
@@ -2105,6 +2110,7 @@ function updateInteractionReticle() {
     if (dot) dot.classList.remove("is-targeting");
     if (hand) hand.classList.remove("is-visible");
     currentInteractionTarget = null;
+    currentInteractionDistance = Infinity;
     return;
   }
 
@@ -2114,7 +2120,7 @@ function updateInteractionReticle() {
   const targets = interactiveItems.concat(Object.values(doors).filter(Boolean));
   interactionRaycaster.setFromCamera(interactionRayOrigin, camera);
   interactionRaycaster.near = 0;
-  interactionRaycaster.far = 2.85;
+  interactionRaycaster.far = 3.8;
 
   const targetHits = interactionRaycaster.intersectObjects(targets, true);
   let target = null;
@@ -2130,18 +2136,23 @@ function updateInteractionReticle() {
     }
   }
 
-  // Не показываем руку сквозь стены и крупные перегородки.
+  // Стена должна блокировать подбор, но не должна перекрывать предмет,
+  // закреплённый на её поверхности (панель, карта или терминал).
   if (target && walls.length) {
     const blockers = walls.map(entry => entry && entry.mesh).filter(Boolean);
     const blockHits = interactionRaycaster.intersectObjects(blockers, true);
     const blocked = blockHits.some(hit => {
       const belongsToTarget = targets.some(candidate => isDescendantOf(hit.object, candidate));
-      return !belongsToTarget && hit.distance < targetDistance - 0.06;
+      return !belongsToTarget && hit.distance < targetDistance - 0.22;
     });
-    if (blocked) target = null;
+    if (blocked) {
+      target = null;
+      targetDistance = Infinity;
+    }
   }
 
   currentInteractionTarget = target;
+  currentInteractionDistance = target ? targetDistance : Infinity;
   dot.classList.toggle("is-targeting", !!target);
   hand.classList.toggle("is-visible", !!target);
 }
