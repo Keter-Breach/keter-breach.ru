@@ -105,7 +105,7 @@ assert.match(script, /renderer.setPixelRatio\(Math.min\(/, "mobile WebGL pixel r
 assert.match(script, /\["ultra", "Максимум/, "graphics menu should expose an ultra preset");
 assert.match(script, /\["cold", "Холодный реализм/, "graphics menu should expose a cold SCP visual style");
 assert.match(script, /renderer.shadowMap.enabled = shadowsEnabled/, "shadow setting should be applied from the selected profile");
-assert.match(script, /deviceCap = touchDevice \? 1\.35 : 2/, "mobile rendering resolution should remain capped");
+assert.match(script, /deviceCap = touchDevice \? 0\.88 : 1\.5/, "mobile and desktop rendering resolution should remain capped");
 assert.match(script, /controlsActive = locked \|\| touchDevice/, "touch gameplay should activate story triggers");
 assert.match(html, /keter-runtime-error/, "runtime failures should be visible instead of a silent black screen");
 assert.match(androidBuilder, /node_modules\/three\/build\/three\.min\.js/, "APK should bundle the local Three.js runtime");
