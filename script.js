@@ -620,6 +620,7 @@ let interactiveItems = [];
 let eventTriggers = [];
 let doors = {};
 let openingDoors = [];     // двери в процессе анимации
+let pickupAnimations = [];  // короткая анимация подбора предметов
 let wallMaterial, floorMaterial, doorMaterial, tableMaterial, serverMaterial;
 
 const isLocked = () => {
@@ -1066,7 +1067,7 @@ function hazardStripe(x, z) {
 }
 
 function build10ZonesMap() {
-  walls = []; interactiveItems = []; eventTriggers = []; doors = {}; flickers = [];
+  walls = []; interactiveItems = []; eventTriggers = []; doors = {}; flickers = []; pickupAnimations = [];
 
   const ceilingMat = MAT.ceil;
   const cabMat = MAT.cab;
@@ -1648,32 +1649,41 @@ function updateInventoryHUD() {
 }
 
 function interact3D() {
-  const p = camera.position;
+  // Взаимодействуем только с тем объектом, на который игрок действительно смотрит.
+  // Это исключает подбор предметов сквозь стены и случайное открытие соседней двери.
+  const target = currentInteractionTarget;
+  if (!target || !camera || camera.position.distanceTo(target.position) > 2.85) return;
 
-  for (let i = interactiveItems.length - 1; i >= 0; i--) {
-    const item = interactiveItems[i];
-    if (p.distanceTo(item.position) < 2.5) {
-      playSound('pickup');
-      const t = item.userData.type;
-      if (t === 'keycardL1') { window.playerState.keycardL1 = true; showToast("Получена карта L-1"); }
-      else if (t === 'keycardL2') { window.playerState.keycardL2 = true; showToast("Получена карта L-2"); }
-      else if (t === 'battery') { battery = Math.min(100, battery + 50); showToast("Батарея фонаря +50%"); }
-      else if (t === 'loreShift') {
-        showToast("ЖУРНАЛ СМЕНЫ · 03:17 — «Смена завершена. Нас шестеро в комнате, но в отражении монитора — семеро. Гирс приказал не смотреть на камеры. Если запись найдут: НЕ ВЫХОДИТЕ ЧЕРЕЗ ЛИФТ».", 9000);
-      }
-      else if (t === 'loreChannel7') {
-        showToast("КАНАЛ 7 · ВХОДЯЩЕЕ СООБЩЕНИЕ — «Не включайте резервное питание. Вы уже сделали это завтра. Когда услышите собственный голос — не отвечайте». ВРЕМЯ ПАКЕТА: ЗАВТРА, 03:17.", 9000);
-      }
-      world.remove(item); interactiveItems.splice(i, 1);
-      updateInventoryHUD();
-      return;
+  const itemIndex = interactiveItems.indexOf(target);
+  if (itemIndex !== -1) {
+    playSound('pickup');
+    const t = target.userData.type;
+    if (t === 'keycardL1') { window.playerState.keycardL1 = true; showToast("Получена карта L-1"); }
+    else if (t === 'keycardL2') { window.playerState.keycardL2 = true; showToast("Получена карта L-2"); }
+    else if (t === 'battery') {
+      const restored = Math.min(50, 100 - battery);
+      battery = Math.min(100, battery + 50);
+      showToast(restored > 0 ? "Батарея фонаря +" + restored + "%" : "Заряд фонаря уже полный");
     }
+    else if (t === 'loreShift') {
+      showToast("ЖУРНАЛ СМЕНЫ · 03:17 — «Смена завершена. Нас шестеро в комнате, но в отражении монитора — семеро. Гирс приказал не смотреть на камеры. Если запись найдут: НЕ ВЫХОДИТЕ ЧЕРЕЗ ЛИФТ».", 9000);
+    }
+    else if (t === 'loreChannel7') {
+      showToast("КАНАЛ 7 · ВХОДЯЩЕЕ СООБЩЕНИЕ — «Не включайте резервное питание. Вы уже сделали это завтра. Когда услышите собственный голос — не отвечайте». ВРЕМЯ ПАКЕТА: ЗАВТРА, 03:17.", 9000);
+    }
+
+    interactiveItems.splice(itemIndex, 1);
+    pickupAnimations.push({ object: target, elapsed: 0, duration: 0.2, startY: target.position.y, startScale: target.scale.clone() });
+    currentInteractionTarget = null;
+    updateInventoryHUD();
+    return;
   }
 
   const tryDoor = (door, key, msg, onOpen) => {
-    if (p.distanceTo(door.position) >= 2.5) return false;
+    if (!door || target !== door) return false;
     if (window.playerState[key]) (onOpen || openDoor)(door);
     else { playSound('deny'); showToast(msg); }
+    currentInteractionTarget = null;
     return true;
   };
 
@@ -1955,6 +1965,21 @@ function animate3D() {
         showToast(event.message, 6500);
         break;
       }
+    }
+  }
+
+  // Предметы втягиваются в руку и исчезают, вместо мгновенного удаления.
+  for (let i = pickupAnimations.length - 1; i >= 0; i--) {
+    const a = pickupAnimations[i];
+    a.elapsed += delta;
+    const t = Math.min(1, a.elapsed / a.duration);
+    const eased = t * t * (3 - 2 * t);
+    a.object.position.y = a.startY + eased * 0.28;
+    a.object.scale.copy(a.startScale).multiplyScalar(1 - eased * 0.92);
+    a.object.rotation.y += delta * 7;
+    if (t >= 1) {
+      world.remove(a.object);
+      pickupAnimations.splice(i, 1);
     }
   }
 
