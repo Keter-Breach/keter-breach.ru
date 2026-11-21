@@ -1771,6 +1771,41 @@ function updateDistantApparition(delta, locked) {
   }
 }
 
+// Reticle: зелёная точка превращается в руку, когда взгляд направлен на доступный объект.
+const interactionRaycaster = new THREE.Raycaster();
+const interactionRayOrigin = new THREE.Vector2(0, 0);
+let currentInteractionTarget = null;
+function updateInteractionReticle() {
+  const root = document.getElementById("three-container");
+  const dot = root && root.querySelector(".crosshair");
+  const hand = root && root.querySelector(".interaction-hand");
+  if (!dot || !hand || !camera || !scene || window.__keterPaused) {
+    if (dot) dot.classList.remove("is-targeting");
+    if (hand) hand.classList.remove("is-visible");
+    currentInteractionTarget = null;
+    return;
+  }
+
+  interactionRaycaster.setFromCamera(interactionRayOrigin, camera);
+  const hits = interactionRaycaster.intersectObjects(scene.children, true);
+  let target = null;
+  for (const hit of hits) {
+    let node = hit.object;
+    while (node && node !== scene) {
+      if (interactiveItems.includes(node) || Object.values(doors).includes(node)) {
+        if (hit.distance <= 2.5) target = node;
+        break;
+      }
+      node = node.parent;
+    }
+    if (target || hit.distance > 2.5) break;
+  }
+
+  currentInteractionTarget = target;
+  dot.classList.toggle("is-targeting", !!target);
+  hand.classList.toggle("is-visible", !!target);
+}
+
 function animate3D() {
   if (document.getElementById("three-container").classList.contains("hidden")) return;
   requestAnimationFrame(animate3D);
@@ -1786,6 +1821,8 @@ function animate3D() {
     prevTime = performance.now();
     return;
   }
+
+  updateInteractionReticle();
 
   const time = performance.now();
   const delta = Math.min((time - prevTime) / 1000, 0.1); // защита от скачков после смены вкладки
