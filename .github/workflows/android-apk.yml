@@ -31,6 +31,8 @@ jobs:
         run: npx cap add android
       - name: Generate native launcher icons
         run: npx capacitor-assets generate --android
+      - name: Set APK version
+        run: node scripts/set-android-version.mjs
       - name: Prepare and sync game assets
         run: npm run android:prepare
       - name: Build debug APK
