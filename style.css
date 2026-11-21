@@ -782,3 +782,115 @@ p#description {
   #keter-overlay .keter-title { font-size: clamp(38px, 11vw, 54px) !important; }
   #keter-overlay .keter-status-strip { grid-template-columns: repeat(3, minmax(0,1fr)); }
 }
+
+
+/* === KETER VISUAL PASS 04: stronger cinematic depth, restrained effects, clean HUD === */
+#three-container {
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(89, 105, 99, .07), transparent 58%),
+    #020405 !important;
+}
+#three-container::after {
+  opacity: .34;
+  background:
+    radial-gradient(ellipse at 50% 48%, transparent 28%, rgba(0,0,0,.26) 72%, rgba(0,0,0,.68) 100%),
+    linear-gradient(90deg, rgba(166,31,26,.055), transparent 18% 82%, rgba(70,112,125,.045));
+  box-shadow: inset 0 0 120px rgba(0,0,0,.42);
+}
+#three-container .keter-vhs-overlay {
+  opacity: .15;
+  background:
+    repeating-linear-gradient(0deg, rgba(190,220,211,.10) 0 1px, transparent 1px 4px),
+    linear-gradient(90deg, rgba(255,20,24,.035), transparent 20% 80%, rgba(30,160,255,.025)),
+    radial-gradient(ellipse at center, transparent 42%, rgba(0,0,0,.28) 100%);
+}
+#minimap-canvas {
+  width: 116px !important;
+  height: 116px !important;
+  border: 1px solid rgba(195, 93, 79, .76) !important;
+  outline: 1px solid rgba(0,0,0,.7);
+  outline-offset: 3px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.48), inset 0 0 18px rgba(160,35,29,.10) !important;
+}
+#hud, #inventory-hud {
+  backdrop-filter: blur(4px);
+  text-shadow: 0 1px 3px rgba(0,0,0,.85);
+}
+#hud {
+  right: auto !important;
+  left: max(16px, env(safe-area-inset-left)) !important;
+  bottom: max(18px, env(safe-area-inset-bottom)) !important;
+  top: auto !important;
+  border-left: 1px solid rgba(190,91,79,.38) !important;
+  border-bottom: 2px solid rgba(157,65,57,.72);
+}
+#inventory-hud {
+  left: max(16px, env(safe-area-inset-left)) !important;
+  bottom: max(82px, calc(env(safe-area-inset-bottom) + 76px)) !important;
+  max-width: min(38vw, 300px);
+}
+.keter-tutorial-subtitle,
+.keter-mouse-hint {
+  z-index: 20 !important;
+  top: auto !important;
+  bottom: max(18px, env(safe-area-inset-bottom)) !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(82vw, 680px);
+  padding: 9px 15px !important;
+  border: 1px solid rgba(190,91,79,.48) !important;
+  border-bottom: 2px solid rgba(176,65,57,.8) !important;
+  background: linear-gradient(100deg, rgba(3,6,7,.9), rgba(13,16,17,.88)) !important;
+  color: #e6e5dd !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+  text-align: center;
+  box-shadow: 0 8px 28px rgba(0,0,0,.42);
+  backdrop-filter: blur(5px);
+}
+#three-container > div[style*="bottom:90px"] {
+  bottom: max(68px, calc(env(safe-area-inset-bottom) + 64px)) !important;
+  border-radius: 2px;
+  background: rgba(4,7,8,.78) !important;
+  box-shadow: 0 6px 24px rgba(0,0,0,.38);
+}
+@media (max-width: 900px), (pointer: coarse) {
+  #minimap-canvas {
+    top: max(10px, env(safe-area-inset-top)) !important;
+    right: max(10px, env(safe-area-inset-right)) !important;
+    left: auto !important;
+    width: 84px !important;
+    height: 84px !important;
+  }
+  #hud {
+    left: max(9px, env(safe-area-inset-left)) !important;
+    right: auto !important;
+    bottom: max(150px, calc(env(safe-area-inset-bottom) + 142px)) !important;
+    max-width: 38vw;
+    font-size: 9px;
+    padding: 7px 8px;
+  }
+  #inventory-hud {
+    left: max(9px, env(safe-area-inset-left)) !important;
+    right: auto !important;
+    bottom: max(198px, calc(env(safe-area-inset-bottom) + 190px)) !important;
+    max-width: 40vw;
+    font-size: 9px;
+    padding: 7px 8px;
+  }
+  .keter-tutorial-subtitle,
+  .keter-mouse-hint {
+    bottom: max(128px, calc(env(safe-area-inset-bottom) + 122px)) !important;
+    max-width: min(88vw, 540px);
+    font-size: 10px !important;
+  }
+  #three-container > div[style*="bottom:90px"] {
+    bottom: max(176px, calc(env(safe-area-inset-bottom) + 168px)) !important;
+    max-width: 82vw;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #three-container .keter-vhs-overlay { animation: none !important; }
+}
