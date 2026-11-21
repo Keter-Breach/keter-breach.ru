@@ -52,7 +52,8 @@
 
   #hud {
     top: 10px;
-    left: 10px;
+    right: 10px;
+    left: auto;
     max-width: calc(100vw - 130px);
     padding: 10px;
     font-size: 11px;
@@ -68,7 +69,8 @@
 
   #minimap-canvas {
     top: 10px;
-    right: 10px;
+    left: 10px;
+    right: auto;
     width: 100px;
     height: 100px;
   }
