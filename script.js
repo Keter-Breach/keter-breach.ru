@@ -3746,10 +3746,12 @@ renderChapter(1);
       try {
         originalInit3DMode();
         if (!renderer) return;
-        if (getControlMode() === "pc" && renderer.domElement && !renderer.domElement.dataset.keterPcPointerReady) {
+        const touchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+          Number(navigator.maxTouchPoints || 0) > 0;
+        if (touchDevice && renderer.domElement && !renderer.domElement.dataset.keterPcPointerReady) {
           renderer.domElement.dataset.keterPcPointerReady = "1";
           renderer.domElement.addEventListener("click", () => {
-            if (!is3DVisible() || window.__keterPaused || isPointerLocked()) return;
+            if (getControlMode() !== "pc" || !is3DVisible() || window.__keterPaused || isPointerLocked()) return;
             try {
               const request = renderer.domElement.requestPointerLock();
               if (request && typeof request.catch === "function") request.catch(() => {});
