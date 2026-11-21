@@ -316,34 +316,45 @@
 </div>
 
 <script>
+  (function installKeterDiagnostics() {
+    window.__keterReportError = function (title, error) {
+      console.error("[KETER]", title, error || "");
+      let panel = document.getElementById("keter-runtime-error");
+      if (!panel) {
+        panel = document.createElement("div");
+        panel.id = "keter-runtime-error";
+        panel.style.cssText = "position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(0,0,0,.94);color:#e8eee9;font:14px/1.55 monospace";
+        document.body.appendChild(panel);
+      }
+      const safe = value => String(value || "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+      panel.innerHTML = '<div style="width:min(100%,560px);padding:22px;border:1px solid #963d37;background:#090e10"><div style="color:#e56d60;letter-spacing:.12em;font-weight:bold">KETER // ОШИБКА СИСТЕМЫ</div><h2 style="margin:12px 0;font-size:19px">' + safe(title) + '</h2><p style="color:#b8c4bd;overflow-wrap:anywhere">' + safe(error && (error.message || error) || "Причина не определена") + '</p><button onclick="location.reload()" style="margin-top:18px;padding:12px 18px;background:#6e2422;border:1px solid #d46c60;color:white;font:inherit">ПЕРЕЗАПУСТИТЬ</button></div>';
+    };
+    window.addEventListener("error", event => {
+      if (event && event.message) window.__keterReportError("Ошибка выполнения игры", event.error || event.message);
+    });
+    window.addEventListener("unhandledrejection", event => window.__keterReportError("Ошибка загрузки ресурса", event.reason));
+  })();
+</script>
+<script>
   (function loadThreeRuntime() {
     const overlay = document.getElementById("keter-loading");
     const status = document.getElementById("loading-status");
     const retry = document.getElementById("loading-retry");
+    const nativeShell = location.protocol === "https:" && location.hostname === "localhost";
     let failed = false;
-
-    function setStatus(message) {
-      if (status) status.textContent = message;
-    }
-
+    function setStatus(message) { if (status) status.textContent = message; }
     function hideLoader() {
       if (failed || !overlay) return;
       overlay.classList.add("is-ready");
-      window.setTimeout(function () {
-        overlay.hidden = true;
-      }, 520);
+      window.setTimeout(() => { overlay.hidden = true; }, 520);
     }
-
-    function showError() {
+    function showError(error) {
       failed = true;
       if (overlay) overlay.classList.add("has-error");
-      setStatus("ОШИБКА ЗАПУСКА. ПРОВЕРЬТЕ ФАЙЛЫ И ПОДКЛЮЧЕНИЕ.");
-      if (retry) {
-        retry.hidden = false;
-        retry.onclick = function () { window.location.reload(); };
-      }
+      setStatus("ОШИБКА ЗАПУСКА. ПОДРОБНОСТИ НА ЭКРАНЕ.");
+      if (retry) retry.hidden = false;
+      window.__keterReportError("Не удалось загрузить 3D-движок", error || "Three.js недоступен.");
     }
-
     function loadGame() {
       setStatus("ЗАПУСК ИГРОВОГО МОДУЛЯ");
       const gameScript = document.createElement("script");
@@ -352,13 +363,15 @@
         const controlsScript = document.createElement("script");
         controlsScript.src = "./mobile-controls.js";
         controlsScript.onload = hideLoader;
-        controlsScript.onerror = hideLoader;
+        controlsScript.onerror = function () {
+          window.__keterReportError("Не загрузилось сенсорное управление", "Проверьте комплектность APK.");
+          hideLoader();
+        };
         document.body.appendChild(controlsScript);
       };
-      gameScript.onerror = showError;
+      gameScript.onerror = () => showError("Внутри приложения отсутствует script.js.");
       document.body.appendChild(gameScript);
     }
-
     function loadThree(src, onError) {
       const threeScript = document.createElement("script");
       threeScript.src = src;
@@ -366,11 +379,14 @@
       threeScript.onerror = onError;
       document.head.appendChild(threeScript);
     }
-
     setStatus("ЗАГРУЗКА 3D-ДВИЖКА");
     loadThree("./node_modules/three/build/three.min.js", function () {
+      if (nativeShell) {
+        showError("Локальный Three.js отсутствует в APK: node_modules/three/build/three.min.js");
+        return;
+      }
       setStatus("РЕЗЕРВНЫЙ КАНАЛ: ПОДКЛЮЧЕНИЕ К 3D-ДВИЖКУ");
-      loadThree("https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js", showError);
+      loadThree("https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js", () => showError("Three.js недоступен локально и через CDN."));
     });
   })();
 </script>
