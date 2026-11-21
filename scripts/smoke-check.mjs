@@ -71,20 +71,20 @@ const [mobileJs, mobileCss, manifest, serviceWorker, packageJson] = await Promis
   read("../service-worker.js"),
   read("../package.json")
 ]);
-assert.match(html, /name="viewport" content="width=device-width, initial-scale=1\\.0, viewport-fit=cover"/, "mobile viewport should respect device safe areas");
-assert.match(html, /rel="manifest" href="\\.\\/manifest\\.webmanifest"/, "page should advertise its PWA manifest");
-assert.match(html, /mobile-controls\\.css/, "page should load touch control styles");
-assert.match(html, /controlsScript\\.src = "\\.\\/mobile-controls\\.js"/, "touch controls should load after the game core");
-assert.match(html, /navigator\\.serviceWorker\\.register\\("\\.\\/service-worker\\.js"\\)/, "page should register its offline service worker");
+assert.match(html, /name="viewport" content="width=device-width, initial-scale=1\.0, viewport-fit=cover"/, "mobile viewport should respect device safe areas");
+assert.match(html, /rel="manifest" href="\.\/manifest\.webmanifest"/, "page should advertise its PWA manifest");
+assert.match(html, /mobile-controls\.css/, "page should load touch control styles");
+assert.match(html, /controlsScript\.src = "\.\/mobile-controls\.js"/, "touch controls should load after the game core");
+assert.match(html, /navigator\.serviceWorker\.register\("\.\/service-worker\.js"\)/, "page should register its offline service worker");
 assert.match(mobileJs, /data-action="sprint"/, "touch UI should include sprint");
 assert.match(mobileJs, /data-action="flashlight"/, "touch UI should include flashlight");
 assert.match(mobileJs, /data-action="interact"/, "touch UI should include interaction");
-assert.match(mobileJs, /camera\\.rotation\\.y/, "right-side touch zone should rotate the camera");
-assert.match(mobileJs, /moveForward = forward/, "virtual joystick should drive the existing movement state");
-assert.match(mobileCss, /env\\(safe-area-inset-left\\)/, "touch controls should respect device safe areas");
+assert.match(mobileJs, /camera\.rotation\.y/, "right-side touch zone should rotate the camera");
+assert.match(mobileJs, /moveForward = y < -dead/, "virtual joystick should drive the existing movement state");
+assert.match(mobileCss, /env\(safe-area-inset-left\)/, "touch controls should respect device safe areas");
 assert.match(manifest, /"display": "standalone"/, "PWA should launch without browser chrome");
-assert.match(serviceWorker, /caches\\.open\\(CACHE_NAME\\)/, "PWA should cache its app shell");
-assert.match(packageJson, /mobile-controls\\.js/, "desktop package should include the mobile runtime files");
+assert.match(serviceWorker, /caches\.open\(CACHE_NAME\)/, "PWA should cache its app shell");
+assert.match(packageJson, /mobile-controls\.js/, "desktop package should include the mobile runtime files");
 new Function(mobileJs);
 new Function(serviceWorker);
 JSON.parse(manifest);
