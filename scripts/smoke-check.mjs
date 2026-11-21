@@ -88,3 +88,17 @@ assert.match(packageJson, /mobile-controls\.js/, "desktop package should include
 new Function(mobileJs);
 new Function(serviceWorker);
 JSON.parse(manifest);
+
+const [mobileControls, androidBuilder] = await Promise.all([
+  read("../mobile-controls.js"),
+  read("../scripts/build-android.mjs")
+]);
+assert.match(mobileControls, /keter-tutorial-subtitle/, "mobile controls should show subtitle tutorial");
+assert.match(mobileControls, /ПРАВАЯ ЧАСТЬ ЭКРАНА/, "tutorial should explain camera swipe");
+assert.match(mobileControls, /keter-mobile-tutorial-v2/, "tutorial completion should be remembered");
+assert.match(script, /powerPreference: touchDevice \? "low-power"/, "mobile WebGL should prefer low-power mode");
+assert.match(script, /renderer.setPixelRatio\(Math.min\(/, "mobile WebGL pixel ratio should be capped");
+assert.match(script, /controlsActive = locked \|\| touchDevice/, "touch gameplay should activate story triggers");
+assert.match(html, /keter-runtime-error/, "runtime failures should be visible instead of a silent black screen");
+assert.match(androidBuilder, /node_modules\/three\/build\/three\.min\.js/, "APK should bundle the local Three.js runtime");
+await access(new URL("../assets/keter-icon.svg", import.meta.url), constants.R_OK);
