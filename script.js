@@ -1771,10 +1771,21 @@ function updateDistantApparition(delta, locked) {
   }
 }
 
-// Reticle: зелёная точка превращается в руку, когда взгляд направлен на доступный объект.
+// Context reticle: проверяем только реальные интерактивные объекты, а не весь мир
+// (иначе собственные руки/декор могли перехватывать луч).
 const interactionRaycaster = new THREE.Raycaster();
 const interactionRayOrigin = new THREE.Vector2(0, 0);
 let currentInteractionTarget = null;
+
+function isDescendantOf(object, rootObject) {
+  let node = object;
+  while (node) {
+    if (node === rootObject) return true;
+    node = node.parent;
+  }
+  return false;
+}
+
 function updateInteractionReticle() {
   const root = document.getElementById("three-container");
   const dot = root && root.querySelector(".crosshair");
@@ -1786,19 +1797,37 @@ function updateInteractionReticle() {
     return;
   }
 
+  camera.updateMatrixWorld(true);
+  if (world) world.updateMatrixWorld(true);
+
+  const targets = interactiveItems.concat(Object.values(doors).filter(Boolean));
   interactionRaycaster.setFromCamera(interactionRayOrigin, camera);
-  const hits = interactionRaycaster.intersectObjects(scene.children, true);
+  interactionRaycaster.near = 0;
+  interactionRaycaster.far = 2.85;
+
+  const targetHits = interactionRaycaster.intersectObjects(targets, true);
   let target = null;
-  for (const hit of hits) {
-    let node = hit.object;
-    while (node && node !== scene) {
-      if (interactiveItems.includes(node) || Object.values(doors).includes(node)) {
-        if (hit.distance <= 2.5) target = node;
+  let targetDistance = Infinity;
+  if (targetHits.length) {
+    const hit = targetHits[0];
+    for (const candidate of targets) {
+      if (isDescendantOf(hit.object, candidate)) {
+        target = candidate;
+        targetDistance = hit.distance;
         break;
       }
-      node = node.parent;
     }
-    if (target || hit.distance > 2.5) break;
+  }
+
+  // Не показываем руку сквозь стены и крупные перегородки.
+  if (target && walls.length) {
+    const blockers = walls.map(entry => entry && entry.mesh).filter(Boolean);
+    const blockHits = interactionRaycaster.intersectObjects(blockers, true);
+    const blocked = blockHits.some(hit => {
+      const belongsToTarget = targets.some(candidate => isDescendantOf(hit.object, candidate));
+      return !belongsToTarget && hit.distance < targetDistance - 0.06;
+    });
+    if (blocked) target = null;
   }
 
   currentInteractionTarget = target;
@@ -2607,8 +2636,9 @@ renderChapter(1);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = mobile ? 1.42 : 1.32;
     renderer.shadowMap.enabled = false;
+    renderer.domElement.setAttribute("aria-hidden", "true");
     world.appendChild(renderer.domElement);
 
     const menuScene = new THREE.Scene();
@@ -2652,9 +2682,9 @@ renderChapter(1);
     menuScene.add(frameTop, frameLeft, frameRight);
     const doorGeo = new THREE.BoxGeometry(1.55, 3.55, 0.12);
     const doorLeft = new THREE.Mesh(doorGeo, steel);
-    doorLeft.position.set(-1.22, 2.05, -18.8);
+    doorLeft.position.set(-1.42, 2.05, -18.8);
     const doorRight = new THREE.Mesh(doorGeo, steel);
-    doorRight.position.set(1.22, 2.05, -18.8);
+    doorRight.position.set(1.42, 2.05, -18.8);
     menuScene.add(doorLeft, doorRight);
 
     // Repeating wall ribs, floor guides and ceiling luminaires add depth without expensive detail.
@@ -2680,12 +2710,12 @@ renderChapter(1);
     menuScene.add(sign);
 
     menuScene.add(new THREE.HemisphereLight(0x91a2aa, 0x151313, 0.82));
-    const ambient = new THREE.AmbientLight(0x8c999e, 0.34);
+    const ambient = new THREE.AmbientLight(0x9eabb0, 0.62);
     menuScene.add(ambient);
-    const coldLight = new THREE.PointLight(0x8da8b5, mobile ? 7 : 11, 19, 2);
+    const coldLight = new THREE.PointLight(0xa8c4d0, mobile ? 13 : 18, 24, 1.8);
     coldLight.position.set(0, 4.25, -5);
     menuScene.add(coldLight);
-    const redLight = new THREE.PointLight(0xd12a20, mobile ? 4 : 7, 12, 2);
+    const redLight = new THREE.PointLight(0xf02e24, mobile ? 7 : 10, 16, 1.8);
     redLight.position.set(0, 3.65, -17.8);
     menuScene.add(redLight);
 
@@ -2701,7 +2731,7 @@ renderChapter(1);
       menuCamera.position.x = Math.sin(t * 0.22) * 0.11;
       menuCamera.position.y = 2.05 + Math.sin(t * 0.31) * 0.035;
       menuCamera.lookAt(Math.sin(t * 0.16) * 0.12, 1.8, -9);
-      redLight.intensity = (mobile ? 4 : 7) * (0.88 + Math.sin(t * 2.2) * 0.12);
+      redLight.intensity = (mobile ? 7 : 10) * (0.82 + Math.sin(t * 2.2) * 0.18);
       renderer.render(menuScene, menuCamera);
     };
     frame = requestAnimationFrame(render);
