@@ -845,8 +845,8 @@ function init3DMode() {
   if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0.3;
   velocity.set(0, 0, 0); openingDoors = [];
   camera.position.set(0, 0.72, -8);
-  camera.rotation.set(0.22, Math.PI, 0); // first-person: без видимой модели тела/рук персонажа
-  if (firstPersonRig) firstPersonRig.visible = false;
+  camera.rotation.set(0.22, Math.PI, 0); // first-person: видны руки охраны и ручной фонарь
+  if (firstPersonRig) firstPersonRig.visible = true;
   wakeupProgress = 0;
   wakeupActive = true;
   showToast("ИНЦИДЕНТ KETER-19: лифт остановлен. Найдите карту L-1 и проверьте архивные терминалы.", 5200);
