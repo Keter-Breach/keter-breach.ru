@@ -678,6 +678,30 @@ function createFirstPersonRig() {
   rig.add(torch);
   rig.userData.torchLens = lens;
 
+  // Extra tactical details: segmented forearm guards, stitched seams and unit insignia.
+  const addPlate = (w, h, d, mat, x, y, z, rz = 0) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    mesh.position.set(x, y, z);
+    mesh.rotation.z = rz;
+    mesh.frustumCulled = false;
+    rig.add(mesh);
+    return mesh;
+  };
+  addPlate(0.19, 0.055, 0.39, seamMatFP, -0.48, -0.405, -1.02, -0.22);
+  addPlate(0.20, 0.055, 0.39, seamMatFP,  0.43, -0.415, -0.98,  0.18);
+  addPlate(0.13, 0.035, 0.22, armorMat, -0.48, -0.355, -1.04, -0.22);
+  addPlate(0.14, 0.035, 0.22, armorMat,  0.43, -0.365, -1.00,  0.18);
+  addPlate(0.12, 0.075, 0.035, patchMat, -0.48, -0.49, -0.79, -0.22);
+  addPlate(0.12, 0.075, 0.035, patchMat,  0.43, -0.50, -0.75,  0.18);
+  // Reinforced glove fingers and thumbs add a more believable first-person silhouette.
+  for (let i = 0; i < 3; i++) {
+    const offset = (i - 1) * 0.052;
+    addPlate(0.038, 0.075, 0.105, gloveMat, -0.43 + offset, -0.665, -1.405, -0.12);
+    addPlate(0.038, 0.075, 0.105, gloveMat,  0.39 + offset, -0.665, -1.365,  0.10);
+  }
+  addPlate(0.055, 0.12, 0.09, gloveMat, -0.555, -0.635, -1.34, -0.42);
+  addPlate(0.055, 0.12, 0.09, gloveMat,  0.515, -0.635, -1.30,  0.42);
+
   // Helmet lamp housing at the very top edge of the view, subtle and unobtrusive.
   const helmetLamp = new THREE.Group();
   helmetLamp.position.set(0, 0.39, -0.92);
