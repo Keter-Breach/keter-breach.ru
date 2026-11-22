@@ -1284,3 +1284,49 @@ p#description {
   #keter-overlay:before{animation:none!important}
   #keter-overlay .keter-button{transition:none!important}
 }
+
+
+/* PROJECT: KETER — darker psychological-horror grade, lightweight for mobile. */
+#three-container {
+  background: #020405 !important;
+}
+#three-container canvas {
+  filter: brightness(.82) contrast(1.18) saturate(.70) sepia(.035) !important;
+}
+#keter-menu-world {
+  background:
+    radial-gradient(ellipse at 72% 45%, rgba(55,66,67,.22), transparent 34%),
+    linear-gradient(120deg, #080e11, #12191b 48%, #010304) !important;
+}
+#keter-menu-world canvas {
+  filter: brightness(.56) contrast(1.22) saturate(.58) !important;
+}
+#keter-menu-world:before {
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.66), transparent 58%),
+    radial-gradient(ellipse at 72% 48%, transparent 12%, rgba(0,0,0,.78) 100%),
+    repeating-linear-gradient(0deg, transparent 0 4px, rgba(180,198,190,.018) 5px, transparent 6px) !important;
+}
+#keter-overlay {
+  background:
+    linear-gradient(90deg, rgba(0,2,3,.97) 0%, rgba(0,2,3,.88) 31%, rgba(0,2,3,.48) 62%, rgba(0,0,0,.22) 100%),
+    linear-gradient(0deg, rgba(0,0,0,.72), transparent 42%, rgba(0,0,0,.22)),
+    #010304 !important;
+}
+#keter-overlay .keter-panel {
+  background: linear-gradient(145deg, rgba(4,8,10,.97), rgba(1,3,4,.96)) !important;
+  border-color: rgba(118,135,129,.16) !important;
+  box-shadow: 0 34px 110px rgba(0,0,0,.88), 0 0 55px rgba(74,12,12,.08) !important;
+}
+@media (max-width:720px), (pointer:coarse) {
+  #three-container canvas {
+    filter: brightness(.86) contrast(1.14) saturate(.74) sepia(.025) !important;
+  }
+  #keter-menu-world canvas {
+    filter: brightness(.48) contrast(1.18) saturate(.54) !important;
+  }
+  #keter-overlay {
+    background: linear-gradient(90deg, rgba(0,2,3,.78), rgba(0,2,3,.48)),
+      linear-gradient(0deg, rgba(0,0,0,.72), transparent 72%), #010304 !important;
+  }
+}
