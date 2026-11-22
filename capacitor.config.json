@@ -1,9 +1,7 @@
 {
   "appId": "ru.keterbreach.projectketer",
-  "appName": "PROJECT: KETER",
+  "appName": "PROJECT KETER",
   "webDir": "www",
   "bundledWebRuntime": false,
-  "server": {
-    "androidScheme": "https"
-  }
+  "server": { "androidScheme": "https" }
 }

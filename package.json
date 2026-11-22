@@ -1,6 +1,6 @@
 {
   "name": "project-keter",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "private": true,
   "description": "PROJECT: KETER — VHS survival horror",
   "main": "desktop/main.cjs",

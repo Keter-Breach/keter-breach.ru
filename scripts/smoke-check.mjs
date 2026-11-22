@@ -18,15 +18,16 @@ assert.match(html, /id="three-container"/, "3D container should exist");
 assert.match(html, /gameScript\.src = "\.\/script\.js"/, "page should load the game script after Three.js is ready");
 assert.match(html, /loadThree\("\.\/node_modules\/three\/build\/three\.min\.js", function \(\)/, "desktop build should prefer the bundled local Three.js runtime");
 assert.doesNotMatch(html, /fonts\.googleapis\.com/, "desktop menu should not depend on Google Fonts");
-assert.match(html, /loadThree\("https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.128\.0\/build\/three\.min\.js", showError\)/, "browser deployment should use a version-pinned fallback runtime");
+assert.match(html, /loadThree\("https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.128\.0\/build\/three\.min\.js", \(\) => showError/, "browser deployment should use a version-pinned fallback runtime");
 assert.match(html, /threeScript\.onload = loadGame/, "game script must load only after Three.js is ready");
 assert.match(html, /threeScript\.onerror = onError/, "runtime load failure should show a readable error");
 assert.match(html, /href="style\.css"/, "page should load responsive styles");
 assert.match(script, /function renderChapter\(/, "chapter renderer should exist");
 assert.match(script, /function init3DMode\(/, "3D initialization should exist");
 assert.match(script, /firstPersonRig\.visible = true/, "first-person hands and flashlight should remain visible");
-assert.match(script, /bumpMap:\s*maps\.bump/, "PBR bump map should be configured");
-assert.match(script, /roughnessMap:\s*maps\.roughness/, "PBR roughness map should be configured");
+assert.match(script, /wallMaterial = new THREE\.MeshStandardMaterial\(/, "starter map should use stable standard wall materials");
+assert.match(script, /floorMaterial = new THREE\.MeshStandardMaterial\(/, "starter map should use stable standard floor materials");
+assert.doesNotMatch(script, /loadImageTexture\("textures\//, "starter map should not depend on external image textures");
 assert.match(script, /inputLength > 1/, "diagonal movement should be normalized");
 assert.match(script, /e\.repeat && \(e\.code === 'KeyF' \|\| e\.code === 'KeyE'\)/, "held interaction keys should not repeat");
 assert.match(script, /url\("menu-background\.svg"\)/, "VHS menu backdrop should be referenced");
@@ -40,7 +41,7 @@ new Function(script); // Parse only; do not execute browser-dependent game code.
 await access(new URL("../menu-background.svg", import.meta.url), constants.R_OK);
 
 console.log("PROJECT: KETER smoke checks passed.");
-console.log("Checked: page wiring, game entry points, PBR maps, input fixes, menu backdrop, JavaScript syntax.");
+console.log("Checked: page wiring, game entry points, stable starter materials, input fixes, menu backdrop, JavaScript syntax.");
 
 
 // Boot screen and sequential runtime loading must remain wired together.
@@ -48,9 +49,9 @@ assert.match(html, /id="keter-loading"/, "page should show a branded loading ove
 assert.match(html, /id="loading-status"/, "loading overlay should expose startup status");
 assert.match(html, /loading-mark/, "loading overlay should include an animated loading icon");
 assert.match(html, /controlsScript\.onload = hideLoader/, "loading overlay should disappear after touch controls load");
-assert.match(html, /gameScript\.onerror = showError/, "startup failure should show a readable error");
+assert.match(html, /gameScript\.onerror = \(\) => showError/, "startup failure should show a readable error");
 assert.match(html, /loadThree\("\.\/node_modules\/three\/build\/three\.min\.js", function \(\)/, "desktop build should prefer the bundled Three.js runtime");
-assert.match(html, /loadThree\("https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.128\.0\/build\/three\.min\.js", showError\)/, "browser build should have a pinned CDN fallback");
+assert.match(html, /loadThree\("https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.128\.0\/build\/three\.min\.js", \(\) => showError/, "browser build should have a pinned CDN fallback");
 assert.doesNotMatch(html, /<script src="script\.js"><\/script>/, "game script must not be loaded twice");
 
 assert.match(script, /document\.pointerLockElement === canvas/, "pointer lock state should recognize the game canvas");
@@ -83,8 +84,30 @@ assert.match(mobileJs, /camera\.rotation\.y/, "right-side touch zone should rota
 assert.match(mobileJs, /moveForward = y < -dead/, "virtual joystick should drive the existing movement state");
 assert.match(mobileCss, /env\(safe-area-inset-left\)/, "touch controls should respect device safe areas");
 assert.match(manifest, /"display": "standalone"/, "PWA should launch without browser chrome");
+assert.match(manifest, /"orientation": "landscape"/, "installed PWA should request landscape orientation");
+assert.match(mobileJs, /screen\.orientation\.lock\("landscape"\)/, "supported mobile browsers should request landscape after a user gesture");
 assert.match(serviceWorker, /caches\.open\(CACHE_NAME\)/, "PWA should cache its app shell");
 assert.match(packageJson, /mobile-controls\.js/, "desktop package should include the mobile runtime files");
 new Function(mobileJs);
 new Function(serviceWorker);
 JSON.parse(manifest);
+
+const [mobileControls, androidBuilder, landscapeBuilder] = await Promise.all([
+  read("../mobile-controls.js"),
+  read("../scripts/build-android.mjs"),
+  read("../scripts/set-android-landscape.mjs")
+]);
+assert.match(landscapeBuilder, /android:screenOrientation="landscape"/, "Android MainActivity should be locked to landscape");
+assert.match(mobileControls, /keter-tutorial-subtitle/, "mobile controls should show subtitle tutorial");
+assert.match(mobileControls, /ПРАВАЯ ЧАСТЬ ЭКРАНА/, "tutorial should explain camera swipe");
+assert.match(mobileControls, /keter-mobile-tutorial-v2/, "tutorial completion should be remembered");
+assert.match(script, /powerPreference: touchDevice \? "low-power"/, "mobile WebGL should prefer low-power mode");
+assert.match(script, /renderer.setPixelRatio\(Math.min\(/, "mobile WebGL pixel ratio should be capped");
+assert.match(script, /\["ultra", "Максимум/, "graphics menu should expose an ultra preset");
+assert.match(script, /\["cold", "Холодный реализм/, "graphics menu should expose a cold SCP visual style");
+assert.match(script, /renderer.shadowMap.enabled = shadowsEnabled/, "shadow setting should be applied from the selected profile");
+assert.match(script, /deviceCap = touchDevice \? 0\.88 : 1\.5/, "mobile and desktop rendering resolution should remain capped");
+assert.match(script, /controlsActive = locked \|\| touchDevice/, "touch gameplay should activate story triggers");
+assert.match(html, /keter-runtime-error/, "runtime failures should be visible instead of a silent black screen");
+assert.match(androidBuilder, /node_modules\/three\/build\/three\.min\.js/, "APK should bundle the local Three.js runtime");
+await access(new URL("../assets/keter-icon.svg", import.meta.url), constants.R_OK);

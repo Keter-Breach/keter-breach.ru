@@ -53,8 +53,199 @@ function playSound(name) {
   osc.start(t); osc.stop(t + s.dur);
 }
 
+// === 1b. ЗВУКОВАЯ СРЕДА И РАДИОПЕРЕХВАТЫ ===
+// Все звуки синтезируются локально: нет дополнительных файлов и сетевых загрузок.
+let facilityAudio = null;
+
+function createFacilityAudio() {
+  if (facilityAudio || !audioCtx) return facilityAudio;
+  const ctx = audioCtx;
+  const master = ctx.createGain();
+  master.gain.value = 0;
+  master.connect(ctx.destination);
+
+  const lowpass = ctx.createBiquadFilter();
+  lowpass.type = "lowpass";
+  lowpass.frequency.value = 260;
+  lowpass.Q.value = 0.7;
+  lowpass.connect(master);
+
+  const humA = ctx.createOscillator();
+  humA.type = "sine";
+  humA.frequency.value = 48;
+  const humGainA = ctx.createGain();
+  humGainA.gain.value = 0.12;
+  humA.connect(humGainA).connect(lowpass);
+  humA.start();
+
+  const humB = ctx.createOscillator();
+  humB.type = "triangle";
+  humB.frequency.value = 73;
+  const humGainB = ctx.createGain();
+  humGainB.gain.value = 0.035;
+  humB.connect(humGainB).connect(lowpass);
+  humB.start();
+
+  const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const noiseData = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1) * 0.22;
+  const noise = ctx.createBufferSource();
+  noise.buffer = noiseBuffer;
+  noise.loop = true;
+  const noiseFilter = ctx.createBiquadFilter();
+  noiseFilter.type = "lowpass";
+  noiseFilter.frequency.value = 180;
+  const noiseGain = ctx.createGain();
+  noiseGain.gain.value = 0.16;
+  noise.connect(noiseFilter).connect(noiseGain).connect(master);
+  noise.start();
+
+  facilityAudio = { master, humA, humB, noise, ctx };
+  return facilityAudio;
+}
+
+function setFacilityAmbience(active) {
+  try {
+    if (!audioCtx) {
+      if (!active) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const ambience = createFacilityAudio();
+    if (!ambience) return;
+    const volume = Math.max(0, Math.min(1, Number(window.__keterVolume ?? 0.7)));
+    const target = active ? volume * 0.12 : 0;
+    ambience.master.gain.cancelScheduledValues(audioCtx.currentTime);
+    ambience.master.gain.setTargetAtTime(target, audioCtx.currentTime, active ? 1.8 : 0.25);
+  } catch (error) {
+    console.warn("[KETER] Не удалось обновить звуковую среду:", error);
+  }
+}
+
+function playRadioStatic() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const ctx = audioCtx;
+    const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.42), ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length) * 0.55;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = 1250;
+    filter.Q.value = 0.8;
+    const gain = ctx.createGain();
+    gain.gain.value = Math.max(0, Math.min(1, Number(window.__keterVolume ?? 0.7))) * 0.22;
+    source.connect(filter).connect(gain).connect(ctx.destination);
+    source.start();
+  } catch (error) {
+    // Радиосообщение останется доступным текстом, даже если Web Audio недоступен.
+  }
+}
+
+const RADIO_INTERCEPTS = [
+  { from: "ДЕЖУРНЫЙ ПОСТ · 03:12", message: "Пост D-12 вызывает контрольную. В коридоре B кто-то повторяет наши переговоры с задержкой в семь секунд. Камеры пустые. Повторяю: камеры пустые." },
+  { from: "ДОКТОР ГИРС · ЗАПИСЬ", message: "Если вы слышите это сообщение, не отвечайте на канал семь. Передатчик принимает голос не из помещения, а из следующего цикла." },
+  { from: "МОБИЛЬНАЯ ГРУППА · ОБРЫВ", message: "Нашли следы у лифта. Они ведут внутрь, хотя дверь всё время была закрыта. Кто-нибудь… выключите свет в коридоре." }
+];
+
+function playRadioIntercept(index) {
+  const item = RADIO_INTERCEPTS[index % RADIO_INTERCEPTS.length];
+  playRadioStatic();
+  const state = window.playerState || (window.playerState = freshState());
+  state.radioMessages = (Number(state.radioMessages) || 0) + 1;
+  showToast("◉ " + item.from + "\n" + item.message, 10000);
+}
+
+// Короткая локальная сирена аварийного протокола; запускается только игровым событием.
+function startFacilityAlarm(duration = 12) {
+  facilityAlarmTimer = Math.max(facilityAlarmTimer, duration);
+  eventPulseTimer = Math.max(eventPulseTimer, duration);
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    if (!facilityAlarmOscillator) {
+      facilityAlarmOscillator = audioCtx.createOscillator();
+      facilityAlarmGain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = 920;
+      filter.Q.value = 1.2;
+      facilityAlarmOscillator.type = "sawtooth";
+      facilityAlarmOscillator.frequency.value = 680;
+      facilityAlarmGain.gain.value = 0;
+      facilityAlarmOscillator.connect(filter).connect(facilityAlarmGain).connect(audioCtx.destination);
+      facilityAlarmOscillator.start();
+    }
+    const volume = Math.max(0, Math.min(1, Number(window.__keterVolume ?? 0.7)));
+    facilityAlarmGain.gain.setTargetAtTime(volume * 0.035, audioCtx.currentTime, 0.08);
+  } catch (error) {
+    console.warn("[KETER] Сирена недоступна:", error);
+  }
+}
+
+function updateFacilityAlarm(delta, time) {
+  if (facilityAlarmTimer <= 0) return;
+  facilityAlarmTimer = Math.max(0, facilityAlarmTimer - delta);
+  facilityAlarmPhase += delta * 2.8;
+  if (facilityAlarmTimer <= 0) {
+    setFacilityLockdown(false);
+    if (facilityAlarmGain && audioCtx) facilityAlarmGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.22);
+    showToast("ЛОКДАУН D-12 СНЯТ · АВТОМАТИЧЕСКИЙ ДОПУСК ВОССТАНОВЛЕН", 4200);
+  }
+  if (facilityAlarmOscillator && audioCtx && facilityAlarmGain) {
+    const sweep = 560 + (Math.sin(facilityAlarmPhase) * 0.5 + 0.5) * 520;
+    facilityAlarmOscillator.frequency.setTargetAtTime(sweep, audioCtx.currentTime, 0.06);
+  }
+  if (facilityAlarmTimer <= 0 && facilityAlarmGain && audioCtx) {
+    facilityAlarmGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.18);
+  }
+}
+
+
+function setFacilityLockdown(active) {
+  const state = window.playerState || (window.playerState = freshState());
+  state.lockdownActive = !!active;
+  const lockdownDoor = doors && doors.doorL2;
+  if (lockdownDoor) {
+    lockdownDoor.userData.locked = !!active;
+    if (lockdownDoor.userData.lamp && lockdownDoor.userData.lamp.material && lockdownDoor.userData.lamp.material.color) {
+      lockdownDoor.userData.lamp.material.color.set(active ? 0xff2418 : 0x00ff66);
+    }
+  }
+}
+
+function releaseFacilityLockdown(manual = false) {
+  setFacilityLockdown(false);
+  facilityAlarmTimer = 0;
+  if (facilityAlarmGain && audioCtx) facilityAlarmGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.18);
+  if (manual) showToast("АВАРИЙНЫЙ ДОСТУП ПОДТВЕРЖДЁН · БЛОКИРОВКА L-2 СНЯТА", 4200);
+}
+
+function setFacilityPower(active) {
+  const state = window.playerState || (window.playerState = freshState());
+  state.powerRestored = !!active;
+  const serviceDoor = doors && doors.doorService;
+  if (serviceDoor) {
+    serviceDoor.userData.locked = !active;
+    if (serviceDoor.userData.lamp && serviceDoor.userData.lamp.material && serviceDoor.userData.lamp.material.color) {
+      serviceDoor.userData.lamp.material.color.set(active ? 0x00ff66 : 0xff2418);
+    }
+  }
+  const relay = interactiveItems.find(item => item && item.userData && item.userData.type === "powerRelay");
+  if (relay && relay.userData.screen) {
+    relay.userData.screen.material.emissive.set(active ? 0x0a7a3b : 0x7a2a10);
+    relay.userData.screen.material.emissiveIntensity = active ? 1.15 : 0.65;
+  }
+  if (active) {
+    flickers.forEach(f => { if (f && f.light) f.light.intensity = f.base; });
+  }
+}
+
 // === 2. СЮЖЕТ И СОСТОЯНИЕ ===
-const freshState = () => ({ keycardL1: false, keycardL2: false, logsFound: [], reactorDisabled: false, anomalySeen: false, radioMessages: 0, containmentOverride: false });
+const freshState = () => ({ keycardL1: false, keycardL2: false, logsFound: [], reactorDisabled: false, anomalySeen: false, radioMessages: 0, containmentOverride: false, lockdownActive: false, powerRestored: false });
 window.playerState = freshState();
 let loopCount = 1;
 
@@ -99,6 +290,8 @@ function renderChapter(chapNum) {
   if (chapNum === 'RESET') {
     loopCount++;
     window.playerState = freshState();
+    setFacilityLockdown(false);
+    setFacilityPower(false);
     chapNum = 1;
   }
 
@@ -142,23 +335,48 @@ function renderChapter(chapNum) {
 }
 function generateKeycardTexture(levelStr, colorHex) {
   const canvas = document.createElement('canvas');
-  canvas.width = 256; canvas.height = 160;
+  canvas.width = 512; canvas.height = 320;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = colorHex; ctx.fillRect(0, 0, 256, 160);
-  ctx.fillStyle = '#111'; ctx.fillRect(0, 20, 256, 30);
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 22px Courier New';
-  ctx.fillText("FACILITY SECURITY", 20, 85);
-  ctx.font = 'bold 18px Courier New';
-  ctx.fillText(`LEVEL ${levelStr}`, 20, 125);
+  const accent = colorHex;
+  ctx.fillStyle = '#101619'; ctx.fillRect(0, 0, 512, 320);
+  ctx.strokeStyle = accent; ctx.lineWidth = 12;
+  ctx.strokeRect(8, 8, 496, 304);
+  ctx.fillStyle = '#20292c'; ctx.fillRect(20, 24, 472, 56);
+  ctx.fillStyle = accent; ctx.fillRect(20, 24, 9, 56);
+  ctx.fillStyle = '#dce5e4'; ctx.font = 'bold 27px monospace';
+  ctx.fillText('SCP FOUNDATION', 48, 61);
+  ctx.fillStyle = '#080c0e'; ctx.fillRect(34, 105, 112, 86);
+  ctx.strokeStyle = '#687579'; ctx.lineWidth = 5; ctx.strokeRect(34, 105, 112, 86);
+  ctx.fillStyle = '#b6c0bd'; ctx.fillRect(49, 120, 82, 56);
+  ctx.strokeStyle = '#596467'; ctx.lineWidth = 3;
+  for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(49 + i * 20, 120); ctx.lineTo(49 + i * 20, 176); ctx.stroke(); }
+  ctx.fillStyle = '#f0f2ed'; ctx.font = 'bold 54px monospace';
+  ctx.fillText('LEVEL ' + levelStr, 174, 160);
+  ctx.fillStyle = accent; ctx.fillRect(174, 180, 280, 8);
+  ctx.fillStyle = '#9aa7a6'; ctx.font = '20px monospace';
+  ctx.fillText('D-12 // AUTHORIZED PERSONNEL', 174, 220);
+  ctx.fillStyle = '#647174'; ctx.font = '16px monospace';
+  ctx.fillText('PROPERTY OF SITE SECURITY', 34, 278);
+  ctx.fillText('ID: D12-' + String(levelStr).padStart(2, '0') + '-7A91', 300, 278);
   const tex = new THREE.CanvasTexture(canvas);
   tex.encoding = THREE.sRGBEncoding;
+  tex.anisotropy = 2;
   return tex;
 }
 
 // === 2b. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ (рисуются на canvas, внешние файлы не нужны) ===
 let MAT = null, dust = null, flickers = [];
 let emergencyPulse = null;
+let eventPulseTimer = 0;
+let eventBlackoutTimer = 0;
+let facilityAlarmTimer = 0;
+let facilityAlarmPhase = 0;
+let facilityAlarmOscillator = null;
+let facilityAlarmGain = null;
+let lastMinimapDraw = 0;
+let lastLightUpdate = 0;
+let lastDustUpdate = 0;
+let lastMobileFrame = 0;
 const rnd = Math.random;
 
 function dataTexture(size, draw) {
@@ -505,43 +723,55 @@ function loadImageTexture(path, material, repeatX = 1, repeatY = 1) {
 }
 
 function buildMaterials() {
-  // Color maps describe albedo only. Surface relief and microsurface roughness
-  // use independent linear-space data maps, as expected by a PBR material.
-  const M = (t, r, m = 0, detail = 'concrete', bumpScale = 0.035) => {
-    const maps = makeSurfaceMaps(detail);
-    return new THREE.MeshStandardMaterial({
-      map: t, roughness: Math.min(1, r), metalness: m,
-      bumpMap: maps.bump, bumpScale: bumpScale * 0.78,
-      roughnessMap: maps.roughness,
-      envMapIntensity: 0.32
-    });
-  };
-  const fl = TEX.metal(); fl.repeat.set(18, 24);
-  const cl = TEX.ceil(); cl.repeat.set(24, 32);
-  wallMaterial = M(TEX.concrete(), 0.94, 0, 'concrete', 0.045);
-  floorMaterial = M(fl, 0.72, 0.12, 'steel', 0.025);
-  doorMaterial = M(TEX.door(), 0.72, 0.08, 'paint', 0.022);
-  tableMaterial = M(TEX.wood(), 0.82, 0, 'paint', 0.018);
-  serverMaterial = M(TEX.rack(), 0.58, 0.3, 'steel', 0.018);
-  MAT = {
-    ceil: M(cl, 0.94, 0, 'concrete', 0.025),
-    cab: M(TEX.cab(), 0.78, 0.12, 'steel', 0.018),
-    bed: M(TEX.cloth(), 0.86, 0, 'paint', 0.012),
-    statue: M(TEX.statue(), 0.97, 0, 'concrete', 0.018),
-    keter: new THREE.MeshStandardMaterial({ map: TEX.keterBase(), roughness: 0.25, metalness: 0.3, emissive: 0xff2200, emissiveMap: TEX.keterVein(), emissiveIntensity: 0.8 }),
-    glass: new THREE.MeshStandardMaterial({ color: 0x88aacc, transparent: true, opacity: 0.15, roughness: 0.1 }),
-    tank: new THREE.MeshStandardMaterial({ color: 0x66ffaa, transparent: true, opacity: 0.25, roughness: 0.1 }),
-    liquid: new THREE.MeshBasicMaterial({ color: 0x22cc66 }),
-    orange: new THREE.MeshStandardMaterial({ color: 0xb85a10, roughness: 0.8 })
-  };
+  // Стабильный набор материалов для стартовой карты D-12.
+  // Убираем внешние изображения, bump/roughness maps и повторяющиеся UV:
+  // на мобильных WebGL-драйверах они давали растяжение, пятна и нестабильную загрузку.
+  // Детализация окружения остаётся геометрической: панели, швы, решётки и оборудование.
 
-  // Локальные бесшовные SVG-текстуры входят в сборку и работают офлайн.
-  // Процедурные карты выше остаются резервом, если изображение не загрузится.
-  loadImageTexture("textures/keter-concrete.svg", wallMaterial, 3, 3);
-  loadImageTexture("textures/keter-industrial-floor.svg", floorMaterial, 4, 4);
-  loadImageTexture("textures/keter-painted-metal.svg", doorMaterial, 1, 1);
-  loadImageTexture("textures/keter-painted-metal.svg", serverMaterial, 1.5, 1.5);
-  loadImageTexture("textures/dark_wood_diff_1k.jpg", tableMaterial);
+  wallMaterial = new THREE.MeshStandardMaterial({
+    color: 0x454d4d, roughness: 0.96, metalness: 0.02
+  });
+  floorMaterial = new THREE.MeshStandardMaterial({
+    color: 0x292f32, roughness: 0.88, metalness: 0.18
+  });
+  doorMaterial = new THREE.MeshStandardMaterial({
+    color: 0x394341, roughness: 0.82, metalness: 0.22
+  });
+  tableMaterial = new THREE.MeshStandardMaterial({
+    color: 0x343331, roughness: 0.9, metalness: 0.04
+  });
+  serverMaterial = new THREE.MeshStandardMaterial({
+    color: 0x20292d, roughness: 0.72, metalness: 0.38
+  });
+
+  MAT = {
+    ceil: new THREE.MeshStandardMaterial({
+      color: 0x252c30, roughness: 0.96, metalness: 0.04
+    }),
+    cab: new THREE.MeshStandardMaterial({
+      color: 0x30393b, roughness: 0.84, metalness: 0.24
+    }),
+    bed: new THREE.MeshStandardMaterial({
+      color: 0x777f7c, roughness: 0.98, metalness: 0
+    }),
+    statue: new THREE.MeshStandardMaterial({
+      color: 0x827b6d, roughness: 0.98, metalness: 0
+    }),
+    keter: new THREE.MeshStandardMaterial({
+      color: 0x090708, roughness: 0.32, metalness: 0.18,
+      emissive: 0x4b090b, emissiveIntensity: 0.42
+    }),
+    glass: new THREE.MeshStandardMaterial({
+      color: 0x88aacc, transparent: true, opacity: 0.15, roughness: 0.1
+    }),
+    tank: new THREE.MeshStandardMaterial({
+      color: 0x66ffaa, transparent: true, opacity: 0.25, roughness: 0.1
+    }),
+    liquid: new THREE.MeshBasicMaterial({ color: 0x22cc66 }),
+    orange: new THREE.MeshStandardMaterial({
+      color: 0xb85a10, roughness: 0.8
+    })
+  };
 }
 
 // Физически масштабируем UV по каждой грани. 4 world units = один повтор,
@@ -599,6 +829,7 @@ let interactiveItems = [];
 let eventTriggers = [];
 let doors = {};
 let openingDoors = [];     // двери в процессе анимации
+let pickupAnimations = [];  // короткая анимация подбора предметов
 let wallMaterial, floorMaterial, doorMaterial, tableMaterial, serverMaterial;
 
 const isLocked = () => {
@@ -674,15 +905,29 @@ function createFirstPersonRig() {
   rig.add(torch);
   rig.userData.torchLens = lens;
 
-  // Helmet lamp housing at the very top edge of the view, subtle and unobtrusive.
-  const helmetLamp = new THREE.Group();
-  helmetLamp.position.set(0, 0.39, -0.92);
-  const housing = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.055, 0.075), armorMat);
-  helmetLamp.add(housing);
-  const lampLens = new THREE.Mesh(new THREE.CircleGeometry(0.027, 8), lensMat);
-  lampLens.position.set(0, 0, -0.041);
-  helmetLamp.add(lampLens);
-  rig.add(helmetLamp);
+  // Extra tactical details: segmented forearm guards, stitched seams and unit insignia.
+  const addPlate = (w, h, d, mat, x, y, z, rz = 0) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    mesh.position.set(x, y, z);
+    mesh.rotation.z = rz;
+    mesh.frustumCulled = false;
+    rig.add(mesh);
+    return mesh;
+  };
+  addPlate(0.19, 0.055, 0.39, seamMatFP, -0.48, -0.405, -1.02, -0.22);
+  addPlate(0.20, 0.055, 0.39, seamMatFP,  0.43, -0.415, -0.98,  0.18);
+  addPlate(0.13, 0.035, 0.22, armorMat, -0.48, -0.355, -1.04, -0.22);
+  addPlate(0.14, 0.035, 0.22, armorMat,  0.43, -0.365, -1.00,  0.18);
+  addPlate(0.12, 0.075, 0.035, patchMat, -0.48, -0.49, -0.79, -0.22);
+  addPlate(0.12, 0.075, 0.035, patchMat,  0.43, -0.50, -0.75,  0.18);
+  // Reinforced glove fingers and thumbs add a more believable first-person silhouette.
+  for (let i = 0; i < 3; i++) {
+    const offset = (i - 1) * 0.052;
+    addPlate(0.038, 0.075, 0.105, gloveMat, -0.43 + offset, -0.665, -1.405, -0.12);
+    addPlate(0.038, 0.075, 0.105, gloveMat,  0.39 + offset, -0.665, -1.365,  0.10);
+  }
+  addPlate(0.055, 0.12, 0.09, gloveMat, -0.555, -0.635, -1.34, -0.42);
+  addPlate(0.055, 0.12, 0.09, gloveMat,  0.515, -0.635, -1.30,  0.42);
 
   rig.position.set(0, 0, 0);
   rig.renderOrder = 2;
@@ -716,32 +961,45 @@ function init3DMode() {
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ'; // yaw отдельно от pitch: взгляд вверх не замедляет ходьбу
 
-    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    const touchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+      Number(navigator.maxTouchPoints || 0) > 0;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: !touchDevice, alpha: false, depth: true, stencil: false,
+        powerPreference: touchDevice ? "low-power" : "high-performance"
+      });
+    } catch (error) {
+      if (window.__keterReportError) window.__keterReportError("Устройство не смогло создать WebGL-контекст", error);
+      console.error("[KETER] WebGL initialization failed:", error);
+      return;
+    }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, touchDevice ? 0.7 : 1.1));
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.12;
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.physicallyCorrectLights = true;
+    renderer.shadowMap.enabled = false;
+    renderer.shadowMap.type = THREE.BasicShadowMap;
+    renderer.physicallyCorrectLights = false;
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
+    renderer.domElement.addEventListener("webglcontextlost", event => {
+      event.preventDefault();
+      if (window.__keterReportError) window.__keterReportError("Потерян WebGL-контекст", "Снизьте графическую нагрузку и перезапустите игру.");
+    });
 
     buildMaterials();
 
     flashlight = new THREE.SpotLight(0xddeeff, 260, 32, Math.PI / 4.2, 0.58, 1.7);
     flashlight.position.set(0, 0, 0);
-    flashlight.castShadow = true;
-    flashlight.shadow.mapSize.set(1024, 1024);
-    flashlight.shadow.bias = -0.00025;
-    flashlight.shadow.normalBias = 0.025;
+    flashlight.castShadow = false; // Динамические тени от фонаря отключены для стабильного FPS.
     flashlight.target.position.set(0, 0, -1); // камера смотрит в -Z
     camera.add(flashlight, flashlight.target);
     scene.add(camera);
     firstPersonRig = createFirstPersonRig();
     flashlight.position.set(0.38, -0.48, -1.28);
     flashlight.target.position.set(0.38, -0.44, -5.5);
-    scene.add(new THREE.HemisphereLight(0x71818b, 0x100f0d, 0.42));
-    scene.add(new THREE.AmbientLight(0x6d777b, 0.12));
+    scene.add(new THREE.HemisphereLight(0x71818b, 0x100f0d, touchDevice ? 0.55 : 0.42));
+    scene.add(new THREE.AmbientLight(0x6d777b, touchDevice ? 0.2 : 0.12));
 
     // Подсказки поверх игры (вместо alert, который ломал pointer lock)
     const base = "position:absolute;left:50%;transform:translateX(-50%);padding:10px 18px;" +
@@ -847,7 +1105,7 @@ function init3DMode() {
   battery = 100; flashlightOn = true; flashlight.intensity = 5.0;
   if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0.3;
   velocity.set(0, 0, 0); openingDoors = [];
-  camera.position.set(0, 0.72, -8);
+  camera.position.set(0, floorHeightAt(0, -8) + 0.72, -8);
   camera.rotation.set(0.22, Math.PI, 0); // first-person: видны руки охраны и ручной фонарь
   if (firstPersonRig) firstPersonRig.visible = true;
   wakeupProgress = 0;
@@ -1018,18 +1276,36 @@ function hazardStripe(x, z) {
 }
 
 function build10ZonesMap() {
-  walls = []; interactiveItems = []; eventTriggers = []; doors = {}; flickers = [];
+  walls = []; interactiveItems = []; eventTriggers = []; doors = {}; flickers = []; pickupAnimations = [];
 
   const ceilingMat = MAT.ceil;
+  const roomFloor = new THREE.MeshStandardMaterial({ color: 0x303638, roughness: 0.94 });
   const cabMat = MAT.cab;
   const bedMat = MAT.bed;
   const darkMat = MAT.keter;
   const glassMat = MAT.glass;
   const redMat = () => new THREE.MeshBasicMaterial({ color: 0xff2222 });
 
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(180, 240), floorMaterial);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(260, 430), floorMaterial);
   floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 30); floor.receiveShadow = true; world.add(floor);
-  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(180, 240), ceilingMat);
+  // Нижние технические уровни B1/B2. Полы ограничены центральным вертикальным блоком.
+  [-3, -6].forEach((y, index) => {
+    const lowerFloor = new THREE.Mesh(new THREE.PlaneGeometry(7.8, 62), roomFloor);
+    lowerFloor.rotation.x = -Math.PI / 2;
+    lowerFloor.position.set(0, y, index === 0 ? -106 : -136);
+    world.add(lowerFloor);
+  });
+  // Боковые стены удерживают игрока внутри нижнего вертикального блока.
+  const lowerWallMat = new THREE.MeshStandardMaterial({ color: 0x303638, roughness: 0.92, metalness: 0.12 });
+  [-4, 4].forEach(x => {
+    const b1Wall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.2, 62), lowerWallMat);
+    b1Wall.position.set(x, -1.55, -106); world.add(b1Wall);
+    walls.push({ mesh: b1Wall, box: new THREE.Box3().setFromObject(b1Wall) });
+    const b2Wall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.2, 62), lowerWallMat);
+    b2Wall.position.set(x, -4.55, -136); world.add(b2Wall);
+    walls.push({ mesh: b2Wall, box: new THREE.Box3().setFromObject(b2Wall) });
+  });
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(210, 250), ceilingMat);
   ceiling.rotation.x = Math.PI / 2; ceiling.position.set(0, 3.2, 30); world.add(ceiling);
 
   const box = (mat, w, h, d, x, y, z, solid) => {
@@ -1059,10 +1335,14 @@ function build10ZonesMap() {
   }
 
   function addPointLight(x, z, color = 0xffa040, y = 2.8) {
-    const light = new THREE.PointLight(color, 0.42, 8);
-    light.position.set(x, y, z); world.add(light);
-    if (color === 0xff3322 || color === 0x40ffee) flickers.push({ light, base: 0.42 });
-    box(new THREE.MeshBasicMaterial({ color: color === 0xff3322 ? 0x4d0b0b : 0x554a2c }), 0.8, 0.1, 0.3, x, 3.1, z);
+    const mobileGPU = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || Number(navigator.maxTouchPoints || 0) > 0;
+    if (!mobileGPU) {
+      const light = new THREE.PointLight(color, 0.42, 8);
+      light.position.set(x, y, z); world.add(light);
+      if (color === 0xff3322 || color === 0x40ffee) flickers.push({ light, base: 0.42 });
+    }
+    const fixtureColor = color === 0xff3322 ? 0x4d0b0b : (mobileGPU ? 0x292c25 : 0x554a2c);
+    box(new THREE.MeshBasicMaterial({ color: fixtureColor }), 0.8, 0.1, 0.3, x, 3.1, z);
   }
 
   const mkTable = (x, z) => {
@@ -1115,29 +1395,73 @@ function build10ZonesMap() {
   box(seamMat, 2.6, 0.018, 0.16, 0, 0.025, -5.28);
   box(edgeMat, 2.5, 0.025, 0.055, 0, 0.035, -5.38);
 
-  // --- Стены и проёмы ---
+  // --- Вертикальный узел D-12: лестницы B1/B2 и площадки ---
+  const stairConcrete = new THREE.MeshStandardMaterial({ color: 0x343a3b, roughness: 0.94, metalness: 0.08 });
+  const stairEdge = new THREE.MeshStandardMaterial({ color: 0x777b77, roughness: 0.72, metalness: 0.38 });
+  const addStairFlight = (upperZ, lowerZ, upperY, lowerY) => {
+    const count = 16;
+    const dz = (upperZ - lowerZ) / count;
+    const dy = (upperY - lowerY) / count;
+    for (let i = 0; i < count; i++) {
+      const z = upperZ - dz * (i + 0.5);
+      const y = upperY - dy * (i + 0.5);
+      const tread = box(stairConcrete, 5.6, 0.16, dz * 0.92, 0, y - 0.08, z, false);
+      const nosing = box(stairEdge, 5.62, 0.035, 0.045, 0, y + 0.005, z - dz * 0.42, false);
+    }
+    // Поручни и боковые ограждения.
+    [-2.95, 2.95].forEach(x => {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.12, Math.hypot(lowerZ-upperZ, lowerY-upperY)), stairEdge);
+      rail.position.set(x, (upperY + lowerY) / 2 + 0.95, (upperZ + lowerZ) / 2);
+      rail.rotation.x = Math.atan2(lowerY-upperY, lowerZ-upperZ);
+      world.add(rail);
+    });
+  };
+  addStairFlight(-55, -75, 0, -3);
+  addStairFlight(-95, -115, -3, -6);
+  const stairSign = (label, y, z) => {
+    const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = 128;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#101719"; ctx.fillRect(0,0,512,128);
+    ctx.strokeStyle = "#b68b48"; ctx.lineWidth = 6; ctx.strokeRect(5,5,502,118);
+    ctx.fillStyle = "#e0d4b8"; ctx.font = "bold 38px monospace"; ctx.textAlign = "center";
+    ctx.fillText(label,256,78);
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.0,0.75), new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas)}));
+    sign.position.set(0,y,z); world.add(sign);
+  };
+  stairSign("ЛЕСТНИЦА · B1", 2.15, -53.8);
+  stairSign("ТЕХНИЧЕСКИЙ УРОВЕНЬ · B1", -1.0, -77.2);
+  stairSign("ЛЕСТНИЦА · B2", -1.0, -93.8);
+  stairSign("НИЖНИЙ СЕКТОР · B2", -4.0, -117.2);
+
+  // --- Стены и проёмы ---\n  // Extend the south spine to serve the personnel and service wings without open-air shortcuts.\n  wallLine('x', -4, -140, -10, [[-115, -109], [-55, -49], [-27, -21]]);\n  wallLine('x', 4, -140, -10, [[-115, -109], [-55, -49], [-27, -21]]);\n\n
   wallLine('z', -10, -4, 4);                         // Шлюз D-12
   wallLine('x', -4, -10, 2, [[-5, -1]]); wallLine('x', 4, -10, 2);
   wallLine('z', -9, -14, -4); wallLine('z', 1, -14, -4); wallLine('x', -14, -9, 1); // Блок D-класса
   wallLine('z', 2, -5, 5, [[-1.5, 1.5]]);            // шлюз -> холл
-  wallLine('x', -5, 2, 24, [[8, 12]]);               // холл (проём в Администрацию)
+  wallLine('x', -5, 2, 24, [[8, 12], [16, 20]]);               // холл (проём в Администрацию)
   wallLine('x', 5, 2, 24, [[8, 12]]);                // холл (проём в Медпункт)
   wallLine('z', 24, -5, 5, [[-1, 1]]);               // дверь L-1
   wallLine('z', 4, -15, -5); wallLine('z', 16, -15, -5); wallLine('x', -15, 4, 16); // Администрация
   wallLine('z', 4, 5, 15); wallLine('z', 16, 5, 15); wallLine('x', 15, 4, 16);      // Медпункт
-  wallLine('x', -5, 24, 44, [[25, 28], [31, 34], [38, 41]]); wallLine('x', 5, 24, 44, [[31, 35]]);
+  wallLine('x', -5, 24, 44, [[25, 28], [31, 34], [38, 41]]); wallLine('x', 5, 24, 44, [[31, 35], [36, 40]]);
   wallLine('z', 27, 5, 15); wallLine('z', 39, 5, 15); wallLine('x', 15, 27, 39); // Лаборатория                              // Узел данных
   wallLine('z', 44, -16, 16, [[-1.5, 1.5]]);         // узел -> зал содержания
   wallLine('x', -16, 44, 60); wallLine('x', 16, 44, 60);
-  wallLine('z', 60, -16, 16, [[-1, 1]]);             // дверь L-2
-  wallLine('x', -4, 60, 80, [[66, 70]]); wallLine('x', 4, 60, 80);
-  wallLine('z', 63, -14, -4); wallLine('z', 77, -14, -4); wallLine('x', -14, 63, 77); // Пост охраны
+  wallLine('z', 60, -16, 16, [[-14.5, -12.5], [-1, 1]]); // L-2 и служебный обход
+  wallLine('x', -4, 60, 166, [[60.5, 64.5], [66, 70], [77, 79], [101, 109], [116, 124]]); wallLine('x', 4, 60, 166, [[68, 72], [101, 109], [116, 124]]);
+  wallLine('z', 63, -14, -4, [[-14.5, -12.5]]); wallLine('z', 77, -14, -4, [[-14.5, -12.5]]); wallLine('x', -14, 63, 77); // Пост охраны и обход
   wallLine('z', 80, -4, 4, [[-1, 1]]);               // выходная дверь
+
+  // Expanded central circulation floor/ceiling links the enlarged north and south wings.
+  const spineFloor = new THREE.Mesh(new THREE.PlaneGeometry(9.4, 306), roomFloor);
+  spineFloor.rotation.x = -Math.PI / 2; spineFloor.position.set(0, 0.013, 13); world.add(spineFloor);
+  const spineCeiling = new THREE.Mesh(new THREE.PlaneGeometry(9.4, 306), ceilingMat);
+  spineCeiling.rotation.x = Math.PI / 2; spineCeiling.position.set(0, 3.18, 13); world.add(spineCeiling);
 
   // --- Новое боковое крыло: архив, мастерская и изолятор ---
   wallLine('x', -17, 24, 44);
   wallLine('z', 24, -17, -5);
-  wallLine('z', 44, -17, -5);
+  wallLine('z', 44, -17, -5, [[-14.5, -12.5]]);
   wallLine('z', 30, -17, -5);
   wallLine('z', 36, -17, -5);
 
@@ -1155,6 +1479,21 @@ function build10ZonesMap() {
   box(cabMat, 1.25, 1.55, 1.0, -14.8, 0.78, 32.8, true);
   box(seamWingMat(), 0.06, 0.42, 0.55, -14.12, 1.02, 32.8);
   box(new THREE.MeshBasicMaterial({ color: 0xff6a18 }), 0.08, 0.08, 0.08, -14.05, 1.2, 32.55);
+  // Интерактивный пульт ручного запуска резервного генератора.
+  const powerRelay = new THREE.Group();
+  const relayFrame = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.82, 0.16), seamWingMat());
+  const relayScreenMat = new THREE.MeshStandardMaterial({ color: 0x17201d, emissive: 0x7a2a10, emissiveIntensity: 0.65, metalness: 0.28, roughness: 0.42 });
+  const relayScreen = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.28, 0.025), relayScreenMat);
+  relayScreen.position.set(0, 0.15, 0.095);
+  const relaySwitch = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.22, 0.08), new THREE.MeshStandardMaterial({ color: 0xb6a27b, metalness: 0.72, roughness: 0.3 }));
+  relaySwitch.position.set(0.2, -0.22, 0.12);
+  powerRelay.add(relayFrame, relayScreen, relaySwitch);
+  powerRelay.position.set(-13.65, 1.28, 32.15);
+  powerRelay.rotation.y = Math.PI / 2;
+  powerRelay.userData = { type: 'powerRelay', screen: relayScreen };
+  world.add(powerRelay);
+  interactiveItems.push(powerRelay);
+  addSign(['РЕЗЕРВНЫЙ ГЕНЕРАТОР', 'РУЧНОЙ ЗАПУСК'], -13.55, 2.35, 32.15, Math.PI / 2, '#ffb45e', 0.72);
   [-13.2, -12.7, -12.2].forEach((x) => {
     const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 3.0, 6), seamWingMat());
     pipe.rotation.x = Math.PI / 2;
@@ -1174,10 +1513,11 @@ function build10ZonesMap() {
   // Одноразовые сюжетные ивенты, запускаемые при входе в новые зоны.
   eventTriggers = [
     { x: -11.0, z: 27.0, radius: 2.8, message: 'АРХИВ 04: терминал печатает отчёт сам по себе. В записи указано: «НЕ СМОТРЕТЬ В КАМЕРУ 6».', sound: 'deny', fired: false },
-    { x: -11.0, z: 33.0, radius: 2.8, message: 'МАСТЕРСКАЯ: щиток выбивает дугой. На секунду все лампы комплекса гаснут, а в темноте кто-то проходит за спиной.', sound: 'deny', fired: false },
+    { x: -11.0, z: 33.0, radius: 2.8, message: 'МАСТЕРСКАЯ: щиток выбивает дугой. На секунду все лампы комплекса гаснут, а в темноте кто-то проходит за спиной.', sound: 'deny', blackout: true, fired: false },
     { x: -11.0, z: 39.5, radius: 2.8, message: 'ИЗОЛЯТОР: за дверью слышны три удара. Затем кто-то шепчет ваше имя по внутренней связи.', sound: 'door', fired: false },
+    { x: 0, z: 8.5, radius: 2.7, message: 'КОРИДОР D-12: датчик движения сработал за стеклом наблюдения. В проходе никого нет.', sound: 'deny', blackout: true, fired: false },
     { x: 0, z: 18.5, radius: 2.5, message: 'РАДИОПЕРЕХВАТ: «...эвакуация отменена. Персонал не покидал комплекс. Повторяю: персонал не покидал...»', sound: 'deny', fired: false },
-    { x: 0, z: 51.5, radius: 3.0, message: 'ПРОТОКОЛ KETER: датчик фиксирует движение внутри пустой камеры. Свет в секторе гаснет на секунду.', sound: 'door', fired: false }
+    { x: 0, z: 51.5, radius: 3.0, message: 'ПРОТОКОЛ KETER: датчик фиксирует движение внутри пустой камеры. Объявлен локальный режим тревоги.', sound: 'door', blackout: true, alarm: true, radio: 2, fired: false }
   ];
 
   function seamWingMat() {
@@ -1203,6 +1543,18 @@ function build10ZonesMap() {
   };
   doors.doorL1 = makeDoor(24, ['ДОПУСК L-1', 'УЗЕЛ ДАННЫХ']);
   doors.doorL2 = makeDoor(60, ['ДОПУСК L-2', 'ЭВАКУАЦИЯ']);
+  doors.doorService = box(doorMaterial, 2.0, 2.8, 0.2, -13.5, 1.4, 60, true);
+  doors.doorService.userData.locked = true;
+  doors.doorService.userData.lamp = box(redMat(), 0.3, 0.1, 0.1, -13.5, 3.05, 59.75);
+  addSign(['ТЕХНИЧЕСКИЙ ОБХОД', 'ПИТАНИЕ: OFFLINE'], -13.5, 0.55, 59.82, Math.PI, '#ff5544', 0.72, doors.doorService);
+  // Световые маркеры обходного коридора загораются только после запуска генератора.
+  [-13.5].forEach(x => [49, 55].forEach(z => {
+    box(new THREE.MeshBasicMaterial({ color: 0x17352c }), 0.72, 0.07, 0.24, x, 3.05, z);
+    const routeLamp = new THREE.PointLight(0x8bffd0, 0, 7);
+    routeLamp.position.set(x, 2.72, z);
+    world.add(routeLamp);
+    flickers.push({ light: routeLamp, base: 0.62, powerRequired: true });
+  }));
   doors.doorExit = makeDoor(80, ['ВЫХОД', 'НА ПОВЕРХНОСТЬ']);
 
   // --- Таблички зон ---
@@ -1371,41 +1723,103 @@ function build10ZonesMap() {
   });
 
   // Дополнительные крылья комплекса: архив, медблок и технический уровень.
-  const roomFloor = new THREE.MeshStandardMaterial({ color: 0x303638, roughness: 0.94 });
+  // Blueprint annexes: each room has a real doorway facing the central route.
   const room = (cx, cz, w, d, title, subtitle, lightColor = 0x8aa8a0) => {
     const rf = new THREE.Mesh(new THREE.PlaneGeometry(w, d), roomFloor);
     rf.rotation.x = -Math.PI / 2; rf.position.set(cx, 0.012, cz); world.add(rf);
     const rc = new THREE.Mesh(new THREE.PlaneGeometry(w, d), ceilingMat);
     rc.rotation.x = Math.PI / 2; rc.position.set(cx, 3.18, cz); world.add(rc);
-    box(wallMaterial, 0.45, 3.2, d, cx - w / 2, 1.6, cz, true);
-    box(wallMaterial, 0.45, 3.2, d, cx + w / 2, 1.6, cz, true);
-    box(wallMaterial, w, 3.2, 0.45, cx, 1.6, cz + d / 2, true);
+    const left = cx - w / 2, right = cx + w / 2, top = cz - d / 2, bottom = cz + d / 2;
+    const half = 3.4;
+    if (cx < -1) {
+      box(wallMaterial, 0.45, 3.2, d, left, 1.6, cz, true);
+      box(wallMaterial, 0.45, 3.2, d / 2 - half, right, 1.6, top + (d / 2 - half) / 2, true);
+      box(wallMaterial, 0.45, 3.2, d / 2 - half, right, 1.6, bottom - (d / 2 - half) / 2, true);
+      box(wallMaterial, w, 3.2, 0.45, cx, 1.6, top, true);
+      box(wallMaterial, w, 3.2, 0.45, cx, 1.6, bottom, true);
+    } else if (cx > 1) {
+      box(wallMaterial, 0.45, 3.2, d / 2 - half, left, 1.6, top + (d / 2 - half) / 2, true);
+      box(wallMaterial, 0.45, 3.2, d / 2 - half, left, 1.6, bottom - (d / 2 - half) / 2, true);
+      box(wallMaterial, 0.45, 3.2, d, right, 1.6, cz, true);
+      box(wallMaterial, w, 3.2, 0.45, cx, 1.6, top, true);
+      box(wallMaterial, w, 3.2, 0.45, cx, 1.6, bottom, true);
+    } else {
+      box(wallMaterial, 0.45, 3.2, d, left, 1.6, cz, true);
+      box(wallMaterial, 0.45, 3.2, d, right, 1.6, cz, true);
+      box(wallMaterial, (w - half * 2) / 2, 3.2, 0.45, cx - (w + half * 2) / 4, 1.6, top, true);
+      box(wallMaterial, (w - half * 2) / 2, 3.2, 0.45, cx + (w + half * 2) / 4, 1.6, top, true);
+      box(wallMaterial, w, 3.2, 0.45, cx, 1.6, bottom, true);
+    }
     addPointLight(cx, cz, lightColor, 2.65);
-    addSign([title, subtitle], cx, 2.65, cz - d / 2 + 0.35, 0, '#9dffcb');
+    addSign([title, subtitle], cx, 2.65, top + 0.35, 0, '#9dffcb');
   };
-  room(-25, 18, 24, 24, 'АРХИВ-09', 'ЗАПИСИ ИНЦИДЕНТА', 0x5c9b87);
-  room(25, 38, 24, 26, 'МЕДБЛОК', 'КАРАНТИН УРОВНЯ 4', 0x7b9dba);
-  room(-25, 62, 24, 26, 'ТЕХНИЧЕСКИЙ УРОВЕНЬ', 'РЕАКТОР / НЕ ВХОДИТЬ', 0xff5533);
+  // Broad connector passages physically join the west/east annexes to the main spine.
+  const annexCorridor = (x1, x2, z, width = 12.0) => {
+    const length = Math.abs(x2 - x1), mid = (x1 + x2) / 2;
+    const cf = new THREE.Mesh(new THREE.PlaneGeometry(length, width), roomFloor);
+    cf.rotation.x = -Math.PI / 2; cf.position.set(mid, 0.014, z); world.add(cf);
+    const cc = new THREE.Mesh(new THREE.PlaneGeometry(length, width), ceilingMat);
+    cc.rotation.x = Math.PI / 2; cc.position.set(mid, 3.18, z); world.add(cc);
+    [-1, 1].forEach(side => box(wallMaterial, length, 3.2, 0.45, mid, 1.6, z + side * width / 2, true));
+  };
+  // Connector mouths cross the existing spine walls instead of stopping just short of them.
+  annexCorridor(-4.7, -17.0, 18, 12.0);
+  annexCorridor(4.7, 17.0, 38, 12.0);
+  annexCorridor(-4.7, -17.0, 105, 12.0);
+  annexCorridor(4.7, 17.0, 120, 12.0);
+  room(-55, 18, 76, 68, 'АРХИВ-09', 'ЗАПИСИ ИНЦИДЕНТА', 0x5c9b87);
+  room(55, 38, 76, 60, 'МЕДБЛОК', 'КАРАНТИН УРОВНЯ 4', 0x7b9dba);
+  room(-55, 105, 76, 72, 'ТЕХНИЧЕСКИЙ УРОВЕНЬ', 'РЕАКТОР / НЕ ВХОДИТЬ', 0xff5533);
   for (let z = 11; z <= 25; z += 4) {
-    box(MAT.cab, 0.7, 2.25, 2.6, -31.8, 1.125, z, true);
-    box(MAT.cab, 0.7, 2.25, 2.6, -18.2, 1.125, z, true);
+    box(MAT.cab, 0.7, 2.25, 2.6, -61.8, 1.125, z, true);
+    box(MAT.cab, 0.7, 2.25, 2.6, -48.2, 1.125, z, true);
   }
   for (let z = 32; z <= 44; z += 4) {
-    box(MAT.bed, 2.5, 0.35, 0.9, 22.2, 0.35, z, true);
-    box(MAT.cab, 0.18, 1.1, 0.18, 21.2, 0.55, z - 0.3, true);
-    box(MAT.cab, 0.18, 1.1, 0.18, 23.2, 0.55, z - 0.3, true);
+    box(MAT.bed, 2.5, 0.35, 0.9, 52.2, 0.35, z, true);
+    box(MAT.cab, 0.18, 1.1, 0.18, 51.2, 0.55, z - 0.3, true);
+    box(MAT.cab, 0.18, 1.1, 0.18, 53.2, 0.55, z - 0.3, true);
   }
   for (let z = 55; z <= 70; z += 3) {
-    box(MAT.keter, 1.2, 2.5, 1.1, -30.5, 1.25, z, true);
-    box(new THREE.MeshBasicMaterial({ color: 0xff3322 }), 0.08, 0.08, 0.08, -29.85, 1.7, z, false);
+    box(MAT.keter, 1.2, 2.5, 1.1, -60.5, 1.25, z + 43, true);
+    box(new THREE.MeshBasicMaterial({ color: 0xff3322 }), 0.08, 0.08, 0.08, -59.85, 1.7, z + 43, false);
   }
   // Дальняя исследовательская галерея и вспомогательные отсеки делают комплекс глубже.
-  room(25, 70, 24, 24, 'ГАЛЕРЕЯ НАБЛЮДЕНИЯ', 'СТЕКЛО ПОВРЕЖДЕНО ИЗНУТРИ', 0x6a7778);
+  room(55, 120, 76, 64, 'ГАЛЕРЕЯ НАБЛЮДЕНИЯ', 'СТЕКЛО ПОВРЕЖДЕНО ИЗНУТРИ', 0x6a7778);
   for (let z = 62; z <= 78; z += 4) {
-    box(MAT.cab, 2.8, 2.1, 0.35, 18.5, 1.05, z, true);
-    box(MAT.glass, 0.08, 1.8, 2.8, 20.0, 1.15, z + 1.2, false);
+    box(MAT.cab, 2.8, 2.1, 0.35, 48.5, 1.05, z + 50, true);
+    box(MAT.glass, 0.08, 1.8, 2.8, 50.0, 1.15, z + 51.2, false);
   }
-  room(0, 94, 30, 22, 'УЗЕЛ СВЯЗИ', 'КАНАЛ 7 · СИГНАЛ ИЗ БУДУЩЕГО', 0x5a79b8);
+  room(0, 200, 88, 68, 'УЗЕЛ СВЯЗИ', 'КАНАЛ 7 · СИГНАЛ ИЗ БУДУЩЕГО', 0x5a79b8);
+  // South service wing from the blueprint: personnel, server room, workshop and CCTV.
+  room(-55, -24, 72, 52, 'КОМНАТА ПЕРСОНАЛА', 'ЖИЛОЙ БЛОК D-12', 0x87959b);
+  room(55, -24, 72, 52, 'СЕРВЕРНАЯ', 'РЕЗЕРВНЫЙ КОНТУР', 0x55a9c5);
+  room(-55, -112, 72, 52, 'ТЕХНИЧЕСКАЯ МАСТЕРСКАЯ', 'РЕМОНТ И ПИТАНИЕ', 0xff8844);
+  room(55, -112, 72, 52, 'КАМЕРЫ НАБЛЮДЕНИЯ', 'МОНИТОРИНГ СЕКТОРА', 0x7da6b8);
+  // Dedicated wide connectors link the added wings to the central circulation spine.
+  annexCorridor(-4.7, -19.0, -24, 12.0);
+  annexCorridor(4.7, 19.0, -24, 12.0);
+  annexCorridor(-4.7, -19.0, -112, 12.0);
+  annexCorridor(4.7, 19.0, -112, 12.0);
+  // Room-specific silhouettes make the new wings readable without expensive assets.
+  for (let z = -32; z <= -18; z += 4) {
+    box(MAT.cab, 1.0, 2.15, 2.8, -65.0, 1.075, z, true);
+    box(MAT.cab, 0.08, 0.08, 2.4, -64.45, 1.9, z, false);
+  }
+  [49, 55, 61].forEach(x => {
+    box(serverMaterial, 1.15, 2.35, 0.85, x, 1.175, -25.0, true);
+    box(new THREE.MeshBasicMaterial({ color: 0x35d98a }), 0.055, 0.055, 0.055, x, 1.75, -24.53, false);
+  });
+  [-62, -55, -48].forEach(x => {
+    box(tableMaterial, 2.6, 0.12, 1.0, x, 0.82, -112.0, true);
+    box(cabMat, 0.18, 0.8, 0.18, x - 1.05, 0.4, -112.0, true);
+    box(cabMat, 0.18, 0.8, 0.18, x + 1.05, 0.4, -112.0, true);
+  });
+  for (let i = 0; i < 4; i++) {
+    const x = 49 + i * 3.5;
+    box(cabMat, 2.1, 1.1, 0.8, x, 0.55, -116.0, true);
+    box(new THREE.MeshBasicMaterial({ color: 0x152c38 }), 1.7, 0.85, 0.06, x, 1.55, -116.45, false);
+    box(new THREE.MeshBasicMaterial({ color: 0x47a9d2 }), 0.06, 0.06, 0.06, x + 0.65, 1.85, -116.52, false);
+  }
   for (let x = -11; x <= 11; x += 5.5) {
     box(MAT.cab, 1.4, 2.2, 0.8, x, 1.1, 90, true);
     box(MAT.glass, 0.05, 1.5, 0.6, x, 1.6, 89.55, false);
@@ -1418,6 +1832,8 @@ function build10ZonesMap() {
   // Дополнительные архитектурные детали: техпанели, напольные решётки и следы эвакуации.
   const panelMat = new THREE.MeshStandardMaterial({ color: 0x202729, roughness: 0.88, metalness: 0.32 });
   const trimMat = new THREE.MeshStandardMaterial({ color: 0x485052, roughness: 0.76, metalness: 0.48 });
+  // Local to this architecture-detail scope: floor drains use the same dark steel finish.
+  const grateMat = new THREE.MeshStandardMaterial({ color: 0x252b2c, roughness: 0.88, metalness: 0.28 });
   const warningMat = new THREE.MeshBasicMaterial({ color: 0x76251f });
   [-1, 1].forEach(side => {
     for (let z = 18; z <= 78; z += 12) {
@@ -1433,13 +1849,13 @@ function build10ZonesMap() {
     }
   }
   // Комната персонала: столы, брошенные папки и журнал последней смены.
-  room(-25, 88, 20, 18, 'КОМНАТА ПЕРСОНАЛА', 'СМЕНА НЕ ЗАВЕРШЕНА', 0x697a78);
-  box(MAT.cab, 3.2, 0.12, 1.25, -25, 0.82, 87, true);
-  box(MAT.cab, 0.12, 0.8, 0.12, -26.4, 0.4, 86.5, true);
-  box(MAT.cab, 0.12, 0.8, 0.12, -23.6, 0.4, 86.5, true);
-  box(MAT.bed, 0.7, 0.08, 0.95, -27.4, 0.42, 89, false);
-  box(MAT.bed, 0.7, 0.08, 0.95, -22.8, 0.42, 85.5, false);
-  addSign(['ЖУРНАЛ СМЕНЫ', 'ПОСЛЕДНЯЯ ЗАПИСЬ: 03:17'], -25, 2.55, 80.5, 0, '#b5c0bd');
+  room(-55, 165, 52, 44, 'АРХИВ ДЕЖУРНОЙ СМЕНЫ', 'СМЕНА НЕ ЗАВЕРШЕНА', 0x697a78);
+  box(MAT.cab, 3.2, 0.12, 1.25, -55, 0.82, 164, true);
+  box(MAT.cab, 0.12, 0.8, 0.12, -56.4, 0.4, 163.5, true);
+  box(MAT.cab, 0.12, 0.8, 0.12, -53.6, 0.4, 163.5, true);
+  box(MAT.bed, 0.7, 0.08, 0.95, -57.4, 0.42, 166, false);
+  box(MAT.bed, 0.7, 0.08, 0.95, -52.8, 0.42, 162.5, false);
+  addSign(['ЖУРНАЛ СМЕНЫ', 'ПОСЛЕДНЯЯ ЗАПИСЬ: 03:17'], -55, 2.55, 154.5, 0, '#b5c0bd');
 
   // Первая сюжетная улика: терминал дежурной смены, который можно изучить.
   const loreScreenMat = new THREE.MeshStandardMaterial({
@@ -1462,7 +1878,7 @@ function build10ZonesMap() {
 
   // Узел связи: стойка с аварийным терминалом и панелью, показывающей временную рассинхронизацию.
   const commsFrame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.25, 0.16), loreFrameMat);
-  commsFrame.position.set(0, 1.35, 88.8);
+  commsFrame.position.set(0, 1.35, 194.8);
   commsFrame.userData = { type: 'loreChannel7' };
   world.add(commsFrame);
   interactiveItems.push(commsFrame);
@@ -1473,10 +1889,10 @@ function build10ZonesMap() {
       emissive: 0x1b2c65, emissiveIntensity: 0.8
     })
   );
-  commsScreen.position.set(0, 1.37, 88.705);
+  commsScreen.position.set(0, 1.37, 194.705);
   world.add(commsScreen);
   for (let x = -1.05; x <= 1.05; x += 0.35) {
-    box(trimMat, 0.055, 0.055, 0.18, x, 0.62, 89, false);
+    box(trimMat, 0.055, 0.055, 0.18, x, 0.62, 195, false);
   }
 
   for (let x = -34; x <= 34; x += 17) {
@@ -1487,17 +1903,102 @@ function build10ZonesMap() {
 }
 
 function spawnKeycard(x, y, z, level, colorHex, type) {
-  const mat = new THREE.MeshBasicMaterial({ map: generateKeycardTexture(level, colorHex) });
-  const m = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.02, 0.22), mat);
-  m.position.set(x, y, z); m.userData = { type };
-  world.add(m); interactiveItems.push(m);
+  const card = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: 0x182124, metalness: 0.62, roughness: 0.38
+  });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.39, 0.026, 0.25), bodyMat);
+  card.add(body);
+
+  const face = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.365, 0.225),
+    new THREE.MeshBasicMaterial({ map: generateKeycardTexture(level, colorHex) })
+  );
+  face.rotation.x = -Math.PI / 2;
+  face.position.y = 0.014;
+  card.add(face);
+
+  const edgeMat = new THREE.MeshStandardMaterial({
+    color: colorHex, emissive: colorHex, emissiveIntensity: 0.16,
+    metalness: 0.45, roughness: 0.42
+  });
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(0.39, 0.008, 0.018), edgeMat);
+  edge.position.set(0, 0.018, -0.105);
+  card.add(edge);
+
+  card.position.set(x, y, z);
+  card.rotation.y = (Math.random() - 0.5) * 0.28;
+  card.rotation.x = -0.035;
+  card.userData = { type, baseY: y, phase: Math.random() * Math.PI * 2 };
+  world.add(card);
+  interactiveItems.push(card);
 }
 
 function spawnBattery(x, y, z) {
-  const mat = new THREE.MeshStandardMaterial({ color: 0x00ff66, roughness: 0.3 });
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.3, 12), mat);
-  m.position.set(x, y, z); m.userData = { type: 'battery' };
-  world.add(m); interactiveItems.push(m);
+  const batteryPack = new THREE.Group();
+  const shellMat = new THREE.MeshStandardMaterial({
+    color: 0x182322, metalness: 0.58, roughness: 0.32
+  });
+  const shell = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.105, 0.105, 0.34, 16), shellMat
+  );
+  batteryPack.add(shell);
+
+  const wrapMat = new THREE.MeshStandardMaterial({
+    color: 0x526b43, metalness: 0.28, roughness: 0.48
+  });
+  const wrap = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.108, 0.108, 0.19, 16), wrapMat
+  );
+  batteryPack.add(wrap);
+
+  const terminalMat = new THREE.MeshStandardMaterial({
+    color: 0xb8c1bd, metalness: 0.86, roughness: 0.22
+  });
+  const terminal = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.043, 0.043, 0.025, 12), terminalMat
+  );
+  terminal.position.y = 0.182;
+  batteryPack.add(terminal);
+
+  const insulator = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.071, 0.071, 0.012, 16),
+    new THREE.MeshStandardMaterial({ color: 0x171b1a, roughness: 0.7 })
+  );
+  insulator.position.y = 0.174;
+  batteryPack.add(insulator);
+
+  const labelCanvas = document.createElement('canvas');
+  labelCanvas.width = 256; labelCanvas.height = 128;
+  const g = labelCanvas.getContext('2d');
+  g.fillStyle = '#202a25'; g.fillRect(0, 0, 256, 128);
+  g.fillStyle = '#a8c58b'; g.font = 'bold 27px monospace';
+  g.fillText('D-12 POWER', 12, 43);
+  g.fillStyle = '#d7dfd0'; g.font = 'bold 38px monospace';
+  g.fillText('18650', 12, 91);
+  g.fillStyle = '#81917a'; g.font = '15px monospace';
+  g.fillText('RECHARGE CELL', 148, 112);
+  const labelTex = new THREE.CanvasTexture(labelCanvas);
+  labelTex.encoding = THREE.sRGBEncoding;
+  const label = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.16, 0.105),
+    new THREE.MeshBasicMaterial({ map: labelTex })
+  );
+  label.position.set(0, 0, 0.106);
+  batteryPack.add(label);
+
+  const indicator = new THREE.Mesh(
+    new THREE.SphereGeometry(0.018, 8, 6),
+    new THREE.MeshBasicMaterial({ color: 0x9cff68 })
+  );
+  indicator.position.set(0.073, 0.06, 0.073);
+  batteryPack.add(indicator);
+
+  batteryPack.position.set(x, y, z);
+  batteryPack.rotation.z = -0.12;
+  batteryPack.userData = { type: 'battery', baseY: y, phase: Math.random() * Math.PI * 2 };
+  world.add(batteryPack);
+  interactiveItems.push(batteryPack);
 }
 
 // === 5. ИНВЕНТАРЬ И ВЗАИМОДЕЙСТВИЕ ===
@@ -1509,34 +2010,79 @@ function updateInventoryHUD() {
 }
 
 function interact3D() {
-  const p = camera.position;
+  // Обновляем цель непосредственно в момент нажатия: сенсорная кнопка и клавиша E
+  // не должны зависеть от устаревшего состояния предыдущего кадра.
+  updateInteractionReticle();
+  const target = currentInteractionTarget;
+  if (!target || !camera || currentInteractionDistance > 3.8) {
+    showToast("Подойдите ближе и наведите прицел на предмет");
+    return;
+  }
 
-  for (let i = interactiveItems.length - 1; i >= 0; i--) {
-    const item = interactiveItems[i];
-    if (p.distanceTo(item.position) < 2.5) {
-      playSound('pickup');
-      const t = item.userData.type;
-      if (t === 'keycardL1') { window.playerState.keycardL1 = true; showToast("Получена карта L-1"); }
-      else if (t === 'keycardL2') { window.playerState.keycardL2 = true; showToast("Получена карта L-2"); }
-      else if (t === 'battery') { battery = Math.min(100, battery + 50); showToast("Батарея фонаря +50%"); }
-      else if (t === 'loreShift') {
-        showToast("ЖУРНАЛ СМЕНЫ · 03:17 — «Смена завершена. Нас шестеро в комнате, но в отражении монитора — семеро. Гирс приказал не смотреть на камеры. Если запись найдут: НЕ ВЫХОДИТЕ ЧЕРЕЗ ЛИФТ».", 9000);
+  const itemIndex = interactiveItems.indexOf(target);
+  if (itemIndex !== -1) {
+    playSound('pickup');
+    const t = target.userData.type;
+    if (t === 'keycardL1') { window.playerState.keycardL1 = true; showToast("Получена карта L-1"); }
+    else if (t === 'keycardL2') { window.playerState.keycardL2 = true; showToast("Получена карта L-2"); }
+    else if (t === 'battery') {
+      const restored = Math.min(50, 100 - battery);
+      battery = Math.min(100, battery + 50);
+      showToast(restored > 0 ? "Батарея фонаря +" + restored + "%" : "Заряд фонаря уже полный");
+    }
+    else if (t === 'powerRelay') {
+      if (window.playerState.powerRestored) showToast("ГЕНЕРАТОР D-12 · ПИТАНИЕ УЖЕ ВОССТАНОВЛЕНО");
+      else {
+        setFacilityPower(true);
+        playSound("door");
+        showToast("ПИТАНИЕ ВОССТАНОВЛЕНО · СЛУЖЕБНЫЙ ОБХОД ОТКРЫТ\nИщите проход вдоль левой стены за залом содержания.", 6500);
       }
-      else if (t === 'loreChannel7') {
-        showToast("КАНАЛ 7 · ВХОДЯЩЕЕ СООБЩЕНИЕ — «Не включайте резервное питание. Вы уже сделали это завтра. Когда услышите собственный голос — не отвечайте». ВРЕМЯ ПАКЕТА: ЗАВТРА, 03:17.", 9000);
-      }
-      world.remove(item); interactiveItems.splice(i, 1);
-      updateInventoryHUD();
+      currentInteractionTarget = null;
       return;
     }
+    else if (t === 'loreShift') {
+      showToast("ЖУРНАЛ СМЕНЫ · 03:17 — «Смена завершена. Нас шестеро в комнате, но в отражении монитора — семеро. Гирс приказал не смотреть на камеры. Если запись найдут: НЕ ВЫХОДИТЕ ЧЕРЕЗ ЛИФТ».", 9000);
+    }
+    else if (t === 'loreChannel7') {
+      const radioIndex = Number(window.playerState.radioMessages || 0);
+      playRadioIntercept(radioIndex);
+      // Терминал остаётся на месте: канал можно прослушать повторно, но каждый раз
+      // открывается следующий фрагмент перехвата.
+      currentInteractionTarget = null;
+      return;
+    }
+
+    interactiveItems.splice(itemIndex, 1);
+    pickupAnimations.push({ object: target, elapsed: 0, duration: 0.2, startY: target.position.y, startScale: target.scale.clone() });
+    currentInteractionTarget = null;
+    updateInventoryHUD();
+    return;
   }
 
   const tryDoor = (door, key, msg, onOpen) => {
-    if (p.distanceTo(door.position) >= 2.5) return false;
-    if (window.playerState[key]) (onOpen || openDoor)(door);
+    if (!door || target !== door) return false;
+    if (door.userData.locked && door === doors.doorL2) {
+      if (window.playerState[key]) {
+        playSound("door");
+        releaseFacilityLockdown(true);
+        openDoor(door);
+      } else {
+        playSound("deny");
+        showToast("АВАРИЙНАЯ БЛОКИРОВКА L-2 · НУЖНА КАРТА L-2 ДЛЯ РУЧНОГО СБРОСА");
+      }
+    } else if (window.playerState[key]) (onOpen || openDoor)(door);
     else { playSound('deny'); showToast(msg); }
+    currentInteractionTarget = null;
     return true;
   };
+
+  const serviceDoorTarget = doors.doorService;
+  if (serviceDoorTarget && target === serviceDoorTarget) {
+    if (window.playerState.powerRestored) openDoor(serviceDoorTarget);
+    else { playSound("deny"); showToast("СЛУЖЕБНЫЙ ШЛЮЗ ОБЕСТОЧЕН · ВОССТАНОВИТЕ ПИТАНИЕ В МАСТЕРСКОЙ"); }
+    currentInteractionTarget = null;
+    return;
+  }
 
   tryDoor(doors.doorL1, 'keycardL1', "Нужна ключ-карта L-1 (кабинет администрации)") ||
   tryDoor(doors.doorL2, 'keycardL2', "Нужна ключ-карта L-2 (серверная)") ||
@@ -1549,10 +2095,22 @@ function interact3D() {
 }
 
 function openDoor(mesh) {
+  if (!mesh || mesh.userData.locked || mesh.userData.opened || mesh.userData.opening) return;
+  mesh.userData.opening = true;
   playSound('door');
-  if (mesh.userData.lamp) mesh.userData.lamp.material.color.set(0x00ff66); // индикатор: зелёный
-  walls = walls.filter(w => w.mesh !== mesh); // проход свободен сразу
+  if (mesh.userData.lamp) mesh.userData.lamp.material.color.set(0x00ff66);
+  walls = walls.filter(w => w.mesh !== mesh);
   openingDoors.push({ mesh, targetY: mesh.position.y + 3.0 });
+}
+
+function updateAutomaticDoors() {
+  if (!camera || !window.playerState) return;
+  for (const [door, key] of [[doors.doorL1, 'keycardL1'], [doors.doorL2, 'keycardL2']]) {
+    if (!door || door.userData.locked || door.userData.opened || door.userData.opening || !window.playerState[key]) continue;
+    const dx = camera.position.x - door.position.x;
+    const dz = camera.position.z - door.position.z;
+    if (dx * dx + dz * dz < 2.8 * 2.8) openDoor(door);
+  }
 }
 
 // === 6. МИНИ-КАРТА ===
@@ -1575,6 +2133,8 @@ function drawMinimap() {
   });
 
   const px = cx + camera.position.x * scale, pz = cy + camera.position.z * scale;
+  const levelLabel = camera.position.y > -1.5 ? "УРОВЕНЬ 0" : (camera.position.y > -4.5 ? "B1" : "B2");
+  ctx.fillStyle = "#d8c69b"; ctx.font = "bold 10px monospace"; ctx.fillText(levelLabel, 5, 10);
   const yaw = camera.rotation.y;
   ctx.strokeStyle = '#00ff66';
   ctx.beginPath(); ctx.moveTo(px, pz);
@@ -1585,10 +2145,26 @@ function drawMinimap() {
 
 // === 7. ИГРОВОЙ ЦИКЛ ===
 const _pBox = new THREE.Box3();
+function floorHeightAt(x, z) {
+  // Два лестничных марша: основной уровень -> B1 -> B2.
+  const ramp = (z, upperZ, lowerZ, upperY, lowerY) => {
+    if (z > upperZ || z < lowerZ) return null;
+    const t = THREE.MathUtils.clamp((upperZ - z) / (upperZ - lowerZ), 0, 1);
+    return THREE.MathUtils.lerp(upperY, lowerY, t);
+  };
+  const b1 = ramp(z, -55, -75, 0, -3);
+  if (b1 !== null && Math.abs(x) < 3.5) return b1;
+  if (z <= -75 && z >= -95 && Math.abs(x) < 3.5) return -3;
+  const b2 = ramp(z, -95, -115, -3, -6);
+  if (b2 !== null && Math.abs(x) < 3.5) return b2;
+  if (z < -115 && z >= -137 && Math.abs(x) < 3.5) return -6;
+  return 0;
+}
 function collides(x, z) {
   const r = 0.4;
-  _pBox.min.set(x - r, 0, z - r);
-  _pBox.max.set(x + r, 3.0, z + r);
+  const ground = floorHeightAt(x, z);
+  _pBox.min.set(x - r, ground, z - r);
+  _pBox.max.set(x + r, ground + 1.8, z + r);
   for (let i = 0; i < walls.length; i++) if (walls[i].box.intersectsBox(_pBox)) return true;
   return false;
 }
@@ -1600,12 +2176,39 @@ let apparitionFired = false;
 let apparitionCueFired = false;
 
 function createDistantApparition() {
-  // Временно отключены монстры и гуманоидные явления; атмосферу создают свет, звук и окружение.
-  distantApparition = null;
   apparitionClock = 0;
   apparitionFired = false;
   apparitionCueFired = false;
-  return;
+  const shadowMat = new THREE.MeshBasicMaterial({
+    color: 0x030607, transparent: true, opacity: 0,
+    depthWrite: false, side: THREE.DoubleSide
+  });
+  const makeSilhouette = () => {
+    const silhouette = new THREE.Group();
+    const addPart = (geometry, x, y, z, sx = 1, sy = 1, sz = 1) => {
+      const mesh = new THREE.Mesh(geometry, shadowMat);
+      mesh.position.set(x, y, z);
+      mesh.scale.set(sx, sy, sz);
+      mesh.frustumCulled = false;
+      silhouette.add(mesh);
+    };
+    addPart(new THREE.BoxGeometry(0.52, 1.05, 0.2), 0, 1.42, 0);
+    addPart(new THREE.SphereGeometry(0.23, 7, 5), 0, 2.12, 0);
+    addPart(new THREE.BoxGeometry(0.18, 0.82, 0.18), -0.19, 0.48, 0);
+    addPart(new THREE.BoxGeometry(0.18, 0.82, 0.18), 0.19, 0.48, 0);
+    addPart(new THREE.BoxGeometry(0.16, 0.9, 0.17), -0.34, 1.42, 0);
+    addPart(new THREE.BoxGeometry(0.16, 0.9, 0.17), 0.34, 1.42, 0);
+    return silhouette;
+  };
+  const group = makeSilhouette();
+  group.position.set(1.65, 0, 16.8);
+  group.visible = false;
+  world.add(group);
+  const glassGroup = makeSilhouette();
+  glassGroup.position.set(-13.65, 0, 57.0);
+  glassGroup.visible = false;
+  world.add(glassGroup);
+  distantApparition = { group, glassGroup, shadowMat, eyeMat: shadowMat };
 }
 function updateDistantApparition(delta, locked) {
   if (!distantApparition || !locked || apparitionFired) return;
@@ -1617,11 +2220,13 @@ function updateDistantApparition(delta, locked) {
   const fadeOut = Math.max(0, 1 - Math.max(0, elapsed - 3.4) / 1.8);
   const opacity = Math.min(fadeIn, fadeOut) * 0.82;
   distantApparition.group.visible = opacity > 0.015;
+  distantApparition.glassGroup.visible = opacity > 0.015;
   distantApparition.shadowMat.opacity = opacity;
   distantApparition.eyeMat.opacity = Math.min(1, opacity * 1.7);
 
   if (elapsed < 1.5) {
-    distantApparition.group.position.x = Math.sin(elapsed * 1.7) * 0.045;
+    distantApparition.group.position.x = 1.65 + Math.sin(elapsed * 1.7) * 0.045;
+    distantApparition.glassGroup.position.z = 57.0 + Math.sin(elapsed * 1.1) * 0.38;
   }
   if (!apparitionCueFired && elapsed >= 0.05) {
     apparitionCueFired = true;
@@ -1630,13 +2235,97 @@ function updateDistantApparition(delta, locked) {
   }
   if (elapsed >= 5.2) {
     distantApparition.group.visible = false;
+    distantApparition.glassGroup.visible = false;
     apparitionFired = true;
   }
+}
+
+// Context reticle: проверяем только реальные интерактивные объекты, а не весь мир
+// (иначе собственные руки/декор могли перехватывать луч).
+const interactionRaycaster = new THREE.Raycaster();
+const interactionRayOrigin = new THREE.Vector2(0, 0);
+let currentInteractionTarget = null;
+let currentInteractionDistance = Infinity;
+
+function isDescendantOf(object, rootObject) {
+  let node = object;
+  while (node) {
+    if (node === rootObject) return true;
+    node = node.parent;
+  }
+  return false;
+}
+
+function updateInteractionReticle() {
+  const root = document.getElementById("three-container");
+  const dot = root && root.querySelector(".crosshair");
+  const hand = root && root.querySelector(".interaction-hand");
+  if (!dot || !hand || !camera || !scene || window.__keterPaused) {
+    if (dot) dot.classList.remove("is-targeting");
+    if (hand) hand.classList.remove("is-visible");
+    currentInteractionTarget = null;
+    currentInteractionDistance = Infinity;
+    return;
+  }
+
+  camera.updateMatrixWorld(true);
+  if (world) world.updateMatrixWorld(true);
+
+  const targets = interactiveItems.concat(Object.values(doors).filter(Boolean));
+  interactionRaycaster.setFromCamera(interactionRayOrigin, camera);
+  interactionRaycaster.near = 0;
+  interactionRaycaster.far = 3.8;
+
+  const targetHits = interactionRaycaster.intersectObjects(targets, true);
+  let target = null;
+  let targetDistance = Infinity;
+  if (targetHits.length) {
+    const hit = targetHits[0];
+    for (const candidate of targets) {
+      if (isDescendantOf(hit.object, candidate)) {
+        target = candidate;
+        targetDistance = hit.distance;
+        break;
+      }
+    }
+  }
+
+  // Стена должна блокировать подбор, но не должна перекрывать предмет,
+  // закреплённый на её поверхности (панель, карта или терминал).
+  if (target && walls.length) {
+    // В walls также попадают столы, кровати и ящики. Они не должны перекрывать
+    // предметы, лежащие сверху: блокирующими считаем только высокие перегородки.
+    const blockers = walls.filter(entry => {
+      if (!entry || !entry.mesh) return false;
+      const bounds = entry.box || new THREE.Box3().setFromObject(entry.mesh);
+      return bounds.max.y - bounds.min.y > 2.2;
+    }).map(entry => entry.mesh);
+    const blockHits = interactionRaycaster.intersectObjects(blockers, true);
+    const blocked = blockHits.some(hit => {
+      const belongsToTarget = targets.some(candidate => isDescendantOf(hit.object, candidate));
+      return !belongsToTarget && hit.distance < targetDistance - 0.22;
+    });
+    if (blocked) {
+      target = null;
+      targetDistance = Infinity;
+    }
+  }
+
+  currentInteractionTarget = target;
+  currentInteractionDistance = target ? targetDistance : Infinity;
+  dot.classList.toggle("is-targeting", !!target);
+  hand.classList.toggle("is-visible", !!target);
 }
 
 function animate3D() {
   if (document.getElementById("three-container").classList.contains("hidden")) return;
   requestAnimationFrame(animate3D);
+
+  // На телефонах ограничиваем частоту до 30 FPS, снижая нагрев и скачки времени кадра.
+  const mobileGPU = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || Number(navigator.maxTouchPoints || 0) > 0;
+  const frameNow = performance.now();
+  if (mobileGPU && frameNow - lastMobileFrame < 33.3) return;
+  if (mobileGPU) lastMobileFrame = frameNow;
 
   // Меню паузы замораживает симуляцию, но оставляет цикл рендера готовым к продолжению.
   if (window.__keterPaused) {
@@ -1644,14 +2333,18 @@ function animate3D() {
     return;
   }
 
+  updateInteractionReticle();
+
   const time = performance.now();
   const delta = Math.min((time - prevTime) / 1000, 0.1); // защита от скачков после смены вкладки
   prevTime = time;
 
   const locked = isLocked();
+  updateAutomaticDoors();
   const touchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
     (navigator.maxTouchPoints > 0);
-  hintEl.style.display = (locked || touchDevice) ? 'none' : 'block';
+  const controlsActive = locked || touchDevice;
+  if (hintEl) hintEl.style.display = (locked || touchDevice) ? 'none' : 'block';
 
   // Медленное пробуждение: взгляд поднимается с пола лифта.
   if (wakeupActive) {
@@ -1698,7 +2391,7 @@ function animate3D() {
     }
 
     // Движение относительно направления взгляда (только по горизонтали)
-    const speed = isSprinting ? 11.5 : 7.0;
+    const speed = isSprinting ? 14.5 : 9.0;
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
 
@@ -1718,28 +2411,55 @@ function animate3D() {
     const nz = camera.position.z + velocity.z * delta;
     if (!collides(nx, camera.position.z)) camera.position.x = nx; else velocity.x = 0;
     if (!collides(camera.position.x, nz)) camera.position.z = nz; else velocity.z = 0;
+    // Поддерживаем высоту камеры по профилю лестничных маршей.
+    const groundY = floorHeightAt(camera.position.x, camera.position.z);
+    camera.position.y = groundY + 1.6;
 
     // Покачивание головы и шаги (один звук на каждый шаг)
     if (dirZ || dirX) {
-      headBobTimer += delta * (isSprinting ? 14 : 9);
+      headBobTimer += delta * (isSprinting ? 16 : 10.5);
       const s = Math.sin(headBobTimer);
-      camera.position.y = 1.6 + s * 0.04;
+      camera.position.y = floorHeightAt(camera.position.x, camera.position.z) + 1.6 + s * 0.04;
       if (s < -0.9) { if (stepReady) { playSound('step'); stepReady = false; } }
       else if (s > 0) stepReady = true;
     }
   }
 
-  updateDistantApparition(delta, locked);
+  updateDistantApparition(delta, controlsActive);
 
   // Сюжетные ивенты: каждый триггер срабатывает только один раз за запуск.
-  if (locked && eventTriggers.length) {
+  if (controlsActive && eventTriggers.length) {
     for (const event of eventTriggers) {
       if (!event.fired && Math.hypot(camera.position.x - event.x, camera.position.z - event.z) < event.radius) {
         event.fired = true;
+        // Событие влияет на освещение: короткий провал питания, затем аварийный импульс.
+        eventPulseTimer = Math.max(eventPulseTimer, event.blackout ? 1.9 : 0.9);
+        if (event.blackout) eventBlackoutTimer = Math.max(eventBlackoutTimer, 0.72);
+        if (event.alarm) {
+          startFacilityAlarm(18);
+          setFacilityLockdown(true);
+          showToast("⚠ ПРОТОКОЛ KETER · ЛОКДАУН D-12\nДверь L-2 заблокирована. Аварийный сброс доступен у панели двери.", 6200);
+          if (Number.isInteger(event.radio)) playRadioIntercept(event.radio);
+        }
         playSound(event.sound || 'deny');
-        showToast(event.message, 6500);
+        if (!event.alarm) showToast(event.message, 6500);
         break;
       }
+    }
+  }
+
+  // Предметы втягиваются в руку и исчезают, вместо мгновенного удаления.
+  for (let i = pickupAnimations.length - 1; i >= 0; i--) {
+    const a = pickupAnimations[i];
+    a.elapsed += delta;
+    const t = Math.min(1, a.elapsed / a.duration);
+    const eased = t * t * (3 - 2 * t);
+    a.object.position.y = a.startY + eased * 0.28;
+    a.object.scale.copy(a.startScale).multiplyScalar(1 - eased * 0.92);
+    a.object.rotation.y += delta * 7;
+    if (t >= 1) {
+      world.remove(a.object);
+      pickupAnimations.splice(i, 1);
     }
   }
 
@@ -1747,12 +2467,17 @@ function animate3D() {
   for (let i = openingDoors.length - 1; i >= 0; i--) {
     const d = openingDoors[i];
     d.mesh.position.y += (d.targetY - d.mesh.position.y) * Math.min(1, delta * 4);
-    if (Math.abs(d.targetY - d.mesh.position.y) < 0.02) { d.mesh.position.y = d.targetY; openingDoors.splice(i, 1); }
+    if (Math.abs(d.targetY - d.mesh.position.y) < 0.02) {
+      d.mesh.position.y = d.targetY;
+      d.mesh.userData.opening = false;
+      d.mesh.userData.opened = true;
+      openingDoors.splice(i, 1);
+    }
   }
 
   // Лёгкое покачивание рук и фонаря синхронно с шагами.
   if (firstPersonRig) {
-    const moving = locked && (moveForward || moveBackward || moveLeft || moveRight);
+    const moving = controlsActive && (moveForward || moveBackward || moveLeft || moveRight);
     const bob = moving ? Math.sin(headBobTimer * 0.5) : 0;
     firstPersonRig.position.y = moving ? Math.abs(bob) * 0.018 : 0;
     firstPersonRig.position.x = moving ? Math.sin(headBobTimer * 0.25) * 0.012 : 0;
@@ -1762,27 +2487,47 @@ function animate3D() {
   // Пленочный дрифт камеры (не накапливается)
   camera.rotation.z = Math.sin(time * 0.0007) * 0.004 + (Math.random() - 0.5) * 0.0008;
 
+  if (eventBlackoutTimer > 0) eventBlackoutTimer = Math.max(0, eventBlackoutTimer - delta);
+  if (eventPulseTimer > 0) eventPulseTimer = Math.max(0, eventPulseTimer - delta);
+  updateFacilityAlarm(delta, time);
   if (emergencyPulse) {
     const pulse = Math.max(0, Math.sin(time * 0.0019));
-    emergencyPulse.intensity = 0.18 + pulse * 1.25;
+    const recoveryFlash = eventPulseTimer > 0 ? Math.max(0, Math.sin((1.9 - eventPulseTimer) * 10)) * 2.1 : 0;
+    const alarmFlash = facilityAlarmTimer > 0 ? 0.7 + Math.max(0, Math.sin(time * 0.012)) * 1.6 : 0;
+    emergencyPulse.intensity = eventBlackoutTimer > 0 ? 0.035 : 0.18 + pulse * 1.25 + recoveryFlash + alarmFlash;
   }
 
-  flickers.forEach(f => {
-    const outage = Math.random() < 0.065;
-    f.light.intensity = f.base * (outage ? 0.08 : 0.82 + Math.random() * 0.18);
-  });
+  if (time - lastLightUpdate >= 100) {
+    lastLightUpdate = time;
+    flickers.forEach(f => {
+      const powerOnline = !!(window.playerState && window.playerState.powerRestored);
+      if (f.powerRequired && !powerOnline) { f.light.intensity = 0; return; }
+      const outage = eventBlackoutTimer > 0 || (!powerOnline && Math.random() < 0.065);
+      const recovery = eventPulseTimer > 0 && eventBlackoutTimer <= 0;
+      f.light.intensity = f.base * (outage ? 0.025 : powerOnline ? 1.0 : recovery ? 1.05 + Math.random() * 0.35 : 0.82 + Math.random() * 0.18);
+    });
+  }
   if (MAT) MAT.keter.emissiveIntensity = 0.7 + 0.3 * Math.sin(time * 0.003);
-  if (dust) {
+  if (dust && dust.visible && time - lastDustUpdate >= 80) {
+    const dustDelta = Math.min((time - lastDustUpdate) / 1000, 0.1);
+    lastDustUpdate = time;
     const p = dust.geometry.attributes.position;
     for (let i = 0; i < p.count; i++) {
-      let y = p.getY(i) + delta * 0.05; if (y > 3) y = 0;
+      let y = p.getY(i) + dustDelta * 0.05; if (y > 3) y = 0;
       p.setY(i, y); p.setX(i, p.getX(i) + Math.sin(time * 0.0005 + i) * 0.0015);
     }
     p.needsUpdate = true;
   }
 
-  drawMinimap();
-  renderer.render(scene, camera);
+  if (time - lastMinimapDraw >= 120) {
+    lastMinimapDraw = time;
+    drawMinimap();
+  }
+  try { renderer.render(scene, camera); }
+  catch (error) {
+    if (window.__keterReportError) window.__keterReportError("Ошибка отрисовки 3D-сцены", error);
+    console.error("[KETER] render failed:", error);
+  }
 }
 
 // Старт
@@ -1809,15 +2554,35 @@ renderChapter(1);
   const SETTINGS_KEY = "keterSettings";
 
   const DEFAULT_SETTINGS = {
-    quality: "medium",
-    shadows: true,
+    quality: "balanced",
+    visualStyle: "cinematic",
+    shadows: false,
     brightness: 0.95,
+    renderScale: 1,
+    fieldOfView: 75,
+    contrast: 1,
     volume: 0.7,
-    mouseSensitivity: 0.002
+    mouseSensitivity: 0.002,
+    controlMode: "auto"
   };
 
   let settings = loadSettings();
   window.__keterVolume = settings.volume;
+
+  function getControlMode() {
+    if (settings.controlMode === "pc" || settings.controlMode === "mobile") return settings.controlMode;
+    const touch = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+      Number(navigator.maxTouchPoints || 0) > 0;
+    return touch ? "mobile" : "pc";
+  }
+
+  function syncControlMode() {
+    const mode = getControlMode();
+    window.__keterControlMode = mode;
+    document.documentElement.dataset.keterControlMode = mode;
+    window.dispatchEvent(new CustomEvent("keter-control-mode-change", { detail: { mode } }));
+    return mode;
+  }
   let coreLoaded = false;
   let sessionStarted = false;
   let pauseRequested = false;
@@ -1841,6 +2606,7 @@ renderChapter(1);
 
   function startVhsAmbient() {
     try {
+      if (typeof setFacilityAmbience === "function" && is3DVisible()) setFacilityAmbience(true);
       const audio = getVhsAmbient();
       audio.volume = Math.min(1, settings.volume * 0.18);
       if (settings.volume <= 0) {
@@ -1858,6 +2624,7 @@ renderChapter(1);
 
   function pauseVhsAmbient() {
     if (vhsAmbient) vhsAmbient.pause();
+    if (typeof setFacilityAmbience === "function") setFacilityAmbience(false);
   }
 
   function loadSettings() {
@@ -1868,12 +2635,22 @@ renderChapter(1);
 
       const merged = { ...DEFAULT_SETTINGS, ...saved };
 
-      if (!["low", "medium", "high"].includes(merged.quality)) {
+      if (merged.quality === "medium") merged.quality = "balanced";
+      if (!["low", "balanced", "high", "ultra"].includes(merged.quality)) {
         merged.quality = DEFAULT_SETTINGS.quality;
+      }
+      if (!["cinematic", "vhs", "cold", "emergency", "nightvision", "monochrome"].includes(merged.visualStyle)) {
+        merged.visualStyle = DEFAULT_SETTINGS.visualStyle;
+      }
+      if (!["auto", "pc", "mobile"].includes(merged.controlMode)) {
+        merged.controlMode = DEFAULT_SETTINGS.controlMode;
       }
 
       merged.shadows = Boolean(merged.shadows);
       merged.brightness = clamp(Number(merged.brightness) || DEFAULT_SETTINGS.brightness, 0.65, 1.5);
+      merged.renderScale = clamp(Number(merged.renderScale) || DEFAULT_SETTINGS.renderScale, 0.65, 1.15);
+      merged.fieldOfView = clamp(Number(merged.fieldOfView) || DEFAULT_SETTINGS.fieldOfView, 60, 100);
+      merged.contrast = clamp(Number(merged.contrast) || DEFAULT_SETTINGS.contrast, 0.85, 1.25);
       merged.volume = clamp(Number(merged.volume) || 0, 0, 1);
       merged.mouseSensitivity = clamp(
         Number(merged.mouseSensitivity) || 0.002,
@@ -1930,6 +2707,17 @@ renderChapter(1);
     const style = document.createElement("style");
     style.id = "keter-menu-styles";
     style.textContent = `
+      #keter-overlay {
+        background: linear-gradient(90deg, rgba(0,0,0,.78) 0%, rgba(0,0,0,.28) 55%, rgba(0,0,0,.12) 100%), #05090b;
+      }
+      #keter-menu-world {
+        position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+        background: radial-gradient(ellipse at 50% 44%, #293236 0%, #0b1012 56%, #020405 100%);
+      }
+      #keter-menu-world canvas { display:block; width:100%; height:100%; }
+      #keter-overlay .keter-panel { z-index: 2; width: min(100%, 490px); background: linear-gradient(145deg, rgba(5,10,12,.94), rgba(3,6,7,.86)); backdrop-filter: blur(8px); }
+      #keter-overlay::before { z-index: 1; }
+      #keter-overlay::after { z-index: 3; }
       #keter-overlay {
         position: fixed;
         inset: 0;
@@ -2274,6 +3062,41 @@ renderChapter(1);
         line-height: 1.6;
       }
 
+      /* PROJECT KETER // revised containment terminal menu */
+      #keter-overlay {
+        background: linear-gradient(90deg, rgba(0,0,0,.82), rgba(0,0,0,.42) 58%, rgba(0,0,0,.12)), url("menu-background.svg") center / cover no-repeat, #020405;
+        filter: none;
+      }
+      #keter-overlay::before { opacity: .18; mix-blend-mode: normal; }
+      #keter-overlay .keter-panel {
+        width: min(100%, 610px); padding: clamp(24px, 4vw, 42px);
+        border-color: rgba(151,166,157,.34);
+        background: linear-gradient(115deg, rgba(8,12,13,.97), rgba(5,8,9,.91)), #050708;
+        box-shadow: 0 34px 110px rgba(0,0,0,.88), inset 4px 0 0 rgba(153,42,36,.72);
+        backdrop-filter: none; -webkit-backdrop-filter: none;
+      }
+      #keter-main-menu .keter-eyebrow { color: #c36a60; font-size: 10px; letter-spacing: 2.5px; }
+      #keter-main-menu .keter-title { margin: 12px 0 10px; font-size: clamp(42px, 7vw, 68px); letter-spacing: .045em; text-shadow: 0 3px 28px rgba(0,0,0,.9), 2px 0 rgba(180,40,34,.18); }
+      #keter-main-menu .keter-subtitle { max-width: 48ch; color: #9ba6a2; letter-spacing: .045em; }
+      #keter-main-menu .keter-status-strip { gap: 6px; margin: 20px 0 14px; }
+      #keter-main-menu .keter-status-cell { border-color: rgba(137,153,145,.22); background: rgba(18,24,25,.72); }
+      #keter-main-menu .keter-status-cell span { color: #798681; letter-spacing: 1.6px; }
+      #keter-main-menu .keter-status-cell b { color: #d0d8d2; }
+      #keter-main-menu .keter-status-cell b.warning { color: #d8796e; }
+      #keter-main-menu .keter-alert-banner { border-color: rgba(157,61,54,.35); border-left-color: #a94139; background: linear-gradient(90deg, rgba(79,24,22,.28), rgba(8,12,13,.55)); }
+      #keter-main-menu .keter-button { min-height: 48px; padding: 14px 16px; border-color: rgba(142,158,149,.28); background: rgba(16,22,22,.78); color: #d8dfda; }
+      #keter-main-menu .keter-button:hover, #keter-main-menu .keter-button:focus-visible { border-color: #c16a60; background: rgba(67,28,27,.52); color: #fff; box-shadow: inset 3px 0 #b94b42; transform: translateX(3px); }
+      #keter-main-menu .keter-button.primary { border-color: #b74a41; background: #9e3933; color: #fff; box-shadow: 0 5px 24px rgba(135,35,30,.2); }
+      #keter-main-menu .keter-button.primary:hover { background: #b64a40; }
+      #keter-main-menu .keter-divider { background: linear-gradient(90deg, rgba(170,70,60,.7), rgba(111,128,119,.25), transparent); }
+      #keter-main-menu .keter-controls { color: #7f8b85; font-size: 10px; }
+      #keter-main-menu .keter-terminal-footer { border-color: rgba(130,145,137,.18); color: #69756f; }
+      @media (max-width: 720px) {
+        #keter-overlay { background: linear-gradient(90deg, rgba(0,0,0,.84), rgba(0,0,0,.52)), #020405; }
+        #keter-overlay .keter-panel { width: min(100%, 460px); margin: auto; max-height: calc(100dvh - 24px); }
+        #keter-menu-world { opacity: .78; }
+        #keter-overlay .keter-panel { width: 100%; }
+      }
       @media (max-width: 480px) {
         #keter-overlay { padding: 10px 10px 40px; }
         #keter-overlay::after { left: 10px; right: 10px; bottom: 5px; font-size: 7px; }
@@ -2335,6 +3158,166 @@ renderChapter(1);
 
   function hideOverlay() {
     overlay.classList.add("keter-hidden");
+  }
+
+  function createMenuScene() {
+    if (!window.THREE || !overlay || overlay.querySelector("#keter-menu-world")) return;
+    const world = document.createElement("div");
+    world.id = "keter-menu-world";
+    world.setAttribute("aria-hidden", "true");
+    overlay.prepend(world);
+
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: "low-power" });
+    } catch (error) {
+      console.warn("[KETER] 3D menu renderer unavailable; keeping fallback background.", error);
+      return;
+    }
+    const mobile = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+      Number(navigator.maxTouchPoints || 0) > 0;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 0.48 : 0.72));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = mobile ? 1.42 : 1.32;
+    renderer.shadowMap.enabled = false;
+    renderer.domElement.setAttribute("aria-hidden", "true");
+    world.appendChild(renderer.domElement);
+
+    const menuScene = new THREE.Scene();
+    menuScene.background = new THREE.Color(0x080d10);
+    menuScene.fog = new THREE.Fog(0x080d10, 10, 31);
+    const menuCamera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 70);
+    menuCamera.position.set(0, 2.05, 7.8);
+    menuCamera.lookAt(0, 1.8, -9);
+
+    const mat = (color, roughness = 0.86, metalness = 0.18) =>
+      new THREE.MeshStandardMaterial({ color, roughness, metalness });
+    const concrete = mat(0x343b3d, 0.98, 0.04);
+    const darkSteel = mat(0x171e21, 0.72, 0.55);
+    const steel = mat(0x566064, 0.58, 0.68);
+    const floorMat = mat(0x242a2c, 0.94, 0.12);
+    const warning = new THREE.MeshStandardMaterial({ color: 0x641b18, emissive: 0x8e160f, emissiveIntensity: 0.55, roughness: 0.7 });
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(9, 29), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0, -6.5);
+    menuScene.add(floor);
+    const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(9, 29), concrete);
+    ceiling.rotation.x = Math.PI / 2;
+    ceiling.position.set(0, 5, -6.5);
+    menuScene.add(ceiling);
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.34, 5, 29), concrete);
+    leftWall.position.set(-4.35, 2.5, -6.5);
+    const rightWall = leftWall.clone();
+    rightWall.position.x = 4.35;
+    menuScene.add(leftWall, rightWall);
+
+    // Recessed elevator bay and partially opened steel doors.
+    const back = new THREE.Mesh(new THREE.BoxGeometry(5.1, 4.8, 0.35), darkSteel);
+    back.position.set(0, 2.4, -19.4);
+    menuScene.add(back);
+    const frameTop = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.22, 0.5), steel);
+    frameTop.position.set(0, 4.25, -18.95);
+    const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.8, 0.5), steel);
+    frameLeft.position.set(-2.15, 2.2, -18.95);
+    const frameRight = frameLeft.clone();
+    frameRight.position.x = 2.15;
+    menuScene.add(frameTop, frameLeft, frameRight);
+    const doorGeo = new THREE.BoxGeometry(1.55, 3.55, 0.12);
+    const doorLeft = new THREE.Mesh(doorGeo, steel);
+    doorLeft.position.set(-1.42, 2.05, -18.8);
+    const doorRight = new THREE.Mesh(doorGeo, steel);
+    doorRight.position.set(1.42, 2.05, -18.8);
+    menuScene.add(doorLeft, doorRight);
+
+    // Elevator state display and a compact rotating emergency beacon.
+    const indicatorFrame = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.34, 0.12), darkSteel);
+    indicatorFrame.position.set(0, 4.48, -18.55);
+    const indicatorFace = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.12, 0.035),
+      new THREE.MeshStandardMaterial({ color: 0x8b3029, emissive: 0xd63b30, emissiveIntensity: 1.2, roughness: 0.4 }));
+    indicatorFace.position.set(0, 4.48, -18.46);
+    menuScene.add(indicatorFrame, indicatorFace);
+    const beacon = new THREE.Group();
+    const beaconBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.12, 8), darkSteel);
+    const beaconLens = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.22, 0.12), warning);
+    beaconLens.position.y = 0.16;
+    beacon.add(beaconBase, beaconLens);
+    beacon.position.set(3.82, 3.65, -15.5);
+    menuScene.add(beacon);
+
+    // Repeating wall ribs, floor guides and ceiling luminaires add depth without expensive detail.
+    for (let z = 4; z > -18; z -= 3.6) {
+      for (const side of [-1, 1]) {
+        const rib = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.65, 0.16), darkSteel);
+        rib.position.set(side * 4.12, 2.35, z);
+        menuScene.add(rib);
+      }
+      const lightHousing = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.07, 0.38), darkSteel);
+      lightHousing.position.set(0, 4.91, z - 0.9);
+      const lightLens = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.025, 0.2), mat(0x9da9a4, 0.35, 0.1));
+      lightLens.position.set(0, 4.86, z - 0.9);
+      menuScene.add(lightHousing, lightLens);
+    }
+    for (const side of [-1, 1]) {
+      const guide = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.018, 24), mat(0x7b332d, 0.7, 0.25));
+      guide.position.set(side * 0.72, 0.015, -6.5);
+      menuScene.add(guide);
+    }
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.42, 0.08), warning);
+    sign.position.set(0, 4.55, -18.65);
+    menuScene.add(sign);
+
+    menuScene.add(new THREE.HemisphereLight(0x91a2aa, 0x151313, 0.82));
+    const ambient = new THREE.AmbientLight(0x9eabb0, 0.62);
+    menuScene.add(ambient);
+    const coldLight = new THREE.PointLight(0xa8c4d0, mobile ? 13 : 18, 24, 1.8);
+    coldLight.position.set(0, 4.25, -5);
+    menuScene.add(coldLight);
+    const redLight = new THREE.PointLight(0xf02e24, mobile ? 7 : 10, 16, 1.8);
+    redLight.position.set(0, 3.65, -17.8);
+    menuScene.add(redLight);
+
+    let lastRender = 0;
+    let frame = 0;
+    let disposed = false;
+    const render = (time) => {
+      if (disposed) return;
+      frame = requestAnimationFrame(render);
+      if (overlay.classList.contains("keter-hidden") || time - lastRender < (mobile ? 90 : 55)) return;
+      lastRender = time;
+      const t = time * 0.001;
+      // Slow, deliberate elevator cycle: doors part, pause, then seal again.
+      const cycle = (t % 34) / 34;
+      const openPhase = Math.max(0, Math.min(1, (cycle - 0.34) / 0.13));
+      const closePhase = Math.max(0, Math.min(1, (cycle - 0.68) / 0.13));
+      const smoothOpen = openPhase * openPhase * (3 - 2 * openPhase);
+      const smoothClose = closePhase * closePhase * (3 - 2 * closePhase);
+      const doorAmount = Math.max(0, smoothOpen - smoothClose);
+      doorLeft.position.x = -1.42 - doorAmount * 0.78;
+      doorRight.position.x = 1.42 + doorAmount * 0.78;
+      doorLeft.position.z = -18.8 + Math.sin(t * 0.7) * 0.006;
+      doorRight.position.z = -18.8 - Math.sin(t * 0.7) * 0.006;
+      menuCamera.position.x = Math.sin(t * 0.22) * 0.11;
+      menuCamera.position.y = 2.05 + Math.sin(t * 0.31) * 0.035;
+      menuCamera.position.z = 7.8 + Math.sin(t * 0.12) * 0.12;
+      menuCamera.lookAt(Math.sin(t * 0.16) * 0.12, 1.8, -9);
+      const alarmPulse = 0.72 + Math.max(0, Math.sin(t * 3.4)) * 0.28;
+      redLight.intensity = (mobile ? 7 : 10) * alarmPulse;
+      beacon.rotation.y = t * 1.8;
+      beaconLens.material.emissiveIntensity = 0.65 + Math.max(0, Math.sin(t * 4.2)) * 1.1;
+      indicatorFace.material.emissiveIntensity = 0.72 + Math.max(0, Math.sin(t * 2.1)) * 0.8;
+      coldLight.intensity = (mobile ? 13 : 18) * (0.94 + Math.sin(t * 0.42) * 0.06);
+      renderer.render(menuScene, menuCamera);
+    };
+    frame = requestAnimationFrame(render);
+    const onResize = () => {
+      if (disposed) return;
+      menuCamera.aspect = window.innerWidth / window.innerHeight;
+      menuCamera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+    window.addEventListener("resize", onResize, { passive: true });
   }
 
   function createMenu() {
@@ -2442,15 +3425,50 @@ renderChapter(1);
     const footnote = document.createElement("div");
     footnote.className = "keter-footnote";
     footnote.textContent =
-      "Изменение качества может повлиять на производительность. " +
-      "При выходе в игру настройки применяются автоматически.";
+      "Пресеты меняют разрешение рендера. На телефонах действует безопасный предел GPU; " +
+      "цветовые режимы можно переключать без перезапуска.";
     settingsPanel.appendChild(footnote);
 
     overlay.append(menuPanel, settingsPanel);
     document.body.appendChild(overlay);
+    createMenuScene();
   }
 
   function createSettingsControls() {
+    const controlLabel = document.createElement("label");
+    controlLabel.className = "keter-label";
+    controlLabel.htmlFor = "keter-control-mode";
+    controlLabel.textContent = "Режим управления";
+
+    const controlMode = document.createElement("select");
+    controlMode.id = "keter-control-mode";
+    controlMode.className = "keter-select";
+    [
+      ["auto", "Автоматически — по устройству"],
+      ["pc", "ПК — клавиатура и мышь"],
+      ["mobile", "Телефон — джойстик и сенсорные кнопки"]
+    ].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      controlMode.appendChild(option);
+    });
+    controlMode.value = settings.controlMode;
+    controlMode.addEventListener("change", () => {
+      settings.controlMode = controlMode.value;
+      saveSettings();
+      const mode = syncControlMode();
+      setStatus(mode === "mobile"
+        ? "Сенсорное управление включено. Перезапустите текущую сессию, если кнопки не появились."
+        : "Управление ПК включено. Используйте WASD и мышь.");
+    });
+    settingsPanel.append(controlLabel, controlMode);
+
+    const controlHint = document.createElement("div");
+    controlHint.className = "keter-footnote";
+    controlHint.textContent = "Режим сохраняется на устройстве. При выборе «Автоматически» игра сама определяет телефон или ПК.";
+    settingsPanel.appendChild(controlHint);
+
     const qualityLabel = document.createElement("label");
     qualityLabel.className = "keter-label";
     qualityLabel.htmlFor = "keter-quality";
@@ -2461,9 +3479,10 @@ renderChapter(1);
     quality.className = "keter-select";
 
     [
-      ["low", "Низкое — для слабых ПК"],
-      ["medium", "Среднее — баланс"],
-      ["high", "Высокое — качество"]
+      ["low", "Производительность — слабые телефоны и ПК"],
+      ["balanced", "Сбалансированное — рекомендуемое"],
+      ["high", "Высокое — больше деталей"],
+      ["ultra", "Максимум — мощные устройства"]
     ].forEach(([value, text]) => {
       const option = document.createElement("option");
       option.value = value;
@@ -2480,6 +3499,40 @@ renderChapter(1);
     });
 
     settingsPanel.append(qualityLabel, quality);
+
+    const graphicsHint = document.createElement("div");
+    graphicsHint.className = "keter-footnote keter-graphics-hint";
+    graphicsHint.textContent = "Профиль влияет на разрешение рендера и нагрузку на устройство. Изменения применяются сразу.";
+    settingsPanel.appendChild(graphicsHint);
+
+    const styleLabel = document.createElement("label");
+    styleLabel.className = "keter-label";
+    styleLabel.htmlFor = "keter-visual-style";
+    styleLabel.textContent = "Визуальный стиль комплекса";
+    const visualStyle = document.createElement("select");
+    visualStyle.id = "keter-visual-style";
+    visualStyle.className = "keter-select";
+    [
+      ["cinematic", "Кинематографичный реализм — нейтральный контраст"],
+      ["vhs", "VHS — плёночные помехи и грязная запись"],
+      ["cold", "Холодный реализм — синеватая сталь"],
+      ["emergency", "Аварийный — красный свет тревоги"],
+      ["nightvision", "Ночное видение — зелёный монохром"],
+      ["monochrome", "Чёрно-белый — архивная камера"]
+    ].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      visualStyle.appendChild(option);
+    });
+    visualStyle.value = settings.visualStyle;
+    visualStyle.addEventListener("change", () => {
+      settings.visualStyle = visualStyle.value;
+      saveSettings();
+      applyGraphicsSettings();
+      setStatus("Визуальный стиль обновлён.");
+    });
+    settingsPanel.append(styleLabel, visualStyle);
 
     const shadowLabel = document.createElement("label");
     shadowLabel.className = "keter-check";
@@ -2501,10 +3554,25 @@ renderChapter(1);
     settingsPanel.appendChild(shadowLabel);
 
     addRangeSetting({
+      id: "keter-render-scale",
+      title: "Масштаб разрешения",
+      min: 0.65,
+      max: 1.15,
+      step: 0.05,
+      value: settings.renderScale,
+      format: value => `${Math.round(Number(value) * 100)}%`,
+      onChange: value => {
+        settings.renderScale = Number(value);
+        saveSettings();
+        applyGraphicsSettings();
+      }
+    });
+
+    addRangeSetting({
       id: "keter-brightness",
-      title: "Экспозиция",
+      title: "Яркость / экспозиция",
       min: 0.7,
-      max: 2,
+      max: 1.5,
       step: 0.05,
       value: settings.brightness,
       format: value => Number(value).toFixed(2),
@@ -2512,6 +3580,39 @@ renderChapter(1);
         settings.brightness = Number(value);
         saveSettings();
         applyGraphicsSettings();
+      }
+    });
+
+    addRangeSetting({
+      id: "keter-contrast",
+      title: "Контраст изображения",
+      min: 0.85,
+      max: 1.25,
+      step: 0.05,
+      value: settings.contrast,
+      format: value => `${Math.round(Number(value) * 100)}%`,
+      onChange: value => {
+        settings.contrast = Number(value);
+        saveSettings();
+        applyGraphicsSettings();
+      }
+    });
+
+    addRangeSetting({
+      id: "keter-fov",
+      title: "Угол обзора",
+      min: 60,
+      max: 100,
+      step: 1,
+      value: settings.fieldOfView,
+      format: value => `${Math.round(Number(value))}°`,
+      onChange: value => {
+        settings.fieldOfView = Number(value);
+        saveSettings();
+        if (typeof camera !== "undefined" && camera) {
+          camera.fov = settings.fieldOfView;
+          camera.updateProjectionMatrix();
+        }
       }
     });
 
@@ -2535,6 +3636,9 @@ renderChapter(1);
           } else if (isPointerLocked() && is3DVisible()) {
             startVhsAmbient();
           }
+        }
+        if (is3DVisible() && typeof setFacilityAmbience === "function") {
+          setFacilityAmbience(settings.volume > 0);
         }
       }
     });
@@ -2605,35 +3709,51 @@ renderChapter(1);
     try {
       if (typeof renderer === "undefined" || !renderer) return;
 
-      const profile = {
-        low: { pixelRatio: 1, shadows: false },
-        medium: { pixelRatio: 1.5, shadows: false },
-        high: { pixelRatio: 2, shadows: false }
-      }[settings.quality];
-
-      const ratio = Math.min(
-        window.devicePixelRatio || 1,
-        profile.pixelRatio
-      );
-
+      const touchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+        Number(navigator.maxTouchPoints || 0) > 0;
+      const profiles = {
+        low:      { pixelRatio: touchDevice ? 0.55 : 0.70, shadows: false, exposure: 1.02, fog: 0.88, dust: false },
+        balanced: { pixelRatio: touchDevice ? 0.68 : 0.90, shadows: false, exposure: 1.08, fog: 0.94, dust: false },
+        high:     { pixelRatio: touchDevice ? 0.78 : 1.05, shadows: false, exposure: 1.12, fog: 1.00, dust: false },
+        ultra:    { pixelRatio: touchDevice ? 0.85 : 1.20, shadows: false, exposure: 1.16, fog: 1.00, dust: false }
+      };
+      // На телефоне пресет тоже меняет разрешение рендера, но остаётся безопасный GPU-предел.
+      const profile = profiles[settings.quality] || profiles.balanced;
+      const deviceCap = touchDevice ? 0.88 : 1.5;
+      const ratio = Math.min((window.devicePixelRatio || 1) * settings.renderScale, profile.pixelRatio, deviceCap);
       renderer.setPixelRatio(ratio);
       renderer.setSize(window.innerWidth, window.innerHeight);
 
-      renderer.shadowMap.enabled = false;
-
+      const shadowsEnabled = profile.shadows && settings.shadows && !touchDevice;
+      renderer.shadowMap.enabled = shadowsEnabled;
       if (typeof flashlight !== "undefined" && flashlight) {
-        flashlight.castShadow = false;
+        flashlight.castShadow = shadowsEnabled;
+      }
+      renderer.toneMappingExposure = settings.brightness * profile.exposure;
+      if (typeof camera !== "undefined" && camera) {
+        camera.fov = settings.fieldOfView;
+        camera.updateProjectionMatrix();
       }
 
-      renderer.toneMappingExposure = settings.brightness * 0.92;
+      if (typeof scene !== "undefined" && scene && scene.fog) {
+        scene.fog.density = 0.034 * profile.fog;
+      }
+      if (typeof dust !== "undefined" && dust) dust.visible = profile.dust;
 
       const container = el("three-container");
       if (container) {
-        // Связываем ползунок экспозиции и с постобработочным фильтром,
-        // чтобы настройка была заметна даже в затемнённой VHS-сцене.
-        const displayBrightness = clamp(settings.brightness / 0.95 * 0.78, 0.55, 1.25);
-        container.style.filter =
-          `contrast(1.16) brightness(${displayBrightness.toFixed(2)}) sepia(0.18) saturate(0.58)`;
+        const displayBrightness = clamp(settings.brightness / 0.95, 0.68, 1.35);
+        // Цветовые режимы работают и на телефонах; без тяжёлых blur и дополнительных проходов.
+        const brightness = displayBrightness.toFixed(2);
+        const styles = {
+          cinematic: "contrast(" + (1.06 * settings.contrast).toFixed(2) + ") brightness(" + brightness + ") saturate(0.92)",
+          vhs: "contrast(" + (1.08 * settings.contrast).toFixed(2) + ") brightness(" + brightness + ") sepia(0.12) saturate(0.76)",
+          cold: "contrast(" + (1.04 * settings.contrast).toFixed(2) + ") brightness(" + brightness + ") hue-rotate(7deg) saturate(0.78)",
+          emergency: "contrast(" + (1.10 * settings.contrast).toFixed(2) + ") brightness(" + brightness + ") sepia(0.18) saturate(1.18) hue-rotate(-8deg)",
+          nightvision: "grayscale(0.72) sepia(1) hue-rotate(65deg) saturate(2.2) brightness(" + brightness + ") contrast(" + (1.18 * settings.contrast).toFixed(2) + ")",
+          monochrome: "grayscale(1) contrast(" + (1.16 * settings.contrast).toFixed(2) + ") brightness(" + brightness + ")"
+        };
+        container.style.filter = styles[settings.visualStyle] || styles.cinematic;
       }
     } catch (error) {
       console.warn("[KETER] Не удалось применить графику:", error);
@@ -2644,8 +3764,14 @@ renderChapter(1);
     settings = { ...DEFAULT_SETTINGS };
     saveSettings();
 
+    const controlMode = el("keter-control-mode");
+    if (controlMode) controlMode.value = settings.controlMode;
+    syncControlMode();
+
     const quality = el("keter-quality");
     if (quality) quality.value = settings.quality;
+    const visualStyle = el("keter-visual-style");
+    if (visualStyle) visualStyle.value = settings.visualStyle;
 
     const shadow = settingsPanel.querySelector(
       "#keter-settings input[type='checkbox']"
@@ -2658,6 +3784,12 @@ renderChapter(1);
       brightness.previousElementSibling?.querySelector("output");
     }
 
+    const renderScale = el("keter-render-scale");
+    if (renderScale) renderScale.value = String(settings.renderScale);
+    const contrast = el("keter-contrast");
+    if (contrast) contrast.value = String(settings.contrast);
+    const fov = el("keter-fov");
+    if (fov) fov.value = String(settings.fieldOfView);
     const volume = el("keter-volume");
     if (volume) volume.value = String(settings.volume);
 
@@ -2674,6 +3806,9 @@ renderChapter(1);
     // Обновляем подписи слайдеров.
     [
       ["keter-brightness", v => Number(v).toFixed(2)],
+      ["keter-render-scale", v => `${Math.round(Number(v) * 100)}%`],
+      ["keter-contrast", v => `${Math.round(Number(v) * 100)}%`],
+      ["keter-fov", v => `${Math.round(Number(v))}°`],
       ["keter-volume", v => `${Math.round(Number(v) * 100)}%`],
       ["keter-sensitivity", v => `${(Number(v) / 0.002).toFixed(1)}×`]
     ].forEach(([id, format]) => {
@@ -2701,7 +3836,7 @@ renderChapter(1);
       if (typeof renderChapter === "function") {
         renderChapter(1);
       }
-    } else if (is3DVisible() && window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
+    } else if (is3DVisible() && getControlMode() === "mobile") {
       // На телефонах Pointer Lock отсутствует: возвращаем управление сенсорной панелью.
       window.__keterPaused = false;
       hideOverlay();
@@ -2814,9 +3949,29 @@ renderChapter(1);
     originalInit3DMode = init3DMode;
 
     init3DMode = function () {
-      originalInit3DMode();
-      applyGraphicsSettings();
-      startVhsAmbient();
+      try {
+        originalInit3DMode();
+        if (!renderer) return;
+        const touchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+          Number(navigator.maxTouchPoints || 0) > 0;
+        if (touchDevice && renderer.domElement && !renderer.domElement.dataset.keterPcPointerReady) {
+          renderer.domElement.dataset.keterPcPointerReady = "1";
+          renderer.domElement.addEventListener("click", () => {
+            if (getControlMode() !== "pc" || !is3DVisible() || window.__keterPaused || isPointerLocked()) return;
+            try {
+              const request = renderer.domElement.requestPointerLock();
+              if (request && typeof request.catch === "function") request.catch(() => {});
+            } catch (error) {
+              console.warn("[KETER] Не удалось захватить указатель мыши:", error);
+            }
+          });
+        }
+        applyGraphicsSettings();
+        startVhsAmbient();
+      } catch (error) {
+        if (window.__keterReportError) window.__keterReportError("Не удалось создать сцену сектора D-12", error);
+        console.error("[KETER] 3D scene initialization failed:", error);
+      }
     };
 
     // Применяем чувствительность мыши, не меняя механику камеры.
@@ -2824,7 +3979,7 @@ renderChapter(1);
       document.removeEventListener("mousemove", onMouseMove);
 
       document.addEventListener("mousemove", function (event) {
-        if (!isPointerLocked()) return;
+        if (getControlMode() !== "pc" || !isPointerLocked()) return;
 
         if (typeof camera === "undefined" || !camera) return;
 
@@ -2905,6 +4060,8 @@ renderChapter(1);
         return;
       }
 
+      // На сенсорном режиме отсутствие Pointer Lock нормально и не должно ставить игру на паузу.
+      if (getControlMode() === "mobile") return;
       // Потеря захвата мыши в 3D переводит игру на паузу.
       if (sessionStarted && is3DVisible()) {
         window.__keterPaused = true;
@@ -2956,6 +4113,7 @@ renderChapter(1);
 
   function boot() {
     coreLoaded = true;
+    syncControlMode();
     createMenu();
     installCoreHooks();
     installEvents();

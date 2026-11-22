@@ -1,4 +1,4 @@
-const CACHE_NAME = "keter-pwa-v1";
+const CACHE_NAME = "keter-pwa-v2";
 const APP_SHELL = ["./", "./index.html", "./style.css", "./mobile-controls.css", "./mobile-controls.js", "./script.js", "./manifest.webmanifest", "./pwa-icon.svg", "./menu-background.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));

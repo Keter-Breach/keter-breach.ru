@@ -1,9 +1,18 @@
 /* PROJECT: KETER — mobile touch controls. */
 (function installKeterTouchControls() {
-  const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
-  const touchPoints = Number(navigator.maxTouchPoints || 0) > 0;
-  const small = Math.min(window.innerWidth, window.innerHeight) <= 900;
-  if (!coarse && !touchPoints && !small) return;
+  const detectMode = () => window.__keterControlMode ||
+    (((window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+      Number(navigator.maxTouchPoints || 0) > 0 ||
+      Math.min(window.innerWidth, window.innerHeight) <= 900) ? "mobile" : "pc");
+  // Native APK is locked by AndroidManifest; this is a best-effort lock for
+  // browsers/PWAs that support the Screen Orientation API after a user gesture.
+  if (screen.orientation && typeof screen.orientation.lock === "function") {
+    document.addEventListener("pointerdown", () => {
+      const lock = screen.orientation.lock("landscape");
+      if (lock && typeof lock.catch === "function") lock.catch(() => {});
+    }, { once: true, capture: true });
+  }
+
   const game = document.getElementById("three-container");
   if (!game) return;
   const root = document.createElement("div");
@@ -23,6 +32,46 @@
   const lookZone = root.querySelector(".keter-look-zone");
   const buttons = root.querySelectorAll("[data-action]");
   const state = { stickId: null, lookId: null, sprintId: null, x: 0, y: 0, lastX: 0, lastY: 0 };
+  const tutorial = document.createElement("div");
+  tutorial.className = "keter-tutorial-subtitle";
+  tutorial.setAttribute("role", "status");
+  tutorial.setAttribute("aria-live", "polite");
+  tutorial.innerHTML = '<span class="keter-tutorial-kicker">ОБУЧЕНИЕ // D-12</span><span class="keter-tutorial-copy"></span><button type="button" class="keter-tutorial-skip">ПРОПУСТИТЬ ×</button>';
+  root.appendChild(tutorial);
+  const tutorialCopy = tutorial.querySelector(".keter-tutorial-copy");
+  const tutorialSkip = tutorial.querySelector(".keter-tutorial-skip");
+  const tutorialSteps = [
+    "ЛЕВЫЙ ДЖОЙСТИК — двигайтесь по комплексу.",
+    "ПРАВАЯ ЧАСТЬ ЭКРАНА — проводите пальцем, чтобы осмотреться.",
+    "БЕГ — удерживайте кнопку, чтобы ускориться.",
+    "СВЕТ — включайте и выключайте фонарь. Заряд ограничен.",
+    "E — взаимодействуйте с дверями, терминалами и предметами. Ⅱ — пауза."
+  ];
+  let tutorialStarted = false;
+  let tutorialTimer = 0;
+  function finishTutorial() {
+    window.clearTimeout(tutorialTimer);
+    tutorial.classList.remove("is-visible");
+    try { localStorage.setItem("keter-mobile-tutorial-v2", "seen"); } catch (_) {}
+  }
+  function startTutorial() {
+    if (tutorialStarted) return;
+    tutorialStarted = true;
+    try { if (localStorage.getItem("keter-mobile-tutorial-v2") === "seen") return; } catch (_) {}
+    let step = 0;
+    const next = () => {
+      if (step >= tutorialSteps.length) return finishTutorial();
+      tutorialCopy.textContent = tutorialSteps[step++];
+      tutorial.classList.add("is-visible");
+      tutorialTimer = window.setTimeout(next, 3600);
+    };
+    tutorialTimer = window.setTimeout(next, 900);
+  }
+  tutorialSkip.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    finishTutorial();
+  });
   const radius = 43;
   function activeGame() { return !game.classList.contains("hidden") && !window.__keterPaused; }
   function setMovement(x, y) {
@@ -99,9 +148,12 @@
   window.addEventListener("blur", () => { resetStick(); state.lookId = null; isSprinting = false; });
   function updateVisibility() {
     const visible = !game.classList.contains("hidden");
-    root.classList.toggle("is-active", visible);
-    if (!visible) { resetStick(); state.lookId = null; isSprinting = false; }
+    const mobileMode = detectMode() === "mobile";
+    root.classList.toggle("is-active", visible && mobileMode);
+    if (visible && mobileMode) startTutorial();
+    if (!visible || !mobileMode) { resetStick(); state.lookId = null; isSprinting = false; }
   }
   new MutationObserver(updateVisibility).observe(game, { attributes: true, attributeFilter: ["class"] });
+  window.addEventListener("keter-control-mode-change", updateVisibility);
   updateVisibility();
 })();

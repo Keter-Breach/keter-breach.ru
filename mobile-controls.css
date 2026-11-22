@@ -1,4 +1,5 @@
 #keter-touch-ui { display: none; }
+#keter-touch-ui.is-disabled { display: none !important; }
 @media (pointer: coarse), (max-width: 900px) {
   html, body { overscroll-behavior: none; }
   #text-game { height: 100dvh; overflow-y: auto; align-items: flex-start; padding: 12px; }
@@ -67,5 +68,29 @@
     .keter-stick-knob { left: 31px; top: 31px; width: 44px; height: 44px; }
     .keter-touch-actions { grid-template-columns: repeat(2, 50px); gap: 6px; }
     .keter-touch-actions button { width: 50px; height: 50px; }
+  }
+}
+@media (pointer: coarse), (max-width: 900px) {
+  .keter-tutorial-subtitle {
+    position: absolute; z-index: 6; left: 50%;
+    bottom: max(154px, calc(env(safe-area-inset-bottom) + 148px));
+    width: min(82vw, 620px); transform: translate(-50%, 12px);
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 10px 44px 10px 14px; border: 1px solid rgba(190,75,64,.62);
+    background: linear-gradient(90deg, rgba(4,8,9,.95), rgba(18,10,10,.9), rgba(4,8,9,.95));
+    color: #edf0e9; text-align: center; opacity: 0; visibility: hidden;
+    transition: opacity .22s ease, transform .22s ease, visibility .22s;
+    pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+  .keter-tutorial-subtitle.is-visible { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+  .keter-tutorial-kicker { color: #e0786b; font: 700 9px/1.2 'Courier New', monospace; letter-spacing: .16em; }
+  .keter-tutorial-copy { font: 12px/1.45 'Courier New', monospace; text-shadow: 0 1px 5px #000; }
+  .keter-tutorial-skip {
+    position: absolute; right: 7px; top: 7px; border: 0; padding: 4px;
+    color: #aebbb3; background: transparent; font: 8px 'Courier New', monospace;
+    pointer-events: auto; touch-action: manipulation;
+  }
+  @media (max-height: 420px) {
+    .keter-tutorial-subtitle { bottom: max(122px, calc(env(safe-area-inset-bottom) + 116px)); width: 88vw; }
   }
 }
