@@ -1657,7 +1657,7 @@ function build10ZonesMap() {
     const rc = new THREE.Mesh(new THREE.PlaneGeometry(w, d), ceilingMat);
     rc.rotation.x = Math.PI / 2; rc.position.set(cx, 3.18, cz); world.add(rc);
     const left = cx - w / 2, right = cx + w / 2, top = cz - d / 2, bottom = cz + d / 2;
-    const half = 1.65;
+    const half = 2.2;
     if (cx < -1) {
       box(wallMaterial, 0.45, 3.2, d, left, 1.6, cz, true);
       box(wallMaterial, 0.45, 3.2, d / 2 - half, right, 1.6, top + (d / 2 - half) / 2, true);
@@ -1681,7 +1681,7 @@ function build10ZonesMap() {
     addSign([title, subtitle], cx, 2.65, top + 0.35, 0, '#9dffcb');
   };
   // Broad connector passages physically join the west/east annexes to the main spine.
-  const annexCorridor = (x1, x2, z, width = 5.2) => {
+  const annexCorridor = (x1, x2, z, width = 7.2) => {
     const length = Math.abs(x2 - x1), mid = (x1 + x2) / 2;
     const cf = new THREE.Mesh(new THREE.PlaneGeometry(length, width), roomFloor);
     cf.rotation.x = -Math.PI / 2; cf.position.set(mid, 0.014, z); world.add(cf);
@@ -1690,13 +1690,13 @@ function build10ZonesMap() {
     [-1, 1].forEach(side => box(wallMaterial, length, 3.2, 0.45, mid, 1.6, z + side * width / 2, true));
   };
   // Connector mouths cross the existing spine walls instead of stopping just short of them.
-  annexCorridor(-4.7, -10.0, 18, 5.8);
-  annexCorridor(4.7, 10.0, 38, 5.8);
-  annexCorridor(-3.7, -10.0, 62, 5.8);
-  annexCorridor(3.7, 10.0, 70, 5.8);
-  room(-25, 18, 30, 28, 'АРХИВ-09', 'ЗАПИСИ ИНЦИДЕНТА', 0x5c9b87);
-  room(25, 38, 30, 30, 'МЕДБЛОК', 'КАРАНТИН УРОВНЯ 4', 0x7b9dba);
-  room(-25, 62, 30, 32, 'ТЕХНИЧЕСКИЙ УРОВЕНЬ', 'РЕАКТОР / НЕ ВХОДИТЬ', 0xff5533);
+  annexCorridor(-4.7, -10.0, 18, 7.2);
+  annexCorridor(4.7, 10.0, 38, 7.2);
+  annexCorridor(-3.7, -10.0, 62, 7.2);
+  annexCorridor(3.7, 10.0, 70, 7.2);
+  room(-25, 18, 38, 34, 'АРХИВ-09', 'ЗАПИСИ ИНЦИДЕНТА', 0x5c9b87);
+  room(25, 38, 38, 30, 'МЕДБЛОК', 'КАРАНТИН УРОВНЯ 4', 0x7b9dba);
+  room(-25, 62, 38, 36, 'ТЕХНИЧЕСКИЙ УРОВЕНЬ', 'РЕАКТОР / НЕ ВХОДИТЬ', 0xff5533);
   for (let z = 11; z <= 25; z += 4) {
     box(MAT.cab, 0.7, 2.25, 2.6, -31.8, 1.125, z, true);
     box(MAT.cab, 0.7, 2.25, 2.6, -18.2, 1.125, z, true);
@@ -1711,22 +1711,22 @@ function build10ZonesMap() {
     box(new THREE.MeshBasicMaterial({ color: 0xff3322 }), 0.08, 0.08, 0.08, -29.85, 1.7, z, false);
   }
   // Дальняя исследовательская галерея и вспомогательные отсеки делают комплекс глубже.
-  room(25, 70, 30, 30, 'ГАЛЕРЕЯ НАБЛЮДЕНИЯ', 'СТЕКЛО ПОВРЕЖДЕНО ИЗНУТРИ', 0x6a7778);
+  room(25, 70, 38, 32, 'ГАЛЕРЕЯ НАБЛЮДЕНИЯ', 'СТЕКЛО ПОВРЕЖДЕНО ИЗНУТРИ', 0x6a7778);
   for (let z = 62; z <= 78; z += 4) {
     box(MAT.cab, 2.8, 2.1, 0.35, 18.5, 1.05, z, true);
     box(MAT.glass, 0.08, 1.8, 2.8, 20.0, 1.15, z + 1.2, false);
   }
-  room(0, 94, 36, 28, 'УЗЕЛ СВЯЗИ', 'КАНАЛ 7 · СИГНАЛ ИЗ БУДУЩЕГО', 0x5a79b8);
+  room(0, 94, 44, 34, 'УЗЕЛ СВЯЗИ', 'КАНАЛ 7 · СИГНАЛ ИЗ БУДУЩЕГО', 0x5a79b8);
   // South service wing from the blueprint: personnel, server room, workshop and CCTV.
-  room(-25, -24, 28, 24, 'КОМНАТА ПЕРСОНАЛА', 'ЖИЛОЙ БЛОК D-12', 0x87959b);
-  room(25, -24, 28, 24, 'СЕРВЕРНАЯ', 'РЕЗЕРВНЫЙ КОНТУР', 0x55a9c5);
-  room(-25, -52, 28, 24, 'ТЕХНИЧЕСКАЯ МАСТЕРСКАЯ', 'РЕМОНТ И ПИТАНИЕ', 0xff8844);
-  room(25, -52, 28, 24, 'КАМЕРЫ НАБЛЮДЕНИЯ', 'МОНИТОРИНГ СЕКТОРА', 0x7da6b8);
+  room(-25, -24, 36, 26, 'КОМНАТА ПЕРСОНАЛА', 'ЖИЛОЙ БЛОК D-12', 0x87959b);
+  room(25, -24, 36, 26, 'СЕРВЕРНАЯ', 'РЕЗЕРВНЫЙ КОНТУР', 0x55a9c5);
+  room(-25, -52, 36, 26, 'ТЕХНИЧЕСКАЯ МАСТЕРСКАЯ', 'РЕМОНТ И ПИТАНИЕ', 0xff8844);
+  room(25, -52, 36, 26, 'КАМЕРЫ НАБЛЮДЕНИЯ', 'МОНИТОРИНГ СЕКТОРА', 0x7da6b8);
   // Dedicated wide connectors link the added wings to the central circulation spine.
-  annexCorridor(-4.7, -11.0, -24, 5.8);
-  annexCorridor(4.7, 11.0, -24, 5.8);
-  annexCorridor(-3.7, -11.0, -52, 5.8);
-  annexCorridor(3.7, 11.0, -52, 5.8);
+  annexCorridor(-4.7, -11.0, -24, 7.2);
+  annexCorridor(4.7, 11.0, -24, 7.2);
+  annexCorridor(-3.7, -11.0, -52, 7.2);
+  annexCorridor(3.7, 11.0, -52, 7.2);
   // Room-specific silhouettes make the new wings readable without expensive assets.
   for (let z = -32; z <= -18; z += 4) {
     box(MAT.cab, 1.0, 2.15, 2.8, -35.0, 1.075, z, true);
