@@ -3137,6 +3137,21 @@ renderChapter(1);
     doorRight.position.set(1.42, 2.05, -18.8);
     menuScene.add(doorLeft, doorRight);
 
+    // Elevator state display and a compact rotating emergency beacon.
+    const indicatorFrame = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.34, 0.12), darkSteel);
+    indicatorFrame.position.set(0, 4.48, -18.55);
+    const indicatorFace = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.12, 0.035),
+      new THREE.MeshStandardMaterial({ color: 0x8b3029, emissive: 0xd63b30, emissiveIntensity: 1.2, roughness: 0.4 }));
+    indicatorFace.position.set(0, 4.48, -18.46);
+    menuScene.add(indicatorFrame, indicatorFace);
+    const beacon = new THREE.Group();
+    const beaconBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.12, 8), darkSteel);
+    const beaconLens = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.22, 0.12), warning);
+    beaconLens.position.y = 0.16;
+    beacon.add(beaconBase, beaconLens);
+    beacon.position.set(3.82, 3.65, -15.5);
+    menuScene.add(beacon);
+
     // Repeating wall ribs, floor guides and ceiling luminaires add depth without expensive detail.
     for (let z = 4; z > -18; z -= 3.6) {
       for (const side of [-1, 1]) {
@@ -3178,10 +3193,27 @@ renderChapter(1);
       if (overlay.classList.contains("keter-hidden") || time - lastRender < (mobile ? 90 : 55)) return;
       lastRender = time;
       const t = time * 0.001;
+      // Slow, deliberate elevator cycle: doors part, pause, then seal again.
+      const cycle = (t % 34) / 34;
+      const openPhase = Math.max(0, Math.min(1, (cycle - 0.34) / 0.13));
+      const closePhase = Math.max(0, Math.min(1, (cycle - 0.68) / 0.13));
+      const smoothOpen = openPhase * openPhase * (3 - 2 * openPhase);
+      const smoothClose = closePhase * closePhase * (3 - 2 * closePhase);
+      const doorAmount = Math.max(0, smoothOpen - smoothClose);
+      doorLeft.position.x = -1.42 - doorAmount * 0.78;
+      doorRight.position.x = 1.42 + doorAmount * 0.78;
+      doorLeft.position.z = -18.8 + Math.sin(t * 0.7) * 0.006;
+      doorRight.position.z = -18.8 - Math.sin(t * 0.7) * 0.006;
       menuCamera.position.x = Math.sin(t * 0.22) * 0.11;
       menuCamera.position.y = 2.05 + Math.sin(t * 0.31) * 0.035;
+      menuCamera.position.z = 7.8 + Math.sin(t * 0.12) * 0.12;
       menuCamera.lookAt(Math.sin(t * 0.16) * 0.12, 1.8, -9);
-      redLight.intensity = (mobile ? 7 : 10) * (0.82 + Math.sin(t * 2.2) * 0.18);
+      const alarmPulse = 0.72 + Math.max(0, Math.sin(t * 3.4)) * 0.28;
+      redLight.intensity = (mobile ? 7 : 10) * alarmPulse;
+      beacon.rotation.y = t * 1.8;
+      beaconLens.material.emissiveIntensity = 0.65 + Math.max(0, Math.sin(t * 4.2)) * 1.1;
+      indicatorFace.material.emissiveIntensity = 0.72 + Math.max(0, Math.sin(t * 2.1)) * 0.8;
+      coldLight.intensity = (mobile ? 13 : 18) * (0.94 + Math.sin(t * 0.42) * 0.06);
       renderer.render(menuScene, menuCamera);
     };
     frame = requestAnimationFrame(render);
