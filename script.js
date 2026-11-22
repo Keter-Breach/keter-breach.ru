@@ -1282,6 +1282,16 @@ function build10ZonesMap() {
     lowerFloor.position.set(0, y, index === 0 ? -106 : -136);
     world.add(lowerFloor);
   });
+  // Боковые стены удерживают игрока внутри нижнего вертикального блока.
+  const lowerWallMat = new THREE.MeshStandardMaterial({ color: 0x303638, roughness: 0.92, metalness: 0.12 });
+  [-4, 4].forEach(x => {
+    const b1Wall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.2, 62), lowerWallMat);
+    b1Wall.position.set(x, -1.55, -106); world.add(b1Wall);
+    walls.push({ mesh: b1Wall, box: new THREE.Box3().setFromObject(b1Wall) });
+    const b2Wall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.2, 62), lowerWallMat);
+    b2Wall.position.set(x, -4.55, -136); world.add(b2Wall);
+    walls.push({ mesh: b2Wall, box: new THREE.Box3().setFromObject(b2Wall) });
+  });
   const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(210, 250), ceilingMat);
   ceiling.rotation.x = Math.PI / 2; ceiling.position.set(0, 3.2, 30); world.add(ceiling);
 
