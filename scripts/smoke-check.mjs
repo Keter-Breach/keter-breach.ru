@@ -25,8 +25,9 @@ assert.match(html, /href="style\.css"/, "page should load responsive styles");
 assert.match(script, /function renderChapter\(/, "chapter renderer should exist");
 assert.match(script, /function init3DMode\(/, "3D initialization should exist");
 assert.match(script, /firstPersonRig\.visible = true/, "first-person hands and flashlight should remain visible");
-assert.match(script, /bumpMap:\s*maps\.bump/, "PBR bump map should be configured");
-assert.match(script, /roughnessMap:\s*maps\.roughness/, "PBR roughness map should be configured");
+assert.match(script, /wallMaterial = new THREE\.MeshStandardMaterial\(/, "starter map should use stable standard wall materials");
+assert.match(script, /floorMaterial = new THREE\.MeshStandardMaterial\(/, "starter map should use stable standard floor materials");
+assert.doesNotMatch(script, /loadImageTexture\("textures\//, "starter map should not depend on external image textures");
 assert.match(script, /inputLength > 1/, "diagonal movement should be normalized");
 assert.match(script, /e\.repeat && \(e\.code === 'KeyF' \|\| e\.code === 'KeyE'\)/, "held interaction keys should not repeat");
 assert.match(script, /url\("menu-background\.svg"\)/, "VHS menu backdrop should be referenced");
@@ -40,7 +41,7 @@ new Function(script); // Parse only; do not execute browser-dependent game code.
 await access(new URL("../menu-background.svg", import.meta.url), constants.R_OK);
 
 console.log("PROJECT: KETER smoke checks passed.");
-console.log("Checked: page wiring, game entry points, PBR maps, input fixes, menu backdrop, JavaScript syntax.");
+console.log("Checked: page wiring, game entry points, stable starter materials, input fixes, menu backdrop, JavaScript syntax.");
 
 
 // Boot screen and sequential runtime loading must remain wired together.
