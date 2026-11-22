@@ -1267,6 +1267,7 @@ function build10ZonesMap() {
   walls = []; interactiveItems = []; eventTriggers = []; doors = {}; flickers = []; pickupAnimations = [];
 
   const ceilingMat = MAT.ceil;
+  const roomFloor = new THREE.MeshStandardMaterial({ color: 0x303638, roughness: 0.94 });
   const cabMat = MAT.cab;
   const bedMat = MAT.bed;
   const darkMat = MAT.keter;
@@ -1710,7 +1711,6 @@ function build10ZonesMap() {
   });
 
   // Дополнительные крылья комплекса: архив, медблок и технический уровень.
-  const roomFloor = new THREE.MeshStandardMaterial({ color: 0x303638, roughness: 0.94 });
   // Blueprint annexes: each room has a real doorway facing the central route.
   const room = (cx, cz, w, d, title, subtitle, lightColor = 0x8aa8a0) => {
     const rf = new THREE.Mesh(new THREE.PlaneGeometry(w, d), roomFloor);
