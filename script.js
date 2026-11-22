@@ -1273,7 +1273,7 @@ function build10ZonesMap() {
   const glassMat = MAT.glass;
   const redMat = () => new THREE.MeshBasicMaterial({ color: 0xff2222 });
 
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(210, 250), floorMaterial);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(260, 430), floorMaterial);
   floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 30); floor.receiveShadow = true; world.add(floor);
   const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(210, 250), ceilingMat);
   ceiling.rotation.x = Math.PI / 2; ceiling.position.set(0, 3.2, 30); world.add(ceiling);
@@ -1365,7 +1365,7 @@ function build10ZonesMap() {
   box(seamMat, 2.6, 0.018, 0.16, 0, 0.025, -5.28);
   box(edgeMat, 2.5, 0.025, 0.055, 0, 0.035, -5.38);
 
-  // --- Стены и проёмы ---\n  // Extend the south spine to serve the personnel and service wings without open-air shortcuts.\n  wallLine('x', -4, -60, -10, [[-55, -49], [-27, -21]]);\n  wallLine('x', 4, -60, -10, [[-55, -49], [-27, -21]]);\n\n
+  // --- Стены и проёмы ---\n  // Extend the south spine to serve the personnel and service wings without open-air shortcuts.\n  wallLine('x', -4, -140, -10, [[-115, -109], [-55, -49], [-27, -21]]);\n  wallLine('x', 4, -140, -10, [[-115, -109], [-55, -49], [-27, -21]]);\n\n
   wallLine('z', -10, -4, 4);                         // Шлюз D-12
   wallLine('x', -4, -10, 2, [[-5, -1]]); wallLine('x', 4, -10, 2);
   wallLine('z', -9, -14, -4); wallLine('z', 1, -14, -4); wallLine('x', -14, -9, 1); // Блок D-класса
@@ -1380,9 +1380,15 @@ function build10ZonesMap() {
   wallLine('z', 44, -16, 16, [[-1.5, 1.5]]);         // узел -> зал содержания
   wallLine('x', -16, 44, 60); wallLine('x', 16, 44, 60);
   wallLine('z', 60, -16, 16, [[-14.5, -12.5], [-1, 1]]); // L-2 и служебный обход
-  wallLine('x', -4, 60, 80, [[60.5, 64.5], [66, 70], [77, 79]]); wallLine('x', 4, 60, 80, [[68, 72]]);
+  wallLine('x', -4, 60, 166, [[60.5, 64.5], [66, 70], [77, 79], [101, 109], [116, 124]]); wallLine('x', 4, 60, 166, [[68, 72], [101, 109], [116, 124]]);
   wallLine('z', 63, -14, -4, [[-14.5, -12.5]]); wallLine('z', 77, -14, -4, [[-14.5, -12.5]]); wallLine('x', -14, 63, 77); // Пост охраны и обход
   wallLine('z', 80, -4, 4, [[-1, 1]]);               // выходная дверь
+
+  // Expanded central circulation floor/ceiling links the enlarged north and south wings.
+  const spineFloor = new THREE.Mesh(new THREE.PlaneGeometry(9.4, 306), roomFloor);
+  spineFloor.rotation.x = -Math.PI / 2; spineFloor.position.set(0, 0.013, 13); world.add(spineFloor);
+  const spineCeiling = new THREE.Mesh(new THREE.PlaneGeometry(9.4, 306), ceilingMat);
+  spineCeiling.rotation.x = Math.PI / 2; spineCeiling.position.set(0, 3.18, 13); world.add(spineCeiling);
 
   // --- Новое боковое крыло: архив, мастерская и изолятор ---
   wallLine('x', -17, 24, 44);
@@ -1657,7 +1663,7 @@ function build10ZonesMap() {
     const rc = new THREE.Mesh(new THREE.PlaneGeometry(w, d), ceilingMat);
     rc.rotation.x = Math.PI / 2; rc.position.set(cx, 3.18, cz); world.add(rc);
     const left = cx - w / 2, right = cx + w / 2, top = cz - d / 2, bottom = cz + d / 2;
-    const half = 2.2;
+    const half = 3.4;
     if (cx < -1) {
       box(wallMaterial, 0.45, 3.2, d, left, 1.6, cz, true);
       box(wallMaterial, 0.45, 3.2, d / 2 - half, right, 1.6, top + (d / 2 - half) / 2, true);
@@ -1681,7 +1687,7 @@ function build10ZonesMap() {
     addSign([title, subtitle], cx, 2.65, top + 0.35, 0, '#9dffcb');
   };
   // Broad connector passages physically join the west/east annexes to the main spine.
-  const annexCorridor = (x1, x2, z, width = 7.2) => {
+  const annexCorridor = (x1, x2, z, width = 12.0) => {
     const length = Math.abs(x2 - x1), mid = (x1 + x2) / 2;
     const cf = new THREE.Mesh(new THREE.PlaneGeometry(length, width), roomFloor);
     cf.rotation.x = -Math.PI / 2; cf.position.set(mid, 0.014, z); world.add(cf);
@@ -1690,62 +1696,62 @@ function build10ZonesMap() {
     [-1, 1].forEach(side => box(wallMaterial, length, 3.2, 0.45, mid, 1.6, z + side * width / 2, true));
   };
   // Connector mouths cross the existing spine walls instead of stopping just short of them.
-  annexCorridor(-4.7, -10.0, 18, 7.2);
-  annexCorridor(4.7, 10.0, 38, 7.2);
-  annexCorridor(-3.7, -10.0, 62, 7.2);
-  annexCorridor(3.7, 10.0, 70, 7.2);
-  room(-25, 18, 38, 34, 'АРХИВ-09', 'ЗАПИСИ ИНЦИДЕНТА', 0x5c9b87);
-  room(25, 38, 38, 30, 'МЕДБЛОК', 'КАРАНТИН УРОВНЯ 4', 0x7b9dba);
-  room(-25, 62, 38, 36, 'ТЕХНИЧЕСКИЙ УРОВЕНЬ', 'РЕАКТОР / НЕ ВХОДИТЬ', 0xff5533);
+  annexCorridor(-4.7, -17.0, 18, 12.0);
+  annexCorridor(4.7, 17.0, 38, 12.0);
+  annexCorridor(-4.7, -17.0, 105, 12.0);
+  annexCorridor(4.7, 17.0, 120, 12.0);
+  room(-55, 18, 76, 68, 'АРХИВ-09', 'ЗАПИСИ ИНЦИДЕНТА', 0x5c9b87);
+  room(55, 38, 76, 60, 'МЕДБЛОК', 'КАРАНТИН УРОВНЯ 4', 0x7b9dba);
+  room(-55, 105, 76, 72, 'ТЕХНИЧЕСКИЙ УРОВЕНЬ', 'РЕАКТОР / НЕ ВХОДИТЬ', 0xff5533);
   for (let z = 11; z <= 25; z += 4) {
-    box(MAT.cab, 0.7, 2.25, 2.6, -31.8, 1.125, z, true);
-    box(MAT.cab, 0.7, 2.25, 2.6, -18.2, 1.125, z, true);
+    box(MAT.cab, 0.7, 2.25, 2.6, -61.8, 1.125, z, true);
+    box(MAT.cab, 0.7, 2.25, 2.6, -48.2, 1.125, z, true);
   }
   for (let z = 32; z <= 44; z += 4) {
-    box(MAT.bed, 2.5, 0.35, 0.9, 22.2, 0.35, z, true);
-    box(MAT.cab, 0.18, 1.1, 0.18, 21.2, 0.55, z - 0.3, true);
-    box(MAT.cab, 0.18, 1.1, 0.18, 23.2, 0.55, z - 0.3, true);
+    box(MAT.bed, 2.5, 0.35, 0.9, 52.2, 0.35, z, true);
+    box(MAT.cab, 0.18, 1.1, 0.18, 51.2, 0.55, z - 0.3, true);
+    box(MAT.cab, 0.18, 1.1, 0.18, 53.2, 0.55, z - 0.3, true);
   }
   for (let z = 55; z <= 70; z += 3) {
-    box(MAT.keter, 1.2, 2.5, 1.1, -30.5, 1.25, z, true);
-    box(new THREE.MeshBasicMaterial({ color: 0xff3322 }), 0.08, 0.08, 0.08, -29.85, 1.7, z, false);
+    box(MAT.keter, 1.2, 2.5, 1.1, -60.5, 1.25, z + 43, true);
+    box(new THREE.MeshBasicMaterial({ color: 0xff3322 }), 0.08, 0.08, 0.08, -59.85, 1.7, z + 43, false);
   }
   // Дальняя исследовательская галерея и вспомогательные отсеки делают комплекс глубже.
-  room(25, 70, 38, 32, 'ГАЛЕРЕЯ НАБЛЮДЕНИЯ', 'СТЕКЛО ПОВРЕЖДЕНО ИЗНУТРИ', 0x6a7778);
+  room(55, 120, 76, 64, 'ГАЛЕРЕЯ НАБЛЮДЕНИЯ', 'СТЕКЛО ПОВРЕЖДЕНО ИЗНУТРИ', 0x6a7778);
   for (let z = 62; z <= 78; z += 4) {
-    box(MAT.cab, 2.8, 2.1, 0.35, 18.5, 1.05, z, true);
-    box(MAT.glass, 0.08, 1.8, 2.8, 20.0, 1.15, z + 1.2, false);
+    box(MAT.cab, 2.8, 2.1, 0.35, 48.5, 1.05, z + 50, true);
+    box(MAT.glass, 0.08, 1.8, 2.8, 50.0, 1.15, z + 51.2, false);
   }
-  room(0, 94, 44, 34, 'УЗЕЛ СВЯЗИ', 'КАНАЛ 7 · СИГНАЛ ИЗ БУДУЩЕГО', 0x5a79b8);
+  room(0, 200, 88, 68, 'УЗЕЛ СВЯЗИ', 'КАНАЛ 7 · СИГНАЛ ИЗ БУДУЩЕГО', 0x5a79b8);
   // South service wing from the blueprint: personnel, server room, workshop and CCTV.
-  room(-25, -24, 36, 26, 'КОМНАТА ПЕРСОНАЛА', 'ЖИЛОЙ БЛОК D-12', 0x87959b);
-  room(25, -24, 36, 26, 'СЕРВЕРНАЯ', 'РЕЗЕРВНЫЙ КОНТУР', 0x55a9c5);
-  room(-25, -52, 36, 26, 'ТЕХНИЧЕСКАЯ МАСТЕРСКАЯ', 'РЕМОНТ И ПИТАНИЕ', 0xff8844);
-  room(25, -52, 36, 26, 'КАМЕРЫ НАБЛЮДЕНИЯ', 'МОНИТОРИНГ СЕКТОРА', 0x7da6b8);
+  room(-55, -24, 72, 52, 'КОМНАТА ПЕРСОНАЛА', 'ЖИЛОЙ БЛОК D-12', 0x87959b);
+  room(55, -24, 72, 52, 'СЕРВЕРНАЯ', 'РЕЗЕРВНЫЙ КОНТУР', 0x55a9c5);
+  room(-55, -112, 72, 52, 'ТЕХНИЧЕСКАЯ МАСТЕРСКАЯ', 'РЕМОНТ И ПИТАНИЕ', 0xff8844);
+  room(55, -112, 72, 52, 'КАМЕРЫ НАБЛЮДЕНИЯ', 'МОНИТОРИНГ СЕКТОРА', 0x7da6b8);
   // Dedicated wide connectors link the added wings to the central circulation spine.
-  annexCorridor(-4.7, -11.0, -24, 7.2);
-  annexCorridor(4.7, 11.0, -24, 7.2);
-  annexCorridor(-3.7, -11.0, -52, 7.2);
-  annexCorridor(3.7, 11.0, -52, 7.2);
+  annexCorridor(-4.7, -19.0, -24, 12.0);
+  annexCorridor(4.7, 19.0, -24, 12.0);
+  annexCorridor(-4.7, -19.0, -112, 12.0);
+  annexCorridor(4.7, 19.0, -112, 12.0);
   // Room-specific silhouettes make the new wings readable without expensive assets.
   for (let z = -32; z <= -18; z += 4) {
-    box(MAT.cab, 1.0, 2.15, 2.8, -35.0, 1.075, z, true);
-    box(MAT.cab, 0.08, 0.08, 2.4, -34.45, 1.9, z, false);
+    box(MAT.cab, 1.0, 2.15, 2.8, -65.0, 1.075, z, true);
+    box(MAT.cab, 0.08, 0.08, 2.4, -64.45, 1.9, z, false);
   }
-  [-31, -25, -19].forEach(x => {
+  [49, 55, 61].forEach(x => {
     box(serverMaterial, 1.15, 2.35, 0.85, x, 1.175, -25.0, true);
     box(new THREE.MeshBasicMaterial({ color: 0x35d98a }), 0.055, 0.055, 0.055, x, 1.75, -24.53, false);
   });
-  [-32, -25, -18].forEach(x => {
-    box(tableMaterial, 2.6, 0.12, 1.0, x, 0.82, -52.0, true);
-    box(cabMat, 0.18, 0.8, 0.18, x - 1.05, 0.4, -52.0, true);
-    box(cabMat, 0.18, 0.8, 0.18, x + 1.05, 0.4, -52.0, true);
+  [-62, -55, -48].forEach(x => {
+    box(tableMaterial, 2.6, 0.12, 1.0, x, 0.82, -112.0, true);
+    box(cabMat, 0.18, 0.8, 0.18, x - 1.05, 0.4, -112.0, true);
+    box(cabMat, 0.18, 0.8, 0.18, x + 1.05, 0.4, -112.0, true);
   });
   for (let i = 0; i < 4; i++) {
-    const x = 19 + i * 3.5;
-    box(cabMat, 2.1, 1.1, 0.8, x, 0.55, -56.0, true);
-    box(new THREE.MeshBasicMaterial({ color: 0x152c38 }), 1.7, 0.85, 0.06, x, 1.55, -56.45, false);
-    box(new THREE.MeshBasicMaterial({ color: 0x47a9d2 }), 0.06, 0.06, 0.06, x + 0.65, 1.85, -56.52, false);
+    const x = 49 + i * 3.5;
+    box(cabMat, 2.1, 1.1, 0.8, x, 0.55, -116.0, true);
+    box(new THREE.MeshBasicMaterial({ color: 0x152c38 }), 1.7, 0.85, 0.06, x, 1.55, -116.45, false);
+    box(new THREE.MeshBasicMaterial({ color: 0x47a9d2 }), 0.06, 0.06, 0.06, x + 0.65, 1.85, -116.52, false);
   }
   for (let x = -11; x <= 11; x += 5.5) {
     box(MAT.cab, 1.4, 2.2, 0.8, x, 1.1, 90, true);
@@ -1776,13 +1782,13 @@ function build10ZonesMap() {
     }
   }
   // Комната персонала: столы, брошенные папки и журнал последней смены.
-  room(-25, 88, 26, 22, 'КОМНАТА ПЕРСОНАЛА', 'СМЕНА НЕ ЗАВЕРШЕНА', 0x697a78);
-  box(MAT.cab, 3.2, 0.12, 1.25, -25, 0.82, 87, true);
-  box(MAT.cab, 0.12, 0.8, 0.12, -26.4, 0.4, 86.5, true);
-  box(MAT.cab, 0.12, 0.8, 0.12, -23.6, 0.4, 86.5, true);
-  box(MAT.bed, 0.7, 0.08, 0.95, -27.4, 0.42, 89, false);
-  box(MAT.bed, 0.7, 0.08, 0.95, -22.8, 0.42, 85.5, false);
-  addSign(['ЖУРНАЛ СМЕНЫ', 'ПОСЛЕДНЯЯ ЗАПИСЬ: 03:17'], -25, 2.55, 80.5, 0, '#b5c0bd');
+  room(-55, 165, 52, 44, 'АРХИВ ДЕЖУРНОЙ СМЕНЫ', 'СМЕНА НЕ ЗАВЕРШЕНА', 0x697a78);
+  box(MAT.cab, 3.2, 0.12, 1.25, -55, 0.82, 164, true);
+  box(MAT.cab, 0.12, 0.8, 0.12, -56.4, 0.4, 163.5, true);
+  box(MAT.cab, 0.12, 0.8, 0.12, -53.6, 0.4, 163.5, true);
+  box(MAT.bed, 0.7, 0.08, 0.95, -57.4, 0.42, 166, false);
+  box(MAT.bed, 0.7, 0.08, 0.95, -52.8, 0.42, 162.5, false);
+  addSign(['ЖУРНАЛ СМЕНЫ', 'ПОСЛЕДНЯЯ ЗАПИСЬ: 03:17'], -55, 2.55, 154.5, 0, '#b5c0bd');
 
   // Первая сюжетная улика: терминал дежурной смены, который можно изучить.
   const loreScreenMat = new THREE.MeshStandardMaterial({
@@ -1805,7 +1811,7 @@ function build10ZonesMap() {
 
   // Узел связи: стойка с аварийным терминалом и панелью, показывающей временную рассинхронизацию.
   const commsFrame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.25, 0.16), loreFrameMat);
-  commsFrame.position.set(0, 1.35, 88.8);
+  commsFrame.position.set(0, 1.35, 194.8);
   commsFrame.userData = { type: 'loreChannel7' };
   world.add(commsFrame);
   interactiveItems.push(commsFrame);
@@ -1816,10 +1822,10 @@ function build10ZonesMap() {
       emissive: 0x1b2c65, emissiveIntensity: 0.8
     })
   );
-  commsScreen.position.set(0, 1.37, 88.705);
+  commsScreen.position.set(0, 1.37, 194.705);
   world.add(commsScreen);
   for (let x = -1.05; x <= 1.05; x += 0.35) {
-    box(trimMat, 0.055, 0.055, 0.18, x, 0.62, 89, false);
+    box(trimMat, 0.055, 0.055, 0.18, x, 0.62, 195, false);
   }
 
   for (let x = -34; x <= 34; x += 17) {
