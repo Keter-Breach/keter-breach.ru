@@ -1093,7 +1093,7 @@ function init3DMode() {
   battery = 100; flashlightOn = true; flashlight.intensity = 5.0;
   if (firstPersonRig && firstPersonRig.userData.torchLens) firstPersonRig.userData.torchLens.material.emissiveIntensity = 0.3;
   velocity.set(0, 0, 0); openingDoors = [];
-  camera.position.set(0, 0.72, -8);
+  camera.position.set(0, floorHeightAt(0, -8) + 0.72, -8);
   camera.rotation.set(0.22, Math.PI, 0); // first-person: видны руки охраны и ручной фонарь
   if (firstPersonRig) firstPersonRig.visible = true;
   wakeupProgress = 0;
@@ -1275,6 +1275,13 @@ function build10ZonesMap() {
 
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(260, 430), floorMaterial);
   floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 30); floor.receiveShadow = true; world.add(floor);
+  // Нижние технические уровни B1/B2. Полы ограничены центральным вертикальным блоком.
+  [-3, -6].forEach((y, index) => {
+    const lowerFloor = new THREE.Mesh(new THREE.PlaneGeometry(7.8, 62), roomFloor);
+    lowerFloor.rotation.x = -Math.PI / 2;
+    lowerFloor.position.set(0, y, index === 0 ? -106 : -136);
+    world.add(lowerFloor);
+  });
   const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(210, 250), ceilingMat);
   ceiling.rotation.x = Math.PI / 2; ceiling.position.set(0, 3.2, 30); world.add(ceiling);
 
@@ -1364,6 +1371,44 @@ function build10ZonesMap() {
   // Тёмные потёртости у порога кабины.
   box(seamMat, 2.6, 0.018, 0.16, 0, 0.025, -5.28);
   box(edgeMat, 2.5, 0.025, 0.055, 0, 0.035, -5.38);
+
+  // --- Вертикальный узел D-12: лестницы B1/B2 и площадки ---
+  const stairConcrete = new THREE.MeshStandardMaterial({ color: 0x343a3b, roughness: 0.94, metalness: 0.08 });
+  const stairEdge = new THREE.MeshStandardMaterial({ color: 0x777b77, roughness: 0.72, metalness: 0.38 });
+  const addStairFlight = (upperZ, lowerZ, upperY, lowerY) => {
+    const count = 16;
+    const dz = (upperZ - lowerZ) / count;
+    const dy = (upperY - lowerY) / count;
+    for (let i = 0; i < count; i++) {
+      const z = upperZ - dz * (i + 0.5);
+      const y = upperY - dy * (i + 0.5);
+      const tread = box(stairConcrete, 5.6, 0.16, dz * 0.92, 0, y - 0.08, z, false);
+      const nosing = box(stairEdge, 5.62, 0.035, 0.045, 0, y + 0.005, z - dz * 0.42, false);
+    }
+    // Поручни и боковые ограждения.
+    [-2.95, 2.95].forEach(x => {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.12, Math.hypot(lowerZ-upperZ, lowerY-upperY)), stairEdge);
+      rail.position.set(x, (upperY + lowerY) / 2 + 0.95, (upperZ + lowerZ) / 2);
+      rail.rotation.x = Math.atan2(lowerY-upperY, lowerZ-upperZ);
+      world.add(rail);
+    });
+  };
+  addStairFlight(-55, -75, 0, -3);
+  addStairFlight(-95, -115, -3, -6);
+  const stairSign = (label, y, z) => {
+    const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = 128;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#101719"; ctx.fillRect(0,0,512,128);
+    ctx.strokeStyle = "#b68b48"; ctx.lineWidth = 6; ctx.strokeRect(5,5,502,118);
+    ctx.fillStyle = "#e0d4b8"; ctx.font = "bold 38px monospace"; ctx.textAlign = "center";
+    ctx.fillText(label,256,78);
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.0,0.75), new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas)}));
+    sign.position.set(0,y,z); world.add(sign);
+  };
+  stairSign("ЛЕСТНИЦА · B1", 2.15, -53.8);
+  stairSign("ТЕХНИЧЕСКИЙ УРОВЕНЬ · B1", -1.0, -77.2);
+  stairSign("ЛЕСТНИЦА · B2", -1.0, -93.8);
+  stairSign("НИЖНИЙ СЕКТОР · B2", -4.0, -117.2);
 
   // --- Стены и проёмы ---\n  // Extend the south spine to serve the personnel and service wings without open-air shortcuts.\n  wallLine('x', -4, -140, -10, [[-115, -109], [-55, -49], [-27, -21]]);\n  wallLine('x', 4, -140, -10, [[-115, -109], [-55, -49], [-27, -21]]);\n\n
   wallLine('z', -10, -4, 4);                         // Шлюз D-12
@@ -2066,6 +2111,8 @@ function drawMinimap() {
   });
 
   const px = cx + camera.position.x * scale, pz = cy + camera.position.z * scale;
+  const levelLabel = camera.position.y > -1.5 ? "УРОВЕНЬ 0" : (camera.position.y > -4.5 ? "B1" : "B2");
+  ctx.fillStyle = "#d8c69b"; ctx.font = "bold 10px monospace"; ctx.fillText(levelLabel, 5, 10);
   const yaw = camera.rotation.y;
   ctx.strokeStyle = '#00ff66';
   ctx.beginPath(); ctx.moveTo(px, pz);
@@ -2076,10 +2123,26 @@ function drawMinimap() {
 
 // === 7. ИГРОВОЙ ЦИКЛ ===
 const _pBox = new THREE.Box3();
+function floorHeightAt(x, z) {
+  // Два лестничных марша: основной уровень -> B1 -> B2.
+  const ramp = (z, upperZ, lowerZ, upperY, lowerY) => {
+    if (z > upperZ || z < lowerZ) return null;
+    const t = THREE.MathUtils.clamp((upperZ - z) / (upperZ - lowerZ), 0, 1);
+    return THREE.MathUtils.lerp(upperY, lowerY, t);
+  };
+  const b1 = ramp(z, -55, -75, 0, -3);
+  if (b1 !== null && Math.abs(x) < 3.5) return b1;
+  if (z <= -75 && z >= -95 && Math.abs(x) < 3.5) return -3;
+  const b2 = ramp(z, -95, -115, -3, -6);
+  if (b2 !== null && Math.abs(x) < 3.5) return b2;
+  if (z < -115 && z >= -137 && Math.abs(x) < 3.5) return -6;
+  return 0;
+}
 function collides(x, z) {
   const r = 0.4;
-  _pBox.min.set(x - r, 0, z - r);
-  _pBox.max.set(x + r, 3.0, z + r);
+  const ground = floorHeightAt(x, z);
+  _pBox.min.set(x - r, ground, z - r);
+  _pBox.max.set(x + r, ground + 1.8, z + r);
   for (let i = 0; i < walls.length; i++) if (walls[i].box.intersectsBox(_pBox)) return true;
   return false;
 }
@@ -2326,12 +2389,15 @@ function animate3D() {
     const nz = camera.position.z + velocity.z * delta;
     if (!collides(nx, camera.position.z)) camera.position.x = nx; else velocity.x = 0;
     if (!collides(camera.position.x, nz)) camera.position.z = nz; else velocity.z = 0;
+    // Поддерживаем высоту камеры по профилю лестничных маршей.
+    const groundY = floorHeightAt(camera.position.x, camera.position.z);
+    camera.position.y = groundY + 1.6;
 
     // Покачивание головы и шаги (один звук на каждый шаг)
     if (dirZ || dirX) {
       headBobTimer += delta * (isSprinting ? 16 : 10.5);
       const s = Math.sin(headBobTimer);
-      camera.position.y = 1.6 + s * 0.04;
+      camera.position.y = floorHeightAt(camera.position.x, camera.position.z) + 1.6 + s * 0.04;
       if (s < -0.9) { if (stepReady) { playSound('step'); stepReady = false; } }
       else if (s > 0) stepReady = true;
     }
