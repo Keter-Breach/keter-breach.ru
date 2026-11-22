@@ -723,43 +723,55 @@ function loadImageTexture(path, material, repeatX = 1, repeatY = 1) {
 }
 
 function buildMaterials() {
-  // Color maps describe albedo only. Surface relief and microsurface roughness
-  // use independent linear-space data maps, as expected by a PBR material.
-  const M = (t, r, m = 0, detail = 'concrete', bumpScale = 0.035) => {
-    const maps = makeSurfaceMaps(detail);
-    return new THREE.MeshStandardMaterial({
-      map: t, roughness: Math.min(1, r), metalness: m,
-      bumpMap: maps.bump, bumpScale: bumpScale * 0.78,
-      roughnessMap: maps.roughness,
-      envMapIntensity: 0.32
-    });
-  };
-  const fl = TEX.metal(); fl.repeat.set(18, 24);
-  const cl = TEX.ceil(); cl.repeat.set(24, 32);
-  wallMaterial = M(TEX.concrete(), 0.94, 0, 'concrete', 0.045);
-  floorMaterial = M(fl, 0.72, 0.12, 'steel', 0.025);
-  doorMaterial = M(TEX.door(), 0.72, 0.08, 'paint', 0.022);
-  tableMaterial = M(TEX.wood(), 0.82, 0, 'paint', 0.018);
-  serverMaterial = M(TEX.rack(), 0.58, 0.3, 'steel', 0.018);
-  MAT = {
-    ceil: M(cl, 0.94, 0, 'concrete', 0.025),
-    cab: M(TEX.cab(), 0.78, 0.12, 'steel', 0.018),
-    bed: M(TEX.cloth(), 0.86, 0, 'paint', 0.012),
-    statue: M(TEX.statue(), 0.97, 0, 'concrete', 0.018),
-    keter: new THREE.MeshStandardMaterial({ map: TEX.keterBase(), roughness: 0.25, metalness: 0.3, emissive: 0xff2200, emissiveMap: TEX.keterVein(), emissiveIntensity: 0.8 }),
-    glass: new THREE.MeshStandardMaterial({ color: 0x88aacc, transparent: true, opacity: 0.15, roughness: 0.1 }),
-    tank: new THREE.MeshStandardMaterial({ color: 0x66ffaa, transparent: true, opacity: 0.25, roughness: 0.1 }),
-    liquid: new THREE.MeshBasicMaterial({ color: 0x22cc66 }),
-    orange: new THREE.MeshStandardMaterial({ color: 0xb85a10, roughness: 0.8 })
-  };
+  // Стабильный набор материалов для стартовой карты D-12.
+  // Убираем внешние изображения, bump/roughness maps и повторяющиеся UV:
+  // на мобильных WebGL-драйверах они давали растяжение, пятна и нестабильную загрузку.
+  // Детализация окружения остаётся геометрической: панели, швы, решётки и оборудование.
 
-  // Локальные бесшовные SVG-текстуры входят в сборку и работают офлайн.
-  // Процедурные карты выше остаются резервом, если изображение не загрузится.
-  loadImageTexture("textures/keter-concrete.svg", wallMaterial, 3, 3);
-  loadImageTexture("textures/keter-industrial-floor.svg", floorMaterial, 4, 4);
-  loadImageTexture("textures/keter-painted-metal.svg", doorMaterial, 1, 1);
-  loadImageTexture("textures/keter-painted-metal.svg", serverMaterial, 1.5, 1.5);
-  loadImageTexture("textures/dark_wood_diff_1k.jpg", tableMaterial);
+  wallMaterial = new THREE.MeshStandardMaterial({
+    color: 0x454d4d, roughness: 0.96, metalness: 0.02
+  });
+  floorMaterial = new THREE.MeshStandardMaterial({
+    color: 0x292f32, roughness: 0.88, metalness: 0.18
+  });
+  doorMaterial = new THREE.MeshStandardMaterial({
+    color: 0x394341, roughness: 0.82, metalness: 0.22
+  });
+  tableMaterial = new THREE.MeshStandardMaterial({
+    color: 0x343331, roughness: 0.9, metalness: 0.04
+  });
+  serverMaterial = new THREE.MeshStandardMaterial({
+    color: 0x20292d, roughness: 0.72, metalness: 0.38
+  });
+
+  MAT = {
+    ceil: new THREE.MeshStandardMaterial({
+      color: 0x252c30, roughness: 0.96, metalness: 0.04
+    }),
+    cab: new THREE.MeshStandardMaterial({
+      color: 0x30393b, roughness: 0.84, metalness: 0.24
+    }),
+    bed: new THREE.MeshStandardMaterial({
+      color: 0x777f7c, roughness: 0.98, metalness: 0
+    }),
+    statue: new THREE.MeshStandardMaterial({
+      color: 0x827b6d, roughness: 0.98, metalness: 0
+    }),
+    keter: new THREE.MeshStandardMaterial({
+      color: 0x090708, roughness: 0.32, metalness: 0.18,
+      emissive: 0x4b090b, emissiveIntensity: 0.42
+    }),
+    glass: new THREE.MeshStandardMaterial({
+      color: 0x88aacc, transparent: true, opacity: 0.15, roughness: 0.1
+    }),
+    tank: new THREE.MeshStandardMaterial({
+      color: 0x66ffaa, transparent: true, opacity: 0.25, roughness: 0.1
+    }),
+    liquid: new THREE.MeshBasicMaterial({ color: 0x22cc66 }),
+    orange: new THREE.MeshStandardMaterial({
+      color: 0xb85a10, roughness: 0.8
+    })
+  };
 }
 
 // Физически масштабируем UV по каждой грани. 4 world units = один повтор,
